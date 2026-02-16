@@ -1,70 +1,4 @@
 import { t, type Static } from 'elysia';
-import { PipelineResult } from '../../pipeline';
-
-// 1. Adicionado 'lecture'
-export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture';
-
-// --- SCHEMAS DE VALIDAÇÃO (Agora com t.Optional para evitar erro 400) ---
-
-const SpeedupOperation = t.Object({
-  type: t.Literal('speedup'),
-  params: t.Object({
-    // Rate é obrigatório para speedup
-    rate: t.Number({ minimum: 0.5, maximum: 5.0 }),
-  }),
-});
-
-const CompressOperation = t.Object({
-  type: t.Literal('compress'),
-  params: t.Optional(t.Object({
-    ratio: t.Optional(t.Number({ minimum: 1, maximum: 20 })),
-    threshold: t.Optional(t.Number({ minimum: -60, maximum: 0 })),
-    attack: t.Optional(t.Number()),
-    release: t.Optional(t.Number()),
-  })),
-});
-
-const NormalizeOperation = t.Object({
-  type: t.Literal('normalize'),
-  params: t.Optional(t.Object({
-    targetLevel: t.Optional(t.Number({ minimum: -70, maximum: 0 })),
-    // Correção Crítica: peakNormalize agora é opcional
-    peakNormalize: t.Optional(t.Boolean()),
-  })),
-});
-
-const TrimSilenceOperation = t.Object({
-  type: t.Literal('trim-silence'),
-  params: t.Optional(t.Object({
-    aggressiveness: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
-    minSilenceDuration: t.Optional(t.Number({ minimum: 100, maximum: 5000 })),
-  })),
-});
-
-export const AudioOperationSchema = t.Union([
-  CompressOperation,
-  NormalizeOperation,
-  TrimSilenceOperation,
-  SpeedupOperation,
-]);
-
-export type AudioOperation = Static<typeof AudioOperationSchema>;
-
-// --- INTERFACES DE INPUT ---
-
-export interface StealAudioInput {
-  file: File;
-  preset?: AudioPreset;
-  operations?: AudioOperation[];
-}
-
-export interface ProcessAudioData {
-  file: File;
-  preset?: AudioPreset;
-  operations?: AudioOperation[];
-}
-
-// --- CONSTANTES DE DOCUMENTAÇÃO ---
 
 export const AUDIO_OPERATIONS = {
   'trim-silence': {
@@ -97,12 +31,12 @@ export const AUDIO_OPERATIONS = {
     name: 'Speed Up',
     description: 'Change audio speed without changing pitch',
     params: {
-        rate: { type: 'number', min: 0.5, max: 5.0, default: 1.25 }
-    }
-  }
+      rate: { type: 'number', min: 0.5, max: 5.0, default: 1.25 },
+    },
+  },
 } as const;
 
-// --- PRESETS (Incluindo Lecture) ---
+export type AudioOperationType = keyof typeof AUDIO_OPERATIONS;
 
 export const AUDIO_PRESETS = {
   chill: {
@@ -140,7 +74,6 @@ export const AUDIO_PRESETS = {
       { type: 'compress', params: { ratio: 4, threshold: -20, attack: 5, release: 150 } },
     ],
   },
-  // 2. Configuração do Lecture
   lecture: {
     name: 'Lecture Mode',
     description: 'Trim silence + 1.5x Speed + Normalize',
@@ -152,23 +85,53 @@ export const AUDIO_PRESETS = {
   },
 } as const;
 
-export type AudioData = Buffer | ArrayBuffer | Uint8Array;
+export type AudioPreset = keyof typeof AUDIO_PRESETS;
 
-export interface AudioDetails {
-  duration: number;
-  sampleRate: number;
-  originalDuration: number;
-  silenceRemoved: number;
-}
 
-export type AudioResult = PipelineResult<AudioData, AudioDetails>;
+export const AudioOperationSchema = t.Union([
+  t.Object({
+    type: t.Literal('trim-silence'),
+    params: t.Optional(t.Object({
+      aggressiveness: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
+      minSilenceDuration: t.Optional(t.Number({ minimum: 100, maximum: 5000 })),
+    })),
+  }),
+  t.Object({
+    type: t.Literal('normalize'),
+    params: t.Optional(t.Object({
+      targetLevel: t.Optional(t.Number({ minimum: -70, maximum: 0 })),
+      peakNormalize: t.Optional(t.Boolean()),
+    })),
+  }),
+  t.Object({
+    type: t.Literal('compress'),
+    params: t.Optional(t.Object({
+      ratio: t.Optional(t.Number({ minimum: 1, maximum: 20 })),
+      threshold: t.Optional(t.Number({ minimum: -60, maximum: 0 })),
+      attack: t.Optional(t.Number()),
+      release: t.Optional(t.Number()),
+    })),
+  }),
+  t.Object({
+    type: t.Literal('speedup'),
+    params: t.Optional(t.Object({
+      rate: t.Optional(t.Number({ minimum: 0.5, maximum: 5.0 })),
+    })),
+  }),
+]);
 
-export function calculateMetrics(originalSize: number, finalSize: number) {
-  const saved = originalSize - finalSize;
-  const ratio = originalSize > 0 ? ((saved / originalSize) * 100).toFixed(2) : '0.00';
-  
-  return {
-    savedBytes: saved,
-    compressionRatio: `${ratio}%`
-  };
+export type AudioOperation = Static<typeof AudioOperationSchema>;
+
+export const AudioPresetSchema = t.Union([
+  t.Literal('chill'),
+  t.Literal('medium'),
+  t.Literal('aggressive'),
+  t.Literal('podcast'),
+  t.Literal('lecture'),
+]);
+
+export interface ProcessAudioInput {
+  audioUrl: string;
+  preset?: AudioPreset;
+  operations?: AudioOperation[];
 }

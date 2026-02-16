@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { validateDashboardAuth } from '../../middlewares/dashboard-auth';
 import { audioService } from './audio.service';
-import { AudioOperationSchema } from './audio.types';
+import { AudioOperationSchema, AudioPresetSchema } from './audio.types';
 
 export const audioRoutes = new Elysia({ prefix: '/audio' })
   .use(validateDashboardAuth)
@@ -9,23 +9,15 @@ export const audioRoutes = new Elysia({ prefix: '/audio' })
   .post(
     '/',
     async ({ body, userId }) => {
-        const { job } = await audioService.createAudioJob(userId, body);
+        const { job } = await audioService.processAudio(userId, body);
         return {
           data: job,
         };
       },
     {
       body: t.Object({
-        file: t.File(),
-        preset: t.Optional(
-          t.Union([
-            t.Literal('chill'),
-            t.Literal('medium'),
-            t.Literal('aggressive'),
-            t.Literal('podcast'),
-            t.Literal('lecture'),
-          ])
-        ),
+        audioUrl: t.String({ format: 'uri' }),
+        preset: t.Optional(AudioPresetSchema),
         operations: t.Optional(
           t.Array(AudioOperationSchema, {
             minItems: 1,

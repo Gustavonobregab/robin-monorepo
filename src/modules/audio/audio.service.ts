@@ -1,25 +1,20 @@
 import {
   AUDIO_PRESETS,
-  type StealAudioInput,
-  type AudioPreset,
   AUDIO_OPERATIONS,
+  type ProcessAudioInput,
+  type AudioPreset,
   type AudioOperation,
 } from './audio.types';
 import { ApiError } from '../../utils/api-error';
-import { jobService } from '../jobs/job.service';
 import type { Job } from '../jobs/job.types';
 
 export class AudioService {
-  
-  async createAudioJob(
-    userId: string,
-    input: StealAudioInput
-  ): Promise<{ job: Job }> {
-    const { preset, operations: customOps, file } = input;
 
-    if (!file) {
-      throw new ApiError('AUDIO_INVALID_INPUT', 'File is required', 400);
-    }
+  async processAudio(
+    userId: string,
+    input: ProcessAudioInput
+  ): Promise<{ job: Job }> {
+    const { preset, operations: customOps, audioUrl } = input;
 
     if (!preset && (!customOps || customOps.length === 0)) {
       throw new ApiError(
@@ -31,35 +26,18 @@ export class AudioService {
 
     const operations = this.resolveOperations(preset, customOps);
 
-    const arrayBuffer = await file.arrayBuffer();
-    const inputSize = arrayBuffer.byteLength;
-    const originalFilename = file.name;
-
-    const job = await jobService.create({
-      userId,
-      payload: {
-        type: 'audio',
-        operations,
-        originalFilename,
-        inputSize,
-      },
-    });
-
-    // TODO: Aqui será feito upload do arquivo para storage (S3, etc)
-    // const inputUrl = await storageService.upload(userId, job.id, originalFilename, buffer);
-    // Depois o worker baixa o arquivo e processa
-
-    await jobService.enqueue(job);
-
+    //TODO: ENQUEUE JOB HERE
+    const job = { id: '123', userId, status: 'pending', payload: { type: 'audio', operations, audioUrl }, createdAt: new Date() } as unknown as Job;
     return { job };
   }
 
   private resolveOperations(
-    preset?: string,
+    preset?: AudioPreset,
     customOps?: AudioOperation[]
   ): AudioOperation[] {
     if (preset) {
-      const presetConfig = AUDIO_PRESETS[preset as AudioPreset];
+      const presetConfig = AUDIO_PRESETS[preset];
+
       if (!presetConfig) {
         throw new ApiError('AUDIO_INVALID_PRESET', `Unknown preset: ${preset}`, 400);
       }
@@ -79,7 +57,7 @@ export class AudioService {
   }
 
   listOperations() {
-    return Object.entries(AUDIO_OPERATIONS).map(([id, op]: any) => ({
+    return Object.entries(AUDIO_OPERATIONS).map(([id, op]) => ({
       id,
       name: op.name,
       description: op.description,
