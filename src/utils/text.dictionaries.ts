@@ -1,5 +1,4 @@
 export const SHORTEN_MAP_EN: Record<string, string> = {
-    // --- Common Internet/Chat Slang (High Confidence for AI) ---
     'because': 'bc',
     'please': 'pls',
     'people': 'ppl',
@@ -21,8 +20,6 @@ export const SHORTEN_MAP_EN: Record<string, string> = {
     'wait': 'w8',
     'with': 'w/',
     'without': 'w/o',
-
-    // --- Business & Technical (Standard Abbreviations) ---
     'information': 'info',
     'application': 'app',
     'approximate': 'approx',
@@ -80,8 +77,6 @@ export const SHORTEN_MAP_EN: Record<string, string> = {
     'control': 'ctrl',
     'escape': 'esc',
     'alternate': 'alt',
-
-    // --- Days & Months (Standard) ---
     'january': 'Jan', 'february': 'Feb', 'march': 'Mar', 'april': 'Apr',
     'august': 'Aug', 'september': 'Sep', 'october': 'Oct', 'november': 'Nov', 'december': 'Dec',
     'monday': 'Mon', 'tuesday': 'Tue', 'wednesday': 'Wed', 'thursday': 'Thu', 'friday': 'Fri',
@@ -122,7 +117,6 @@ export const SHORTEN_MAP_PT: Record<string, string> = {
     'tudo': 'td',
     'aqui': 'aq',
 
-    // --- Abreviações Padrão/Comerciais ---
     'exemplo': 'ex',
     'observação': 'obs',
     'informação': 'info',
@@ -171,8 +165,6 @@ export const SHORTEN_MAP_PT: Record<string, string> = {
     'configuração': 'config',
     'atualização': 'update',
     'software': 'softw',
-
-    // --- Meses e Semanas ---
     'janeiro': 'jan', 'fevereiro': 'fev', 'março': 'mar', 'abril': 'abr',
     'maio': 'mai', 'junho': 'jun', 'julho': 'jul', 'agosto': 'ago',
     'setembro': 'set', 'outubro': 'out', 'novembro': 'nov', 'dezembro': 'dez',

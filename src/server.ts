@@ -1,9 +1,9 @@
 
 import { Elysia } from 'elysia';
 import { connectDatabase } from './config/database';
+import { auth } from './config/auth';
 import { apiErrorPlugin } from './utils/api-error';
 import { cors } from '@elysiajs/cors';
-const { authRoutes } = await import('./auth/auth.routes');
 const { keysRoutes } = await import('./modules/keys/keys.routes');
 const { usageRoutes } = await import('./modules/usage/usage.routes');
 const { usersRoutes } = await import('./modules/users/users.routes');
@@ -16,11 +16,11 @@ const app = new Elysia()
   .use(cors({
       origin: "http://localhost:3333",
       credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'], 
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   }))
+  .all('/api/auth/*', (c) => auth.handler(c.request))
   .use(apiErrorPlugin)
-  .use(authRoutes)
   .use(keysRoutes)
   .use(usageRoutes)
   .use(usersRoutes)
