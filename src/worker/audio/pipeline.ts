@@ -16,7 +16,7 @@ export async function processAudioFile(
 
     const isLast = i === operations.length - 1;
 
-    const stepOutput = isLast ? outputPath : join(inputPath + `.step-${i}`);
+    const stepOutput = isLast ? outputPath : join(inputPath + `.step-${i}.mp3`);
 
     await handler.process(currentInput, stepOutput, op.params as any);
 
