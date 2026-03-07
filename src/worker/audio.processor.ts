@@ -7,30 +7,35 @@ import type { AudioJobPayload } from '../modules/jobs/job.types';
 import { JobModel } from '../modules/jobs/job.model';
 import { processAudioFile } from './audio/pipeline';
 
+const log = (jobId: string, msg: string) => console.log(`[AUDIO:${jobId}] ${msg}`);
+
 export default async function (job: Job<AudioQueueJob>) {
   const { data } = job.data;
+  const id = data.jobId;
 
-  const jobDoc = await JobModel.findById(data.jobId);
+  log(id, 'Starting');
+
+  const jobDoc = await JobModel.findById(id);
 
   if (!jobDoc) {
-    throw new Error(`Job ${data.jobId} not found`);
+    throw new Error(`Job ${id} not found`);
   }
 
   const payload = jobDoc.payload as unknown as AudioJobPayload;
 
-  await JobModel.findByIdAndUpdate(data.jobId, { status: 'processing' });
+  log(id, `Operations: ${payload.operations.map((op) => op.type).join(' → ')}`);
+
+  await JobModel.findByIdAndUpdate(id, { status: 'processing' });
 
   const workDir = await mkdtemp(join(tmpdir(), 'rw-audio-'));
-
   const inputPath = join(workDir, 'input');
-
   const outputPath = join(workDir, 'output.mp3');
 
   try {
     const source = payload.source;
-
     const url = source.kind === 'url' ? source.url : source.ref;
 
+    log(id, `Downloading from ${url}`);
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -38,34 +43,36 @@ export default async function (job: Job<AudioQueueJob>) {
     }
 
     const buffer = await response.arrayBuffer();
-
     await Bun.write(inputPath, buffer);
-
     const inputSize = buffer.byteLength;
+    log(id, `Downloaded ${(inputSize / 1024 / 1024).toFixed(2)}MB`);
 
+    log(id, 'Processing pipeline...');
     await processAudioFile(inputPath, outputPath, payload.operations);
 
     const outputFile = Bun.file(outputPath);
-
     const outputSize = outputFile.size;
+
+    const ratio = (inputSize / outputSize).toFixed(2);
+    log(id, `Done — ${(inputSize / 1024 / 1024).toFixed(2)}MB → ${(outputSize / 1024 / 1024).toFixed(2)}MB (ratio: ${ratio}x)`);
 
     // TODO: upload outputPath to storage and get outputUrl
 
-    await JobModel.findByIdAndUpdate(data.jobId, {
+    await JobModel.findByIdAndUpdate(id, {
       status: 'completed',
       completedAt: new Date(),
       result: {
         metrics: {
           inputSize,
           outputSize,
-          compressionRatio: +(inputSize / outputSize).toFixed(2),
+          compressionRatio: +ratio,
           operationsApplied: payload.operations.map((op) => op.type),
         },
       },
     });
-
   } catch (err) {
-    await JobModel.findByIdAndUpdate(data.jobId, {
+    log(id, `Failed: ${err instanceof Error ? err.message : err}`);
+    await JobModel.findByIdAndUpdate(id, {
       status: 'failed',
       error: err instanceof Error ? err.message : 'Unknown error',
     });

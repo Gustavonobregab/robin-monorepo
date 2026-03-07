@@ -46,12 +46,18 @@ export const apiErrorPlugin = new Elysia({ name: 'api-error' })
       };
     }
 
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    
+    console.error(`[INTERNAL_ERROR]`, error);
+
+    const isDev = process.env.NODE_ENV !== 'production';
+
     set.status = 500;
     return {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
+        message: isDev ? message : 'Internal server error',
       }
     };
   })

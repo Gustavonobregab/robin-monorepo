@@ -2,6 +2,8 @@ import { Elysia, t } from 'elysia';
 import { validateApiKey } from '../../middlewares/api-key';
 import { textService } from './text.service';
 import { TextOperationSchema, TextPresetSchema } from './text.types';
+import { jobService } from '../jobs/job.service';
+import { ApiError } from '../../utils/api-error';
 
 export const textRoutes = new Elysia({ prefix: '/text' })
   .use(validateApiKey)
@@ -27,6 +29,25 @@ export const textRoutes = new Elysia({ prefix: '/text' })
       }),
       detail: {
         summary: 'Create text processing job',
+        tags: ['Text'],
+      },
+    }
+  )
+
+  .get(
+    '/jobs/:id',
+    async ({ params: { id } }) => {
+      const job = await jobService.getStatus(id);
+
+      if (!job) {
+        throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
+      }
+
+      return { data: job };
+    },
+    {
+      detail: {
+        summary: 'Get text job status',
         tags: ['Text'],
       },
     }

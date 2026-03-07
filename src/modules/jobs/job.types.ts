@@ -73,4 +73,14 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
     updatedAt: Date;
     error?: string;
   };
+
+  export type JobStatusView = {
+    id: string;
+    status: JobStatus;
+    error?: string;
+    result?: {
+      outputUrl?: string;
+      metrics?: Record<string, unknown>;
+    };
+  };
     

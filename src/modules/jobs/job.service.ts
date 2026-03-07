@@ -1,4 +1,4 @@
-import type { JobPayload, Job } from './job.types';
+import type { JobPayload, Job, JobStatusView } from './job.types';
 import { JobModel } from './job.model';
 
 export class JobService {
@@ -15,6 +15,18 @@ export class JobService {
   async findById(jobId: string): Promise<Job | null> {
     const doc = await JobModel.findById(jobId);
     return doc ? this.toJob(doc) : null;
+  }
+
+  async getStatus(jobId: string): Promise<JobStatusView | null> {
+    const doc = await JobModel.findById(jobId);
+    if (!doc) return null;
+
+    return {
+      id: doc._id.toString(),
+      status: doc.status as Job['status'],
+      error: doc.error ?? undefined,
+      result: doc.result as JobStatusView['result'],
+    };
   }
 
   async findByUserId(userId: string): Promise<Job[]> {
