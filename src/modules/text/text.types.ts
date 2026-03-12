@@ -39,6 +39,13 @@ export const TEXT_OPERATIONS = {
       intensity: { type: 'number', min: 0, max: 100, default: 50 },
     },
   },
+  'summarize': {
+    name: 'Summarize',
+    description: 'AI-powered text summarization using Claude',
+    params: {
+      intensity: { type: 'number', min: 0, max: 100, default: 50 },
+    },
+  },
 } as const;
 
 export type TextOperationType = keyof typeof TEXT_OPERATIONS;
@@ -101,6 +108,12 @@ export const TextOperationSchema = t.Union([
   }),
   t.Object({
     type: t.Literal('json-to-toon'),
+    params: t.Optional(t.Object({
+      intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
+    })),
+  }),
+  t.Object({
+    type: t.Literal('summarize'),
     params: t.Optional(t.Object({
       intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
     })),

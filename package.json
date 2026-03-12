@@ -9,6 +9,7 @@
     "seed": "bun run src/scripts/seed-api-keys.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/swagger": "^1.1.1",
     "better-auth": "^1.4.17",

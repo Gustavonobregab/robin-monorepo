@@ -5,6 +5,7 @@ import { shorten } from './shorten';
 import { minify } from './minify';
 import { compress } from './compress';
 import { jsonToToon } from './json-to-toon';
+import { summarize } from './summarize';
 
 const handlers = new Map<string, TextOperationHandler<TextOperationType>>();
 
@@ -17,6 +18,7 @@ register(shorten);
 register(minify);
 register(compress);
 register(jsonToToon);
+register(summarize);
 
 export function getHandler(type: string): TextOperationHandler<TextOperationType> {
   const handler = handlers.get(type);
