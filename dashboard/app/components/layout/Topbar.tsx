@@ -42,7 +42,11 @@ export function Topbar() {
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={async () => {
-              await signOut()
+              try {
+                await signOut()
+              } catch {
+                // sign-out failure is non-critical; redirect anyway
+              }
               router.push('/sign-in')
             }}
             className="text-red-600"
