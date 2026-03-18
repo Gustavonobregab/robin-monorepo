@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import useSWR from 'swr'
 import { cn } from '@/app/lib/utils'
 import { Label } from '@/app/components/ui/label'
@@ -17,7 +18,7 @@ interface TextSettingsPanelProps {
 const LANG_OPTIONS = ['EN', 'PT'] as const
 const ALGO_OPTIONS = ['gzip', 'brotli'] as const
 
-//TODO: VERIFY IF/ELSES 
+//TODO: VERIFY IF/ELSES
 export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
   const { data: presetsData, error: presetsError, isLoading: presetsLoading } = useSWR('text/presets', () => getTextPresets())
   const { data: operationsData, error: operationsError, isLoading: operationsLoading } = useSWR('text/operations', () => getTextOperations())
@@ -31,29 +32,26 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
   const customOps: TextOperationInput[] =
     value.mode === 'custom' ? value.operations : []
 
+  // Auto-initialize all operations with defaults when switching to custom mode
+  useEffect(() => {
+    if (value.mode !== 'custom' || operations.length === 0) return
+    if (value.operations.length > 0) return
+    const allOps: TextOperationInput[] = operations.map((op) => {
+      const defaultParams: Record<string, number | string> = {}
+      for (const [key, param] of Object.entries(op.params)) {
+        defaultParams[key] = param.default
+      }
+      return { type: op.id, params: defaultParams }
+    })
+    onChange({ mode: 'custom', operations: allOps })
+  }, [operations, value.mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function switchToPreset() {
     onChange({ mode: 'preset', preset: 'medium' })
   }
 
   function switchToCustom() {
     onChange({ mode: 'custom', operations: [] })
-  }
-
-  function toggleOperation(opId: string) {
-    if (value.mode !== 'custom') return
-    const exists = value.operations.find((o) => o.type === opId)
-    if (exists) {
-      onChange({ mode: 'custom', operations: value.operations.filter((o) => o.type !== opId) })
-    } else {
-      const opDef = operations.find((o) => o.id === opId)
-      const defaultParams: Record<string, number | string> = {}
-      if (opDef) {
-        for (const [key, param] of Object.entries(opDef.params)) {
-          defaultParams[key] = param.default
-        }
-      }
-      onChange({ mode: 'custom', operations: [...value.operations, { type: opId, params: defaultParams }] })
-    }
   }
 
   function setParam(opId: string, paramKey: string, paramValue: number | string) {
@@ -124,123 +122,96 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
 
       {/* Custom mode */}
       {value.mode === 'custom' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {operations.length === 0
             ? Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-16 rounded-xl bg-background-section animate-pulse" />
               ))
             : operations.map((op) => {
-                const active = customOps.find((o) => o.type === op.id)
-                const params = active?.params ?? {}
+                const activeOp = customOps.find((o) => o.type === op.id)
+                const params = activeOp?.params ?? {}
 
                 return (
                   <div key={op.id} className="space-y-2">
-                    {/* Operation header with toggle */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-sm font-medium">{op.name}</Label>
-                        <p className="text-xs text-muted mt-0.5">{op.description}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => toggleOperation(op.id)}
-                        className={cn(
-                          'relative w-10 h-6 rounded-full transition-colors shrink-0',
-                          active ? 'bg-foreground' : 'bg-background-section'
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'absolute top-1 w-4 h-4 rounded-full bg-background transition-all',
-                            active ? 'left-5' : 'left-1'
-                          )}
-                        />
-                      </button>
+                    <div>
+                      <Label className="text-sm font-medium">{op.name}</Label>
+                      <p className="text-xs text-muted mt-0.5">{op.description}</p>
                     </div>
 
-                    {/* Params — only shown when enabled */}
-                    {active && (
-                      <div className="pl-0 space-y-2">
-                        {Object.entries(op.params).map(([key, param]) => {
-                          if (param.type === 'number') {
-                            const val = (params[key] as number) ?? (param.default as number)
-                            return (
-                              <div key={key} className="space-y-1">
-                                <div className="flex justify-between text-xs text-muted">
-                                  <span className="capitalize">{key}</span>
-                                  <span>{val}</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min={param.min ?? 0}
-                                  max={param.max ?? 100}
-                                  value={val}
-                                  onChange={(e) => setParam(op.id, key, Number(e.target.value))}
-                                  className="w-full h-1.5 appearance-none rounded-full bg-background-section accent-foreground cursor-pointer"
-                                />
+                    <div className="space-y-2">
+                      {Object.entries(op.params).map(([key, param]) => {
+                        if (param.type === 'number') {
+                          const val = (params[key] as number) ?? (param.default as number)
+                          return (
+                            <div key={key} className="space-y-1">
+                              <div className="flex justify-between text-xs text-muted">
+                                <span className="capitalize">{key}</span>
+                                <span>{val}</span>
                               </div>
-                            )
-                          }
+                              <input
+                                type="range"
+                                min={param.min ?? 0}
+                                max={param.max ?? 100}
+                                value={val}
+                                onChange={(e) => setParam(op.id, key, Number(e.target.value))}
+                                className="w-full h-1.5 appearance-none rounded-full bg-background-section accent-foreground cursor-pointer"
+                              />
+                            </div>
+                          )
+                        }
 
-                          if (key === 'lang') {
-                            const val = (params[key] as string) ?? (param.default as string)
-                            return (
-                              <div key={key} className="flex gap-1.5">
-                                {LANG_OPTIONS.map((opt) => (
-                                  <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => setParam(op.id, key, opt)}
-                                    className={cn(
-                                      'flex-1 text-xs py-1 rounded-lg border transition-colors',
-                                      val === opt
-                                        ? 'border-accent-strong bg-accent-light text-foreground'
-                                        : 'border-border text-muted hover:border-accent-light'
-                                    )}
-                                  >
-                                    {opt}
-                                  </button>
-                                ))}
-                              </div>
-                            )
-                          }
+                        if (key === 'lang') {
+                          const val = (params[key] as string) ?? (param.default as string)
+                          return (
+                            <div key={key} className="flex gap-1.5">
+                              {LANG_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setParam(op.id, key, opt)}
+                                  className={cn(
+                                    'flex-1 text-xs py-1 rounded-lg border transition-colors',
+                                    val === opt
+                                      ? 'border-accent-strong bg-accent-light text-foreground'
+                                      : 'border-border text-muted hover:border-accent-light'
+                                  )}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        }
 
-                          if (key === 'algo') {
-                            const val = (params[key] as string) ?? (param.default as string)
-                            return (
-                              <div key={key} className="flex gap-1.5">
-                                {ALGO_OPTIONS.map((opt) => (
-                                  <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => setParam(op.id, key, opt)}
-                                    className={cn(
-                                      'flex-1 text-xs py-1 rounded-lg border transition-colors',
-                                      val === opt
-                                        ? 'border-accent-strong bg-accent-light text-foreground'
-                                        : 'border-border text-muted hover:border-accent-light'
-                                    )}
-                                  >
-                                    {opt}
-                                  </button>
-                                ))}
-                              </div>
-                            )
-                          }
+                        if (key === 'algo') {
+                          const val = (params[key] as string) ?? (param.default as string)
+                          return (
+                            <div key={key} className="flex gap-1.5">
+                              {ALGO_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setParam(op.id, key, opt)}
+                                  className={cn(
+                                    'flex-1 text-xs py-1 rounded-lg border transition-colors',
+                                    val === opt
+                                      ? 'border-accent-strong bg-accent-light text-foreground'
+                                      : 'border-border text-muted hover:border-accent-light'
+                                  )}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          )
+                        }
 
-                          return null
-                        })}
-                      </div>
-                    )}
+                        return null
+                      })}
+                    </div>
                   </div>
                 )
               })}
-
-          {customOps.length === 0 && operations.length > 0 && (
-            <p className="text-xs text-muted text-center py-2">
-              Enable at least one operation to proceed.
-            </p>
-          )}
         </div>
       )}
     </div>

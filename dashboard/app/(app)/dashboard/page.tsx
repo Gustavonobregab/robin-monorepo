@@ -23,11 +23,11 @@ const MOCK_CHART: UsageChartPoint[] = [
 ]
 
 const MOCK_RECENT: RecentActivity[] = [
-  { id: '1', type: 'text', status: 'success', size: '18 KB → 11 KB', latency: '1.2s', timestamp: 'Mar 17, 14:32' },
-  { id: '2', type: 'audio', status: 'success', size: '4.2 MB → 2.8 MB', latency: '8.4s', timestamp: 'Mar 17, 13:15' },
-  { id: '3', type: 'text', status: 'success', size: '42 KB → 24 KB', latency: '2.1s', timestamp: 'Mar 17, 11:58' },
+  { id: '1', type: 'text', status: 'success', size: '18 KB to 11 KB', latency: '1.2s', timestamp: 'Mar 17, 14:32' },
+  { id: '2', type: 'audio', status: 'success', size: '4.2 MB to 2.8 MB', latency: '8.4s', timestamp: 'Mar 17, 13:15' },
+  { id: '3', type: 'text', status: 'success', size: '42 KB to 24 KB', latency: '2.1s', timestamp: 'Mar 17, 11:58' },
   { id: '4', type: 'audio', status: 'failed', size: '—', latency: '—', timestamp: 'Mar 16, 22:10' },
-  { id: '5', type: 'text', status: 'success', size: '7 KB → 4 KB', latency: '0.9s', timestamp: 'Mar 16, 19:44' },
+  { id: '5', type: 'text', status: 'success', size: '7 KB to 4 KB', latency: '0.9s', timestamp: 'Mar 16, 19:44' },
 ]
 
 export default function DashboardPage() {

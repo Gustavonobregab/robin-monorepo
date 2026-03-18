@@ -23,7 +23,7 @@ export default async function (job: Job<AudioQueueJob>) {
 
   const payload = jobDoc.payload as unknown as AudioJobPayload;
 
-  log(id, `Operations: ${payload.operations.map((op) => op.type).join(' → ')}`);
+  log(id, `Operations: ${payload.operations.map((op) => op.type).join(' -> ')}`);
 
   await JobModel.findByIdAndUpdate(id, { status: 'processing' });
 
@@ -54,7 +54,7 @@ export default async function (job: Job<AudioQueueJob>) {
     const outputSize = outputFile.size;
 
     const ratio = (inputSize / outputSize).toFixed(2);
-    log(id, `Done — ${(inputSize / 1024 / 1024).toFixed(2)}MB → ${(outputSize / 1024 / 1024).toFixed(2)}MB (ratio: ${ratio}x)`);
+    log(id, `Done — ${(inputSize / 1024 / 1024).toFixed(2)}MB to ${(outputSize / 1024 / 1024).toFixed(2)}MB (ratio: ${ratio}x)`);
 
     // TODO: upload outputPath to storage and get outputUrl
 

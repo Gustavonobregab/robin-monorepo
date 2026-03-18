@@ -55,10 +55,10 @@ export function MetricsPanel({ status, metrics, error, timedOut }: MetricsPanelP
           <span className="text-sm text-muted">smaller</span>
         </div>
         <div className="text-sm text-muted">
-          {formatBytes(metrics.inputSize ?? 0)} → {formatBytes(metrics.outputSize ?? 0)}
+          {formatBytes(metrics.inputSize ?? 0)} to {formatBytes(metrics.outputSize ?? 0)}
         </div>
         <div className="text-xs text-muted">
-          Operations: {metrics.operationsApplied.join(' → ')}
+          Operations: {metrics.operationsApplied.join(' -> ')}
         </div>
       </div>
     )

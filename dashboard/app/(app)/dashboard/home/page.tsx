@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useSession } from '@/app/lib/auth-client'
-import { FileText, Mic, Image as ImageIcon, Key, BookOpen, ChevronRight } from 'lucide-react'
+import { FileText, Mic, Image as ImageIcon, Key, BookOpen } from 'lucide-react'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -102,11 +102,11 @@ const TOOLS = [
 ]
 
 const MOCK_JOBS = [
-  { id: '1', type: 'text', status: 'success', size: '18 KB → 11 KB', ratio: '1.6×', timestamp: 'Mar 17, 14:32' },
-  { id: '2', type: 'audio', status: 'success', size: '4.2 MB → 2.8 MB', ratio: '1.5×', timestamp: 'Mar 17, 13:15' },
-  { id: '3', type: 'text', status: 'success', size: '42 KB → 24 KB', ratio: '1.7×', timestamp: 'Mar 17, 11:58' },
+  { id: '1', type: 'text', status: 'success', size: '18 KB to 11 KB', ratio: '1.6×', timestamp: 'Mar 17, 14:32' },
+  { id: '2', type: 'audio', status: 'success', size: '4.2 MB to 2.8 MB', ratio: '1.5×', timestamp: 'Mar 17, 13:15' },
+  { id: '3', type: 'text', status: 'success', size: '42 KB to 24 KB', ratio: '1.7×', timestamp: 'Mar 17, 11:58' },
   { id: '4', type: 'audio', status: 'failed', size: '—', ratio: '—', timestamp: 'Mar 16, 22:10' },
-  { id: '5', type: 'text', status: 'success', size: '7 KB → 4 KB', ratio: '1.8×', timestamp: 'Mar 16, 19:44' },
+  { id: '5', type: 'text', status: 'success', size: '7 KB to 4 KB', ratio: '1.8×', timestamp: 'Mar 16, 19:44' },
 ]
 
 const QUICK_STARTS = [
@@ -237,7 +237,6 @@ export default function HomePage() {
                     <p className="font-medium text-sm">{item.label}</p>
                     <p className="text-xs text-muted mt-0.5">{item.description}</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
                 </Link>
               ))}
             </div>

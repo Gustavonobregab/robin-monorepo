@@ -28,7 +28,7 @@ export function ToolLayout({ title, description, inputPanel, outputPanel, settin
       </div>
 
       {/* Right settings panel */}
-      <div className="w-72 border-l border-border bg-background-section p-6 overflow-y-auto shrink-0">
+      <div className="w-96 border-l border-border bg-background p-8 overflow-y-auto shrink-0">
         <div className="mb-5">
           <h2 className="font-semibold">{title}</h2>
           <p className="text-sm text-muted mt-0.5">{description}</p>

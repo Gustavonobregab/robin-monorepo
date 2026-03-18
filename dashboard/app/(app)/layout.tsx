@@ -26,8 +26,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Topbar />
-          <ApiKeyBanner />
-          <main className="flex-1 overflow-hidden bg-background">
+          <main className="relative flex-1 overflow-hidden bg-background">
+            <ApiKeyBanner />
             {children}
           </main>
         </div>

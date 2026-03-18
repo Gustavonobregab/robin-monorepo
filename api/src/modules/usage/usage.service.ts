@@ -112,7 +112,7 @@ export class UsageService {
       id: e._id.toString(),
       type: e.pipelineType ? e.pipelineType.charAt(0).toUpperCase() + e.pipelineType.slice(1) : 'Unknown',
       status: 'success',
-      size: `${this.formatBytes(e.inputBytes)} → ${this.formatBytes(e.outputBytes)}`,
+      size: `${this.formatBytes(e.inputBytes)} to ${this.formatBytes(e.outputBytes)}`,
       latency: `${e.processingMs}ms`,
       timestamp: new Date(e.timestamp).toLocaleString('en-US', { 
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
