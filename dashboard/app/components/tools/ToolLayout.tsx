@@ -10,24 +10,38 @@ interface ToolLayoutProps {
   settingsPanel?: ReactNode
   historyPanel?: ReactNode
   action: ReactNode
+  credits?: number
 }
 
-export function ToolLayout({ title, description, inputPanel, outputPanel, settingsPanel, historyPanel, action }: ToolLayoutProps) {
+export function ToolLayout({ title, description, inputPanel, outputPanel, settingsPanel, historyPanel, action, credits }: ToolLayoutProps) {
   const [tab, setTab] = useState<'settings' | 'history'>('settings')
   const hasTabs = !!historyPanel
 
   return (
     <div className="flex h-full">
       {/* Center area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-10 overflow-y-auto">
-        <div className="w-full max-w-xl space-y-4">
-          <div className="bg-background rounded-xl border border-border shadow-sm p-5">
-            {inputPanel}
+      <div className="flex-1 flex flex-col justify-between p-10 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="w-full max-w-3xl space-y-4">
+            <div className="bg-background rounded-xl border border-border shadow-sm p-6">
+              {inputPanel}
+            </div>
+            <div className="bg-background rounded-xl border border-border shadow-sm p-6">
+              {outputPanel}
+            </div>
           </div>
-          <div className="bg-background rounded-xl border border-border shadow-sm p-5">
-            {outputPanel}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="w-full max-w-3xl mx-auto flex items-center justify-between pt-6">
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{credits != null ? credits.toLocaleString() : '10,000'} credits remaining</span>
           </div>
-          <div className="flex justify-end">
+          <div className="flex items-center gap-3">
             {action}
           </div>
         </div>

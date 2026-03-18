@@ -15,7 +15,7 @@ const toolNav = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/text', icon: FileText, label: 'Text' },
   { href: '/dashboard/audio', icon: Music, label: 'Audio' },
-  { href: '/dashboard/image', icon: ImageIcon, label: 'Image' },
+  { href: '/dashboard/image', icon: ImageIcon, label: 'Image', disabled: true, badge: 'Soon' },
 ]
 
 const settingsNav = [
