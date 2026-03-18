@@ -19,7 +19,11 @@ export default function SignUpPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await signUp.email({ name, email, password })
+      const { error } = await signUp.email({ name, email, password })
+      if (error) {
+        toast.error('Could not create account. Try again.')
+        return
+      }
       router.push('/dashboard')
     } catch {
       toast.error('Could not create account. Try again.')
@@ -29,7 +33,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-border p-8">
+    <div className="bg-background rounded-xl shadow-sm border border-border p-8">
       <h1 className="text-xl font-semibold mb-1">Create account</h1>
       <p className="text-sm text-muted mb-6">Start compressing in seconds.</p>
       <form onSubmit={handleSubmit} className="space-y-4">

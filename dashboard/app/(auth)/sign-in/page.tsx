@@ -18,7 +18,11 @@ export default function SignInPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await signIn.email({ email, password })
+      const { error } = await signIn.email({ email, password })
+      if (error) {
+        toast.error('Invalid email or password')
+        return
+      }
       router.push('/dashboard')
     } catch {
       toast.error('Invalid email or password')
@@ -28,7 +32,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-border p-8">
+    <div className="bg-background rounded-xl shadow-sm border border-border p-8">
       <h1 className="text-xl font-semibold mb-1">Sign in</h1>
       <p className="text-sm text-muted mb-6">Welcome back.</p>
       <form onSubmit={handleSubmit} className="space-y-4">
