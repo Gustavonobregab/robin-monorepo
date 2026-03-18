@@ -62,7 +62,7 @@ export default function KeysPage() {
           <h2 className="text-lg font-semibold">API Keys</h2>
           <p className="text-sm text-muted mt-0.5">Manage your API keys. Maximum 5 active keys.</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setNewKeyValue(null) }}>
           <DialogTrigger asChild>
             <Button size="sm" className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light">
               <Plus className="w-4 h-4 mr-1" /> New key
@@ -84,9 +84,13 @@ export default function KeysPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(newKeyValue)
-                      toast.success('Copied!')
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(newKeyValue)
+                        toast.success('Copied!')
+                      } catch {
+                        toast.error('Failed to copy')
+                      }
                     }}
                   >
                     <Copy className="w-4 h-4" />
@@ -165,7 +169,7 @@ export default function KeysPage() {
                     <Badge className={`text-xs border-0 rounded-full ${
                       key.status === 'active'
                         ? 'bg-accent-light text-foreground'
-                        : 'bg-gray-100 text-gray-500'
+                        : 'bg-background-section text-muted'
                     }`}>
                       {key.status}
                     </Badge>
