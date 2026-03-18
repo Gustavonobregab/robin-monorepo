@@ -1,53 +1,46 @@
-'use client'
-import useSWR from 'swr'
 import { StatCard } from '@/app/components/dashboard/StatCard'
 import { UsageChart } from '@/app/components/dashboard/UsageChart'
 import { RecentJobsTable } from '@/app/components/dashboard/RecentJobsTable'
 import { QuickActions } from '@/app/components/dashboard/QuickActions'
-import { Skeleton } from '@/app/components/ui/skeleton'
-import { getUsageAnalytics } from '@/app/http/usage'
-import type { ApiResponse, UsageAnalytics } from '@/types'
+import type { UsageChartPoint, RecentActivity } from '@/types'
+
+const MOCK_CHART: UsageChartPoint[] = [
+  { date: 'Feb 16', requests: 4 },
+  { date: 'Feb 18', requests: 9 },
+  { date: 'Feb 20', requests: 6 },
+  { date: 'Feb 22', requests: 14 },
+  { date: 'Feb 24', requests: 11 },
+  { date: 'Feb 26', requests: 20 },
+  { date: 'Feb 28', requests: 17 },
+  { date: 'Mar 02', requests: 25 },
+  { date: 'Mar 04', requests: 19 },
+  { date: 'Mar 06', requests: 30 },
+  { date: 'Mar 08', requests: 27 },
+  { date: 'Mar 10', requests: 38 },
+  { date: 'Mar 12', requests: 34 },
+  { date: 'Mar 14', requests: 42 },
+  { date: 'Mar 16', requests: 47 },
+]
+
+const MOCK_RECENT: RecentActivity[] = [
+  { id: '1', type: 'text', status: 'success', size: '18 KB → 11 KB', latency: '1.2s', timestamp: 'Mar 17, 14:32' },
+  { id: '2', type: 'audio', status: 'success', size: '4.2 MB → 2.8 MB', latency: '8.4s', timestamp: 'Mar 17, 13:15' },
+  { id: '3', type: 'text', status: 'success', size: '42 KB → 24 KB', latency: '2.1s', timestamp: 'Mar 17, 11:58' },
+  { id: '4', type: 'audio', status: 'failed', size: '—', latency: '—', timestamp: 'Mar 16, 22:10' },
+  { id: '5', type: 'text', status: 'success', size: '7 KB → 4 KB', latency: '0.9s', timestamp: 'Mar 16, 19:44' },
+]
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = useSWR<ApiResponse<UsageAnalytics>>(
-    'usage-analytics',
-    () => getUsageAnalytics('30d')
-  )
-
-  const analytics = data?.data
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-        <Skeleton className="h-40 rounded-xl" />
-        <Skeleton className="h-48 rounded-xl" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12 text-muted text-sm">
-        Failed to load dashboard data.
-        <button onClick={() => window.location.reload()} className="ml-2 underline text-foreground">
-          Retry
-        </button>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto p-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Requests" value={analytics?.stats.totalRequests ?? 0} />
-        <StatCard label="Tokens Saved" value={analytics?.stats.tokensSaved ?? 0} description="bytes saved across all jobs" />
-        <StatCard label="Tokens Used" value={analytics?.stats.tokensUsed ?? 0} />
+        <StatCard label="Total Requests" value={347} />
+        <StatCard label="Tokens Saved" value="2.1 MB" description="bytes saved across all jobs" />
+        <StatCard label="Tokens Used" value="8,400" />
       </div>
 
-      {analytics?.chart && <UsageChart data={analytics.chart} />}
+      <UsageChart data={MOCK_CHART} />
 
       <div>
         <h2 className="font-medium text-sm mb-3">Quick actions</h2>
@@ -56,8 +49,9 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="font-medium text-sm mb-3">Recent activity</h2>
-        <RecentJobsTable jobs={analytics?.recent ?? []} />
+        <RecentJobsTable jobs={MOCK_RECENT} />
       </div>
+    </div>
     </div>
   )
 }

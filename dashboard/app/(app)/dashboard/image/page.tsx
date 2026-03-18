@@ -13,7 +13,8 @@ const IMAGE_PRESETS = [
 
 export default function ImagePage() {
   return (
-    <div className="space-y-5 max-w-5xl">
+    <div className="h-full overflow-y-auto p-6">
+    <div className="space-y-5 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
         <div>
           <h2 className="text-lg font-semibold">Image compression</h2>
@@ -63,6 +64,7 @@ export default function ImagePage() {
           Compress image
         </Button>
       </div>
+    </div>
     </div>
   )
 }

@@ -55,16 +55,14 @@ export default function AudioPage() {
       title="Audio compression"
       description="Process an audio file using a preset. Paste a public URL to your audio file."
       inputPanel={
-        <>
-          <UrlInput
-            value={url}
-            onChange={setUrl}
-            placeholder="https://example.com/recording.mp3"
-            label="Audio file URL"
-          />
-          <PresetSelector presets={AUDIO_PRESETS} value={preset} onChange={setPreset} />
-        </>
+        <UrlInput
+          value={url}
+          onChange={setUrl}
+          placeholder="https://example.com/recording.mp3"
+          label="Audio file URL"
+        />
       }
+      settingsPanel={<PresetSelector presets={AUDIO_PRESETS} value={preset} onChange={setPreset} />}
       outputPanel={
         <MetricsPanel
           status={job?.status}

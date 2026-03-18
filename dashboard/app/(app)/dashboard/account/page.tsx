@@ -15,7 +15,6 @@ import { useSession, authClient } from '@/app/lib/auth-client'
 export default function AccountPage() {
   const { data: session } = useSession()
   const user = session?.user
-
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -50,7 +49,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-xl">
+    <div className="h-full overflow-y-auto p-6">
+    <div className="space-y-8 max-w-xl mx-auto">
       {/* Profile */}
       <div className="bg-background rounded-xl border border-border shadow-sm p-6">
         <h2 className="font-semibold mb-4">Profile</h2>
@@ -144,6 +144,7 @@ export default function AccountPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+    </div>
     </div>
   )
 }

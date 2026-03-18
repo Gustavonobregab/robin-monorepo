@@ -8,7 +8,7 @@
     "dashboard"
   ],
   "scripts": {
-    "dev": "bun run --filter api dev",
+    "dev": "bun run --filter '*' dev",
     "dev:api": "bun run --filter api dev",
     "dev:dashboard": "bun run --filter dashboard dev",
     "start": "bun run --filter api start",

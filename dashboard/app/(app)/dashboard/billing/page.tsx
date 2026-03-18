@@ -8,7 +8,8 @@ export default function BillingPage() {
   const pct = Math.round((MOCK_USED / MOCK_LIMIT) * 100)
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="h-full overflow-y-auto p-6">
+    <div className="space-y-5 max-w-2xl mx-auto">
       <div>
         <h2 className="text-lg font-semibold">Billing</h2>
         <p className="text-sm text-muted mt-0.5">Your current plan and usage.</p>
@@ -45,6 +46,7 @@ export default function BillingPage() {
           Upgrade — coming soon
         </Button>
       </div>
+    </div>
     </div>
   )
 }

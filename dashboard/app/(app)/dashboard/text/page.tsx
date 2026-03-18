@@ -53,16 +53,14 @@ export default function TextPage() {
       title="Text compression"
       description="Compress a text file using a preset. Paste a public URL to your file."
       inputPanel={
-        <>
-          <UrlInput
-            value={url}
-            onChange={setUrl}
-            placeholder="https://example.com/my-text.txt"
-            label="Text file URL"
-          />
-          <PresetSelector presets={TEXT_PRESETS} value={preset} onChange={setPreset} />
-        </>
+        <UrlInput
+          value={url}
+          onChange={setUrl}
+          placeholder="https://example.com/my-text.txt"
+          label="Text file URL"
+        />
       }
+      settingsPanel={<PresetSelector presets={TEXT_PRESETS} value={preset} onChange={setPreset} />}
       outputPanel={
         <MetricsPanel
           status={job?.status}

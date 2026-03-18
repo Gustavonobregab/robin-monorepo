@@ -1,3 +1,3 @@
-export default function Page() {
-  return <div>Robin</div>
-}
+import LandingPage from './(public)/page'
+
+export default LandingPage

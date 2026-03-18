@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import {
-  LayoutDashboard, FileText, Music, Image as ImageIcon,
+  Home, LayoutDashboard, FileText, Music, Image as ImageIcon,
   Key, CreditCard, User, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { NavItem } from './NavItem'
@@ -11,6 +11,7 @@ import { cn } from '@/app/lib/utils'
 const STORAGE_KEY = 'robin_sidebar_collapsed'
 
 const toolNav = [
+  { href: '/dashboard/home', icon: Home, label: 'Home' },
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/text', icon: FileText, label: 'Text' },
   { href: '/dashboard/audio', icon: Music, label: 'Audio' },

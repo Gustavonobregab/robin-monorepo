@@ -7,6 +7,7 @@ import {
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar'
 
 const PAGE_TITLES: Record<string, string> = {
+  '/dashboard/home': 'Home',
   '/dashboard': 'Dashboard',
   '/dashboard/text': 'Text',
   '/dashboard/audio': 'Audio',

@@ -56,7 +56,8 @@ export default function KeysPage() {
   }
 
   return (
-    <div className="space-y-5 max-w-4xl">
+    <div className="h-full overflow-y-auto p-6">
+    <div className="space-y-5 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">API Keys</h2>
@@ -214,6 +215,7 @@ export default function KeysPage() {
           </Table>
         </div>
       )}
+    </div>
     </div>
   )
 }

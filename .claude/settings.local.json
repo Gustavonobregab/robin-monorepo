@@ -12,7 +12,19 @@
       "Bash(bun run build:*)",
       "Bash(bun add:*)",
       "Bash(git:*)",
-      "Bash(bun --version)"
+      "Bash(bun --version)",
+      "Bash(bun install:*)",
+      "Bash(grep -E \"^\\(next|react|ky|swr|better-auth|framer-motion|sonner|recharts|lucide-react|clsx|tailwind-merge|class-variance-authority\\)$\")",
+      "Bash(bunx shadcn@latest add button input label textarea select dialog alert-dialog tooltip table badge card separator dropdown-menu avatar skeleton sonner radio-group --yes)",
+      "Bash(bun run:*)",
+      "Bash(bun test:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(grep -r 'use client' /Users/gustavonobregab/Programming/robin-wood-api/dashboard/app/components/ --include=*.tsx -l)",
+      "Bash(grep -r SessionProvider node_modules/better-auth/dist/ --include=*.d.ts -l)",
+      "Bash(find /Users/gustavonobregab/Programming/robin-wood-api -name package.json -path */better-auth/package.json)",
+      "Bash(grep -r SessionProvider /Users/gustavonobregab/Programming/robin-wood-api/node_modules/better-auth/dist/ --include=*.d.ts -l)"
     ]
   },
   "enabledPlugins": {

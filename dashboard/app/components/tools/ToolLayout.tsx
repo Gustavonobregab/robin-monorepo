@@ -5,21 +5,36 @@ interface ToolLayoutProps {
   description: string
   inputPanel: ReactNode
   outputPanel: ReactNode
+  settingsPanel?: ReactNode
   action: ReactNode
 }
 
-export function ToolLayout({ title, description, inputPanel, outputPanel, action }: ToolLayoutProps) {
+export function ToolLayout({ title, description, inputPanel, outputPanel, settingsPanel, action }: ToolLayoutProps) {
   return (
-    <div className="space-y-5 max-w-5xl">
-      <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-sm text-muted mt-0.5">{description}</p>
+    <div className="flex h-full">
+      {/* Center area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-10 overflow-y-auto">
+        <div className="w-full max-w-xl space-y-4">
+          <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+            {inputPanel}
+          </div>
+          <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+            {outputPanel}
+          </div>
+          <div className="flex justify-end">
+            {action}
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-background rounded-xl border border-border shadow-sm p-5">{inputPanel}</div>
-        <div className="bg-background rounded-xl border border-border shadow-sm p-5">{outputPanel}</div>
+
+      {/* Right settings panel */}
+      <div className="w-72 border-l border-border bg-background-section p-6 overflow-y-auto shrink-0">
+        <div className="mb-5">
+          <h2 className="font-semibold">{title}</h2>
+          <p className="text-sm text-muted mt-0.5">{description}</p>
+        </div>
+        {settingsPanel}
       </div>
-      <div className="flex justify-end">{action}</div>
     </div>
   )
 }
