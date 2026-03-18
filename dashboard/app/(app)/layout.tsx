@@ -1,7 +1,6 @@
 'use client'
 import { Sidebar } from '@/app/components/layout/Sidebar'
 import { Topbar } from '@/app/components/layout/Topbar'
-import { ApiKeyBanner } from '@/app/components/layout/ApiKeyBanner'
 import { ChatPanel } from '@/app/components/layout/ChatPanel'
 import { ChatProvider, useChat } from '@/app/components/layout/ChatContext'
 import { cn } from '@/app/lib/utils'
@@ -27,7 +26,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Topbar />
           <main className="relative flex-1 overflow-hidden bg-background">
-            <ApiKeyBanner />
             {children}
           </main>
         </div>

@@ -51,7 +51,7 @@ export function MetricsPanel({ status, metrics, error, timedOut }: MetricsPanelP
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold">{metrics.compressionRatio}×</span>
+          <span className="text-2xl font-bold">{metrics.compressionRatio}x</span>
           <span className="text-sm text-muted">smaller</span>
         </div>
         <div className="text-sm text-muted">

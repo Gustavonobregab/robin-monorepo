@@ -102,11 +102,11 @@ const TOOLS = [
 ]
 
 const MOCK_JOBS = [
-  { id: '1', type: 'text', status: 'success', size: '18 KB to 11 KB', ratio: '1.6×', timestamp: 'Mar 17, 14:32' },
-  { id: '2', type: 'audio', status: 'success', size: '4.2 MB to 2.8 MB', ratio: '1.5×', timestamp: 'Mar 17, 13:15' },
-  { id: '3', type: 'text', status: 'success', size: '42 KB to 24 KB', ratio: '1.7×', timestamp: 'Mar 17, 11:58' },
+  { id: '1', type: 'text', status: 'success', size: '18 KB to 11 KB', ratio: '1.6x', timestamp: 'Mar 17, 14:32' },
+  { id: '2', type: 'audio', status: 'success', size: '4.2 MB to 2.8 MB', ratio: '1.5x', timestamp: 'Mar 17, 13:15' },
+  { id: '3', type: 'text', status: 'success', size: '42 KB to 24 KB', ratio: '1.7x', timestamp: 'Mar 17, 11:58' },
   { id: '4', type: 'audio', status: 'failed', size: '—', ratio: '—', timestamp: 'Mar 16, 22:10' },
-  { id: '5', type: 'text', status: 'success', size: '7 KB to 4 KB', ratio: '1.8×', timestamp: 'Mar 16, 19:44' },
+  { id: '5', type: 'text', status: 'success', size: '7 KB to 4 KB', ratio: '1.8x', timestamp: 'Mar 16, 19:44' },
 ]
 
 const QUICK_STARTS = [

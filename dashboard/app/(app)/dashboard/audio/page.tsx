@@ -1,28 +1,18 @@
-// dashboard/app/(app)/dashboard/audio/page.tsx
 'use client'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
 import { ToolLayout } from '@/app/components/tools/ToolLayout'
 import { UrlInput } from '@/app/components/tools/UrlInput'
-import { PresetSelector } from '@/app/components/tools/PresetSelector'
 import { MetricsPanel } from '@/app/components/tools/MetricsPanel'
+import { AudioSettingsPanel, type AudioSettings } from '@/app/components/tools/AudioSettingsPanel'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { submitAudioJob } from '@/app/http/audio'
 import { getAudioJobStatus } from '@/app/http/jobs'
-import type { AudioPreset } from '@/types'
-
-const AUDIO_PRESETS = [
-  { value: 'chill', label: 'Chill', description: 'Light processing, preserves original dynamics' },
-  { value: 'medium', label: 'Medium', description: 'Balanced processing for general use' },
-  { value: 'aggressive', label: 'Aggressive', description: 'Heavy processing, maximizes loudness' },
-  { value: 'podcast', label: 'Podcast', description: 'Optimized for voice content' },
-  { value: 'lecture', label: 'Lecture', description: 'Trim silence + 1.5× speed + normalize' },
-]
 
 export default function AudioPage() {
   const [url, setUrl] = useState('')
-  const [preset, setPreset] = useState<AudioPreset>('medium')
+  const [settings, setSettings] = useState<AudioSettings>({ mode: 'preset', preset: 'medium' })
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -31,12 +21,22 @@ export default function AudioPage() {
     fetcher: getAudioJobStatus,
   })
 
+  const canSubmit =
+    settings.mode === 'preset' ||
+    (settings.mode === 'custom' && settings.operations.length > 0)
+
   async function handleSubmit() {
     if (!url) return toast.error('Please enter a URL')
+    if (!canSubmit) return toast.error('Enable at least one operation')
     setJobId(null)
     setSubmitting(true)
     try {
-      const res = await submitAudioJob({ audioUrl: url, preset })
+      const input =
+        settings.mode === 'preset'
+          ? { audioUrl: url, preset: settings.preset }
+          : { audioUrl: url, operations: settings.operations }
+
+      const res = await submitAudioJob(input)
       setJobId(res.data._id)
     } catch {
       toast.error('Failed to submit job. Check your API key and URL.')
@@ -45,7 +45,6 @@ export default function AudioPage() {
     }
   }
 
-  // Show error toast once when job transitions to failed (not on every render)
   useEffect(() => {
     if (isFailed) toast.error(job?.error ?? 'Job failed')
   }, [isFailed]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -53,7 +52,7 @@ export default function AudioPage() {
   return (
     <ToolLayout
       title="Audio compression"
-      description="Process an audio file using a preset. Paste a public URL to your audio file."
+      description="Process an audio file using a preset or custom operations. Paste a public URL to your audio file."
       inputPanel={
         <UrlInput
           value={url}
@@ -62,7 +61,7 @@ export default function AudioPage() {
           label="Audio file URL"
         />
       }
-      settingsPanel={<PresetSelector presets={AUDIO_PRESETS} value={preset} onChange={setPreset} />}
+      settingsPanel={<AudioSettingsPanel value={settings} onChange={setSettings} />}
       outputPanel={
         <MetricsPanel
           status={job?.status}
@@ -74,7 +73,7 @@ export default function AudioPage() {
       action={
         <Button
           onClick={handleSubmit}
-          disabled={submitting || isPolling}
+          disabled={submitting || isPolling || !canSubmit}
           className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
         >
           {submitting || isPolling ? 'Processing…' : 'Process audio'}

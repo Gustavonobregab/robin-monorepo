@@ -3,39 +3,37 @@ import { useEffect } from 'react'
 import useSWR from 'swr'
 import { cn } from '@/app/lib/utils'
 import { Label } from '@/app/components/ui/label'
-import { getTextPresets, getTextOperations } from '@/app/http/text'
-import type { TextPreset, TextOperationInput } from '@/types'
+import { getAudioPresets, getAudioOperations } from '@/app/http/audio'
+import type { AudioPreset, AudioOperationInput } from '@/types'
 
-export type TextSettings =
-  | { mode: 'preset'; preset: TextPreset }
-  | { mode: 'custom'; operations: TextOperationInput[] }
+export type AudioSettings =
+  | { mode: 'preset'; preset: AudioPreset }
+  | { mode: 'custom'; operations: AudioOperationInput[] }
 
-interface TextSettingsPanelProps {
-  value: TextSettings
-  onChange: (value: TextSettings) => void
+interface AudioSettingsPanelProps {
+  value: AudioSettings
+  onChange: (value: AudioSettings) => void
 }
 
 const LANG_OPTIONS = ['EN', 'PT'] as const
-const ALGO_OPTIONS = ['gzip', 'brotli'] as const
 
-//TODO: VERIFY IF/ELSES
-export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
-  const { data: presetsData, error: presetsError, isLoading: presetsLoading } = useSWR('text/presets', () => getTextPresets())
-  const { data: operationsData, error: operationsError, isLoading: operationsLoading } = useSWR('text/operations', () => getTextOperations())
-
+export function AudioSettingsPanel({ value, onChange }: AudioSettingsPanelProps) {
+  const { data: presetsData } = useSWR('audio/presets', () => getAudioPresets())
+  const { data: operationsData } = useSWR('audio/operations', () => getAudioOperations())
 
   const presets = presetsData?.data ?? []
   const operations = operationsData?.data ?? []
 
-  const customOps: TextOperationInput[] =
+  const customOps: AudioOperationInput[] =
     value.mode === 'custom' ? value.operations : []
 
   // Auto-initialize all operations with defaults when switching to custom mode
   useEffect(() => {
     if (value.mode !== 'custom' || operations.length === 0) return
     if (value.operations.length > 0) return
-    const allOps: TextOperationInput[] = operations.map((op) => {
-      const defaultParams: Record<string, number | string> = {}
+    
+    const allOps: AudioOperationInput[] = operations.map((op) => {
+      const defaultParams: Record<string, number | string | boolean> = {}
       for (const [key, param] of Object.entries(op.params)) {
         defaultParams[key] = param.default
       }
@@ -52,7 +50,7 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
     onChange({ mode: 'custom', operations: [] })
   }
 
-  function setParam(opId: string, paramKey: string, paramValue: number | string) {
+  function setParam(opId: string, paramKey: string, paramValue: number | string | boolean) {
     if (value.mode !== 'custom') return
     onChange({
       mode: 'custom',
@@ -96,14 +94,14 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
       {value.mode === 'preset' && (
         <div className="grid gap-2">
           {presets.length === 0
-            ? Array.from({ length: 3 }).map((_, i) => (
+            ? Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-12 rounded-xl bg-background-section animate-pulse" />
               ))
             : presets.map((preset) => (
                 <button
                   key={preset.id}
                   type="button"
-                  onClick={() => onChange({ mode: 'preset', preset: preset.id as TextPreset })}
+                  onClick={() => onChange({ mode: 'preset', preset: preset.id as AudioPreset })}
                   className={cn(
                     'text-left px-3 py-2 rounded-xl border text-sm transition-colors',
                     value.preset === preset.id
@@ -122,7 +120,7 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
       {value.mode === 'custom' && (
         <div className="space-y-4">
           {operations.length === 0
-            ? Array.from({ length: 4 }).map((_, i) => (
+            ? Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-16 rounded-xl bg-background-section animate-pulse" />
               ))
             : operations.map((op) => {
@@ -140,20 +138,46 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
                       {Object.entries(op.params).map(([key, param]) => {
                         if (param.type === 'number') {
                           const val = (params[key] as number) ?? (param.default as number)
+                          const step = (param.max ?? 100) - (param.min ?? 0) <= 5 ? 0.1 : 1
                           return (
                             <div key={key} className="space-y-1">
                               <div className="flex justify-between text-xs text-muted">
-                                <span className="capitalize">{key}</span>
+                                <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                 <span>{val}</span>
                               </div>
                               <input
                                 type="range"
                                 min={param.min ?? 0}
                                 max={param.max ?? 100}
+                                step={step}
                                 value={val}
                                 onChange={(e) => setParam(op.id, key, Number(e.target.value))}
                                 className="w-full h-1.5 appearance-none rounded-full bg-background-section accent-foreground cursor-pointer"
                               />
+                            </div>
+                          )
+                        }
+
+                        if (param.type === 'boolean') {
+                          const val = (params[key] as boolean) ?? (param.default as boolean)
+                          return (
+                            <div key={key} className="flex items-center justify-between">
+                              <span className="text-xs text-muted capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                              <button
+                                type="button"
+                                onClick={() => setParam(op.id, key, !val)}
+                                className={cn(
+                                  'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+                                  val ? 'bg-accent-strong' : 'bg-background-section'
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    'inline-block h-3.5 w-3.5 rounded-full bg-foreground transition-transform',
+                                    val ? 'translate-x-4.5' : 'translate-x-0.5'
+                                  )}
+                                />
+                              </button>
                             </div>
                           )
                         }
@@ -163,29 +187,6 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
                           return (
                             <div key={key} className="flex gap-1.5">
                               {LANG_OPTIONS.map((opt) => (
-                                <button
-                                  key={opt}
-                                  type="button"
-                                  onClick={() => setParam(op.id, key, opt)}
-                                  className={cn(
-                                    'flex-1 text-xs py-1 rounded-lg border transition-colors',
-                                    val === opt
-                                      ? 'border-accent-strong bg-accent-light text-foreground'
-                                      : 'border-border text-muted hover:border-accent-light'
-                                  )}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )
-                        }
-
-                        if (key === 'algo') {
-                          const val = (params[key] as string) ?? (param.default as string)
-                          return (
-                            <div key={key} className="flex gap-1.5">
-                              {ALGO_OPTIONS.map((opt) => (
                                 <button
                                   key={opt}
                                   type="button"

@@ -121,9 +121,36 @@ export interface SubmitTextJobInput {
 // ─── Audio ───────────────────────────────────────────────────
 export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture'
 
+export interface AudioPresetDef {
+  id: string
+  name: string
+  description: string
+  operations: string[]
+}
+
+export interface AudioOperationParamDef {
+  type: 'number' | 'string' | 'boolean'
+  min?: number
+  max?: number
+  default: number | string | boolean
+}
+
+export interface AudioOperationDef {
+  id: string
+  name: string
+  description: string
+  params: Record<string, AudioOperationParamDef>
+}
+
+export interface AudioOperationInput {
+  type: string
+  params?: Record<string, number | string | boolean>
+}
+
 export interface SubmitAudioJobInput {
   audioUrl: string
-  preset: AudioPreset
+  preset?: AudioPreset
+  operations?: AudioOperationInput[]
 }
 
 // ─── Auth ─────────────────────────────────────────────────────
