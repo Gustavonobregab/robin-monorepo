@@ -14,7 +14,7 @@ export interface JobMetrics {
 }
 
 export interface Job {
-  _id: string
+  id: string
   userId: string
   status: JobStatus
   payload: {

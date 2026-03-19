@@ -38,7 +38,9 @@ export class UploadService {
     }
 
     const { ulid } = await import('ulidx');
+
     const uploadId = ulid();
+      
     const s3Key = `uploads/${userId}/${uploadId}.${detectedFormat}`;
 
     await s3.send(new PutObjectCommand({

@@ -9,7 +9,7 @@ export const uploadAudio = (file: File) => {
 }
 
 export const submitAudioJob = (input: SubmitAudioJobInput) =>
-  clientApi.post('audio', { json: input }).json<ApiResponse<Job>>()
+  clientApi.post('audio', { json: input }).json<Job>()
 
 export const getAudioPresets = () =>
   clientApi.get('audio/presets').json<ApiResponse<AudioPresetDef[]>>()

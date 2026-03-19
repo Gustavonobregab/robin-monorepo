@@ -40,7 +40,7 @@ export default function AudioPage() {
           : { audioId, operations: settings.operations }
 
       const res = await submitAudioJob(input)
-      setJobId(res.data.id)
+      setJobId(res.id)
     } catch {
       toast.error('Failed to submit job. Check your file and try again.')
     } finally {

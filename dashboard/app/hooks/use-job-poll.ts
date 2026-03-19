@@ -2,7 +2,7 @@
 'use client'
 import useSWR from 'swr'
 import { useRef } from 'react'
-import type { Job, ApiResponse } from '@/types'
+import type { Job } from '@/types'
 
 const POLL_INTERVAL_MS = 2000
 const MAX_POLLS = 150 // 5 minutes
@@ -12,7 +12,7 @@ const isTerminal = (status?: string) =>
 
 interface UseJobPollOptions {
   jobId: string | null
-  fetcher: (id: string) => Promise<ApiResponse<Job>>
+  fetcher: (id: string) => Promise<Job>
 }
 
 export function useJobPoll({ jobId, fetcher }: UseJobPollOptions) {
@@ -24,13 +24,13 @@ export function useJobPoll({ jobId, fetcher }: UseJobPollOptions) {
     prevJobId.current = jobId
   }
 
-  const { data, error } = useSWR<ApiResponse<Job>>(
+  const { data: job, error } = useSWR<Job>(
     jobId ? `job-poll-${jobId}` : null,
     () => fetcher(jobId!),
     {
       refreshInterval: (latestData) => {
         if (!latestData) return POLL_INTERVAL_MS
-        if (isTerminal(latestData.data.status)) return 0
+        if (isTerminal(latestData.status)) return 0
         pollCount.current += 1
         if (pollCount.current >= MAX_POLLS) return 0
         return POLL_INTERVAL_MS
@@ -39,7 +39,6 @@ export function useJobPoll({ jobId, fetcher }: UseJobPollOptions) {
     }
   )
 
-  const job = data?.data
   const timedOut = pollCount.current >= MAX_POLLS && !isTerminal(job?.status)
 
   return {
