@@ -144,7 +144,7 @@ export const AudioPresetSchema = t.Union([
 ]);
 
 export interface ProcessAudioInput {
-  audioUrl: string;
+  audioId: string;
   preset?: AudioPreset;
   operations?: AudioOperation[];
 }
