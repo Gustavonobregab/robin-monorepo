@@ -25,7 +25,8 @@
       "Bash(grep -r SessionProvider node_modules/better-auth/dist/ --include=*.d.ts -l)",
       "Bash(find /Users/gustavonobregab/Programming/robin-wood-api -name package.json -path */better-auth/package.json)",
       "Bash(grep -r SessionProvider /Users/gustavonobregab/Programming/robin-wood-api/node_modules/better-auth/dist/ --include=*.d.ts -l)",
-      "WebFetch(domain:elevenlabs.io)"
+      "WebFetch(domain:elevenlabs.io)",
+      "Bash(bun:*)"
     ]
   },
   "enabledPlugins": {
