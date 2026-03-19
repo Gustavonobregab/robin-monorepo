@@ -74,6 +74,7 @@ export default async function (job: Job<AudioQueueJob>) {
 
     // Upload output to S3
     const outputKey = `outputs/${id}/result.mp3`;
+
     const outputBuffer = await outputFile.arrayBuffer();
 
     await s3.send(new PutObjectCommand({
@@ -86,6 +87,7 @@ export default async function (job: Job<AudioQueueJob>) {
     log(id, `Uploaded output to S3: ${outputKey}`);
 
     // Generate presigned URL — 72h from now (effectively aligned with S3 lifecycle
+    
     // since this runs immediately after PutObject; the object and URL expire ~same time)
     const outputUrl = await getSignedUrl(
       s3,
