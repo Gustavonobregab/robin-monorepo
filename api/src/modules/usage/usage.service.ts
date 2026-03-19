@@ -101,11 +101,11 @@ export class UsageService {
     const chartMap = new Map<string, number>();
     let loopDate = new Date(startDate);
     while (loopDate <= now) {
-      chartMap.set(format(loopDate, 'dd/MM'), 0);
+      chartMap.set(format(loopDate, 'yyyy-MM-dd'), 0);
       loopDate.setDate(loopDate.getDate() + 1);
     }
     events.forEach(e => {
-      const key = format(new Date(e.timestamp), 'dd/MM');
+      const key = format(new Date(e.timestamp), 'yyyy-MM-dd');
       if (chartMap.has(key)) {
         chartMap.set(key, (chartMap.get(key) || 0) + 1);
       }
