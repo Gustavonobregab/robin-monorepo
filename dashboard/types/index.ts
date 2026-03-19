@@ -147,8 +147,15 @@ export interface AudioOperationInput {
   params?: Record<string, number | string | boolean>
 }
 
+export interface UploadAudioResponse {
+  id: string
+  originalName: string
+  size: number
+  expiresAt: string
+}
+
 export interface SubmitAudioJobInput {
-  audioUrl: string
+  audioId: string
   preset?: AudioPreset
   operations?: AudioOperationInput[]
 }
