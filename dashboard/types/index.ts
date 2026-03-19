@@ -32,43 +32,77 @@ export interface Job {
 }
 
 // ─── Usage ───────────────────────────────────────────────────
-export interface UsageStats {
-  totalRequests: number
-  tokensSaved: number
-  tokensUsed: number
-}
-
 export interface UsageChartPoint {
   date: string
   requests: number
 }
 
-export interface UsageBreakdownItem {
-  type: string
-  count: number
-  percentage: number
+export interface UsageEvent {
+  _id: string
+  idempotencyKey: string
+  userId: string
+  jobId: string
+  pipelineType: 'audio' | 'text' | 'image' | 'video'
+  operations: string[]
+  inputBytes: number
+  outputBytes: number
+  processingMs: number
+  timestamp: string
+  audio?: {
+    durationMs: number
+    format: string
+    sampleRate: number
+    channels: number
+  }
+  text?: {
+    characterCount: number
+    wordCount: number
+    encoding: string
+  }
+  image?: {
+    width: number
+    height: number
+    format: string
+    megapixels: number
+  }
+  video?: {
+    durationMs: number
+    width: number
+    height: number
+    format: string
+    fps: number
+    codec: string
+  }
 }
 
-export interface RecentActivity {
-  id: string
-  type: string
-  status: string
-  size: string
-  latency: string
-  timestamp: string
+export interface PipelineUsageSummary {
+  requests: number
+  totalInputBytes: number
+  totalOutputBytes: number
 }
 
 export interface UsageAnalytics {
-  stats: UsageStats
+  summary: {
+    totalRequests: number
+    totalInputBytes: number
+    totalOutputBytes: number
+    byPipeline: {
+      audio?: PipelineUsageSummary & { totalMinutes: number }
+      text?: PipelineUsageSummary & { totalCharacters: number; totalWords: number }
+      image?: PipelineUsageSummary & { totalMegapixels: number }
+      video?: PipelineUsageSummary & { totalMinutes: number }
+    }
+  }
   chart: UsageChartPoint[]
-  breakdown: UsageBreakdownItem[]
-  recent: RecentActivity[]
+  recent: UsageEvent[]
 }
 
 export interface CurrentUsage {
-  tokensLimit: number
-  tokensUsed: number
-  tokensRemaining: number
+  period: { start: string; end: string }
+  audio: { requests: number; minutes: number; inputBytes: number }
+  text: { requests: number; characters: number; inputBytes: number }
+  image: { requests: number; megapixels: number; inputBytes: number }
+  video: { requests: number; minutes: number; inputBytes: number }
 }
 
 // ─── API Keys ────────────────────────────────────────────────

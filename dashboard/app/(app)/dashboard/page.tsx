@@ -2,7 +2,7 @@ import { StatCard } from '@/app/components/dashboard/StatCard'
 import { UsageChart } from '@/app/components/dashboard/UsageChart'
 import { RecentJobsTable } from '@/app/components/dashboard/RecentJobsTable'
 import { QuickActions } from '@/app/components/dashboard/QuickActions'
-import type { UsageChartPoint, RecentActivity } from '@/types'
+import type { UsageChartPoint, UsageEvent } from '@/types'
 
 const MOCK_CHART: UsageChartPoint[] = [
   { date: 'Feb 16', requests: 4 },
@@ -22,12 +22,28 @@ const MOCK_CHART: UsageChartPoint[] = [
   { date: 'Mar 16', requests: 47 },
 ]
 
-const MOCK_RECENT: RecentActivity[] = [
-  { id: '1', type: 'text', status: 'success', size: '18 KB to 11 KB', latency: '1.2s', timestamp: 'Mar 17, 14:32' },
-  { id: '2', type: 'audio', status: 'success', size: '4.2 MB to 2.8 MB', latency: '8.4s', timestamp: 'Mar 17, 13:15' },
-  { id: '3', type: 'text', status: 'success', size: '42 KB to 24 KB', latency: '2.1s', timestamp: 'Mar 17, 11:58' },
-  { id: '4', type: 'audio', status: 'failed', size: '—', latency: '—', timestamp: 'Mar 16, 22:10' },
-  { id: '5', type: 'text', status: 'success', size: '7 KB to 4 KB', latency: '0.9s', timestamp: 'Mar 16, 19:44' },
+const MOCK_RECENT: UsageEvent[] = [
+  {
+    _id: '1', idempotencyKey: 'job:1', userId: 'u1', jobId: 'j1',
+    pipelineType: 'text', operations: ['trim', 'shorten'],
+    inputBytes: 18432, outputBytes: 11264, processingMs: 1200,
+    timestamp: '2026-03-17T14:32:00Z',
+    text: { characterCount: 18000, wordCount: 3000, encoding: 'utf-8' },
+  },
+  {
+    _id: '2', idempotencyKey: 'job:2', userId: 'u1', jobId: 'j2',
+    pipelineType: 'audio', operations: ['normalize', 'compress'],
+    inputBytes: 4404019, outputBytes: 2936013, processingMs: 8400,
+    timestamp: '2026-03-17T13:15:00Z',
+    audio: { durationMs: 180000, format: 'mp3', sampleRate: 44100, channels: 2 },
+  },
+  {
+    _id: '3', idempotencyKey: 'job:3', userId: 'u1', jobId: 'j3',
+    pipelineType: 'text', operations: ['shorten', 'minify'],
+    inputBytes: 43008, outputBytes: 24576, processingMs: 2100,
+    timestamp: '2026-03-17T11:58:00Z',
+    text: { characterCount: 42000, wordCount: 7000, encoding: 'utf-8' },
+  },
 ]
 
 export default function DashboardPage() {
@@ -36,8 +52,8 @@ export default function DashboardPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="grid grid-cols-3 gap-4">
         <StatCard label="Total Requests" value={347} />
-        <StatCard label="Tokens Saved" value="2.1 MB" description="bytes saved across all jobs" />
-        <StatCard label="Tokens Used" value="8,400" />
+        <StatCard label="Data Processed" value="24.5 MB" description="total input across all jobs" />
+        <StatCard label="Data Saved" value="8.2 MB" description="total reduction in output size" />
       </div>
 
       <UsageChart data={MOCK_CHART} />

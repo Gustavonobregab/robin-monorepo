@@ -2,15 +2,19 @@ import Link from 'next/link'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/app/components/ui/table'
-import { Badge } from '@/app/components/ui/badge'
-import type { RecentActivity } from '@/types'
+import type { UsageEvent } from '@/types'
 
 interface RecentJobsTableProps {
-  jobs: RecentActivity[]
+  jobs: UsageEvent[]
 }
 
-const statusVariant = (status: string) =>
-  status === 'success' ? 'bg-accent-light text-foreground' : 'bg-red-100 text-red-700'
+function formatBytes(bytes: number): string {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
 
 export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
   if (jobs.length === 0) {
@@ -32,7 +36,6 @@ export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
             <TableHead>Size</TableHead>
             <TableHead>Latency</TableHead>
             <TableHead>Date</TableHead>
@@ -40,16 +43,17 @@ export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
         </TableHeader>
         <TableBody>
           {jobs.map((job) => (
-            <TableRow key={job.id}>
-              <TableCell className="font-medium">{job.type}</TableCell>
-              <TableCell>
-                <Badge className={`text-xs border-0 rounded-full ${statusVariant(job.status)}`}>
-                  {job.status}
-                </Badge>
+            <TableRow key={job._id}>
+              <TableCell className="font-medium capitalize">{job.pipelineType}</TableCell>
+              <TableCell className="text-muted text-sm">
+                {formatBytes(job.inputBytes)} to {formatBytes(job.outputBytes)}
               </TableCell>
-              <TableCell className="text-muted text-sm">{job.size}</TableCell>
-              <TableCell className="text-muted text-sm">{job.latency}</TableCell>
-              <TableCell className="text-muted text-sm">{job.timestamp}</TableCell>
+              <TableCell className="text-muted text-sm">{job.processingMs}ms</TableCell>
+              <TableCell className="text-muted text-sm">
+                {new Date(job.timestamp).toLocaleString('en-US', {
+                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                })}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
