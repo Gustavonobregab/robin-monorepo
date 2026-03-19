@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from '@/app/components/layout/Logo'
 
 const footerLinks = {
   Product: [
@@ -25,7 +26,10 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-8 py-16">
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-16">
           <div>
-            <span className="font-bold text-lg">Robin</span>
+            <div className="flex items-center gap-2">
+              <Logo size={22} />
+              <span className="font-bold text-lg">Robin</span>
+            </div>
             <p className="text-sm text-muted mt-3 max-w-xs leading-relaxed">
               The compression API for modern applications. Reduce size, reduce cost, keep quality.
             </p>
