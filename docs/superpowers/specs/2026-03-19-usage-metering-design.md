@@ -23,13 +23,13 @@ The existing `UsageEvent` model is expanded with type-specific metadata fields a
 UsageEvent
 ├── idempotencyKey: string (unique)
 ├── userId: string (indexed)
-├── apiKeyId?: string
+├── apiKeyId?: string                      // optional — not available from worker context
 ├── jobId: string                          // NEW — reference to Job._id
 ├── pipelineType: 'audio' | 'text' | 'image' | 'video'
 ├── operations: string[]
 ├── inputBytes: number
 ├── outputBytes: number
-├── processingMs: number
+├── processingMs: number                   // NEW — measured in worker with Date.now() delta
 ├── timestamp: Date (indexed)
 │
 ├── audio?: {                              // NEW — only when pipelineType = 'audio'
@@ -65,13 +65,17 @@ Existing indexes are sufficient:
 - `{ userId: 1, timestamp: -1 }`
 - `{ apiKeyId: 1, timestamp: -1 }`
 
-No new indexes needed at current volume.
+No new indexes needed at current volume. A `jobId` index can be added later if needed for lookups.
 
 ### Removed
 
 - `tokensSaved` field — was mixing metering with billing (input - output). Raw `inputBytes`/`outputBytes` remain; billing interprets them.
 
 ## 2. Recording Flow
+
+### Current State
+
+`UsageService.record()` exists but is **never called** from the workers today. This spec introduces the `record()` call into both processors for the first time.
 
 ### When: After successful processing only
 
@@ -81,31 +85,45 @@ Failed jobs do not generate usage events — the user consumed nothing.
 
 ```
 Job enters worker
+  → const start = Date.now()
   → Download input
   → Extract metadata (ffprobe for audio, char/word count for text)
   → Process
   → Upload output
+  → const processingMs = Date.now() - start
   → Update Job (status: completed, metrics)
-  → Record UsageEvent with all data    ← here
+  → Record UsageEvent with all data    ← NEW — introduced by this spec
 ```
 
 ### Idempotency
 
 Key format: `job:{jobId}`. If BullMQ retries a job, the duplicate `UsageEvent` insert is rejected by the unique index on `idempotencyKey`.
 
+### Obtaining userId
+
+The worker receives only `{ jobId }` in the queue payload. The `userId` is read from the fetched `JobModel` document (`jobDoc.userId`). The `apiKeyId` is **not available** in worker context — it will be `undefined` in usage events created from workers. This is acceptable; `apiKeyId` attribution can be added later if the Job schema is extended.
+
 ### Audio processor changes (`audio.processor.ts`)
 
-1. Run `ffprobe` on the input file to extract: `durationMs`, `sampleRate`, `channels`, `format`
-2. After successful processing and upload, call `UsageService.record()` with:
-   - All existing fields (inputBytes, outputBytes, processingMs, operations)
-   - New: `jobId`, `audio: { durationMs, format, sampleRate, channels }`
+1. Record `Date.now()` at the start of processing
+2. Run `ffprobe` on the input file (via `fluent-ffmpeg`'s `ffprobe()` method, consistent with existing ffmpeg usage) to extract: `durationMs`, `sampleRate`, `channels`, `format`
+3. After successful processing and upload, call `UsageService.record()` with:
+   - `userId` from `jobDoc.userId`
+   - `jobId`, `pipelineType: 'audio'`, `operations`
+   - `inputBytes`, `outputBytes`, `processingMs`
+   - `audio: { durationMs, format, sampleRate, channels }`
+   - `idempotencyKey: \`job:${jobId}\``
 
 ### Text processor changes (`text.processor.ts`)
 
-1. Calculate `characterCount` and `wordCount` from input text
-2. After successful processing, call `UsageService.record()` with:
-   - All existing fields
-   - New: `jobId`, `text: { characterCount, wordCount, encoding: 'utf-8' }`
+1. Record `Date.now()` at the start of processing
+2. Calculate `characterCount` (string length) and `wordCount` (split by whitespace) from input text
+3. After successful processing, call `UsageService.record()` with:
+   - `userId` from `jobDoc.userId`
+   - `jobId`, `pipelineType: 'text'`, `operations`
+   - `inputBytes`, `outputBytes`, `processingMs`
+   - `text: { characterCount, wordCount, encoding: 'utf-8' }`
+   - `idempotencyKey: \`job:${jobId}\``
 
 ## 3. UsageService Changes
 
@@ -114,8 +132,11 @@ Key format: `job:{jobId}`. If BullMQ retries a job, the duplicate `UsageEvent` i
 - Accept new optional fields: `jobId`, `audio`, `text`, `image`, `video`
 - **Remove** the `User.tokens.used` increment — metering no longer touches the User document
 - Save the enriched `UsageEvent` to MongoDB
+- Return `{ eventId: string }` (simplified from current `RecordUsageResult` which returned `tokensSaved`/`tokensRemaining`)
 
 ### `getAnalytics(userId, range)` method — Redesigned
+
+Replaces the current response shape entirely. The old `stats`/`breakdown`/`recent` structure is replaced by a unified `summary` with per-pipeline breakdowns.
 
 **`GET /usage/analytics?range=7d|30d|90d|1y`**
 
@@ -156,11 +177,13 @@ Response:
     }
   }
   chart: [{ date: string, requests: number }]  // "DD/MM" format
-  recent: UsageEvent[]                          // last 10 events, full data
+  recent: UsageEvent[]                          // last 10 raw events — dashboard handles formatting
 }
 ```
 
 ### `getCurrentUsage(userId)` method — Redesigned
+
+Fully replaces the old `CurrentUsage` type (`tokensLimit`/`tokensUsed`/`tokensRemaining`). Dashboard code consuming the old type must be updated.
 
 **`GET /usage/current`**
 
@@ -178,6 +201,10 @@ Response:
 
 Image and video return zeros until implemented.
 
+### `getUserStats(userId)` method
+
+Kept as-is. Only returns `{ totalRequests }`, no dependency on deprecated token fields.
+
 ### Removed
 
 - `checkLimits()` method — no enforcement until billing is built
@@ -191,6 +218,9 @@ Image and video return zeros until implemented.
 | `User.tokens.used` | Keep in schema, stop writing |
 | `UsageEvent.tokensSaved` | Remove from schema |
 | `UsageService.checkLimits()` | Remove method |
+| `RecordUsageResult.tokensSaved` | Remove — return type becomes `{ eventId: string }` |
+| `RecordUsageResult.tokensRemaining` | Remove — return type becomes `{ eventId: string }` |
+| `DEFAULT_TOKENS_LIMIT` in `usage.types.ts` | Keep — still referenced by `users.model.ts` schema default |
 | `GET /usage/limits` | Remove route |
 
 The `tokens` field on User stays in the model to avoid a migration — it becomes inert until billing replaces it.
@@ -200,14 +230,18 @@ The `tokens` field on User stays in the model to avoid a migration — it become
 | File | Change |
 |------|--------|
 | `api/src/modules/usage/usage.model.ts` | Add `jobId`, `audio`, `text`, `image`, `video` fields; remove `tokensSaved` |
-| `api/src/modules/usage/usage.types.ts` | Update `RecordUsageInput`, analytics response types |
-| `api/src/modules/usage/usage.service.ts` | Remove token increment, accept new fields, redesign analytics |
+| `api/src/modules/usage/usage.types.ts` | Update `RecordUsageInput`, `RecordUsageResult`, add new analytics response types; keep `DEFAULT_TOKENS_LIMIT` |
+| `api/src/modules/usage/usage.service.ts` | Remove token increment, remove `checkLimits()`, accept new fields, redesign `getAnalytics()` and `getCurrentUsage()` |
 | `api/src/modules/usage/usage.routes.ts` | Update responses, remove `/usage/limits` |
-| `api/src/worker/audio.processor.ts` | Add ffprobe metadata extraction, call `record()` with audio data |
-| `api/src/worker/text.processor.ts` | Add char/word count, call `record()` with text data |
-| `dashboard/types/index.ts` | Update `UsageAnalytics` type to match new response |
-| `dashboard/app/http/usage.ts` | Update functions to match new endpoints |
-| `dashboard/app/components/dashboard/` | Update analytics components for new data structure |
+| `api/src/worker/audio.processor.ts` | Add ffprobe metadata extraction, add `Date.now()` timing, **introduce** `UsageService.record()` call |
+| `api/src/worker/text.processor.ts` | Add char/word count, add `Date.now()` timing, **introduce** `UsageService.record()` call |
+| `dashboard/types/index.ts` | Replace `UsageAnalytics` and `CurrentUsage` types with new response shapes |
+| `dashboard/app/http/usage.ts` | Update functions to match new endpoints, remove `getCurrentUsage` old shape |
+| `dashboard/app/components/dashboard/` | Update analytics components for new data structure (raw events, per-pipeline breakdown) |
+
+### Prerequisite fix
+
+`job.types.ts` defines `JobStatus` as `'created' | 'queued' | 'running' | 'succeeded' | 'failed'` but `job.model.ts` uses `'created' | 'pending' | 'processing' | 'completed' | 'failed'`. This mismatch should be resolved (align types to model) before or during implementation to avoid type errors in the new worker code.
 
 ## 6. What This Does NOT Include
 
