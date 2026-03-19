@@ -8,11 +8,12 @@ import {
 import { ApiError } from '../../utils/api-error';
 import { jobService } from '../jobs/job.service';
 import type { Job } from '../jobs/job.types';
+import { uploadService } from '../upload/upload.service';
 
 export class AudioService {
 
   async processAudio( userId: string, input: ProcessAudioInput): Promise<{ job: Job }> {
-    const { preset, operations: customOps, audioUrl } = input;
+    const { preset, operations: customOps, audioId } = input;
 
     if (!preset && (!customOps || customOps.length === 0)) {
       throw new ApiError(
@@ -22,6 +23,9 @@ export class AudioService {
       );
     }
 
+    // Resolve audioId to upload document — validates ownership and expiry
+    const upload = await uploadService.getUpload(audioId, userId);
+
     const operations = this.resolveOperations(preset, customOps);
 
     const job = await jobService.create({ userId,
@@ -29,8 +33,8 @@ export class AudioService {
      { type: 'audio',
        preset,
        operations,
-       source: { kind: 'url', url: audioUrl },
-       name: audioUrl,
+       source: { kind: 'storage', ref: upload.s3Key },
+       name: upload.originalName,
      } });
 
     await jobService.enqueue(job);
