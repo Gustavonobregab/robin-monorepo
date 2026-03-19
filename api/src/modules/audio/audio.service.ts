@@ -46,16 +46,29 @@ export class AudioService {
     preset?: AudioPreset,
     customOps?: AudioOperation[]
   ): AudioOperation[] {
+    let ops: AudioOperation[];
+
     if (preset) {
       const presetConfig = AUDIO_PRESETS[preset];
 
       if (!presetConfig) {
         throw new ApiError('AUDIO_INVALID_PRESET', `Unknown preset: ${preset}`, 400);
       }
-      return presetConfig.operations as unknown as AudioOperation[];
+      ops = presetConfig.operations as unknown as AudioOperation[];
+    } else {
+      ops = customOps!;
     }
 
-    return customOps!;
+    return ops.map((op) => {
+      const definition = AUDIO_OPERATIONS[op.type as keyof typeof AUDIO_OPERATIONS];
+      if (!definition) return op;
+
+      const defaults = Object.fromEntries(
+        Object.entries(definition.params).map(([key, param]) => [key, param.default])
+      );
+
+      return { ...op, params: { ...defaults, ...op.params } };
+    });
   }
 
   listPresets() {

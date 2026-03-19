@@ -78,6 +78,7 @@ export default function AudioPage() {
         <MetricsPanel
           status={job?.status}
           metrics={job?.result?.metrics}
+          outputUrl={job?.result?.outputUrl}
           error={job?.error}
           timedOut={timedOut}
         />
