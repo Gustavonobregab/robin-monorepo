@@ -211,7 +211,7 @@ export default function HomePage() {
     () => getUsageAnalytics('30d'),
   )
 
-  const recentJobs = data?.data?.recent ?? []
+  const recentJobs = (data?.data?.recent ?? []).slice(0, 5)
   const hasActivity = recentJobs.length > 0
 
   return (

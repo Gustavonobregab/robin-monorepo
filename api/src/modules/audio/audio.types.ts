@@ -68,7 +68,7 @@ export const AUDIO_PRESETS = {
     description: 'Heavy processing, maximizes loudness',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.8 } },
-      { type: 'speedup', params: { rate: 1.25 } },
+      { type: 'speedup', params: { rate: 1.75 } },
       { type: 'normalize', params: { targetLevel: -10 } },
       { type: 'compress', params: { ratio: 8, threshold: -18 } },
     ],

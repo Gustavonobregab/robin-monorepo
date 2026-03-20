@@ -1,12 +1,18 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/app/components/ui/table'
+import { Pagination } from '@/app/components/ui/pagination'
 import type { UsageEvent } from '@/types'
 
 interface RecentJobsTableProps {
   jobs: UsageEvent[]
 }
+
+const PER_PAGE = 10
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B'
@@ -17,6 +23,8 @@ function formatBytes(bytes: number): string {
 }
 
 export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
+  const [page, setPage] = useState(1)
+
   if (jobs.length === 0) {
     return (
       <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
@@ -30,6 +38,10 @@ export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
     )
   }
 
+  const totalPages = Math.ceil(jobs.length / PER_PAGE)
+  
+  const paged = jobs.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
   return (
     <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
       <Table>
@@ -42,7 +54,7 @@ export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {jobs.map((job) => (
+          {paged.map((job) => (
             <TableRow key={job._id}>
               <TableCell className="font-medium capitalize">{job.pipelineType}</TableCell>
               <TableCell className="text-muted text-sm">
@@ -58,6 +70,9 @@ export function RecentJobsTable({ jobs }: RecentJobsTableProps) {
           ))}
         </TableBody>
       </Table>
+      <div className="py-2">
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      </div>
     </div>
   )
 }
