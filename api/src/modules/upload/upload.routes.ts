@@ -33,7 +33,6 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
       body: t.Object({
         file: t.File({
           maxSize: '100m',
-          type: ['application/pdf', 'text/plain'],
         }),
       }),
       detail: {
