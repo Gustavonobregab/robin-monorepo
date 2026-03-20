@@ -62,6 +62,17 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
     })
   }
 
+  function toggleOperation(opId: string) {
+    if (value.mode !== 'custom') return
+    const exists = value.operations.some((o) => o.type === opId)
+    onChange({
+      mode: 'custom',
+      operations: exists
+        ? value.operations.filter((o) => o.type !== opId)
+        : [...value.operations, { type: opId }],
+    })
+  }
+
   return (
     <div className="space-y-4 mt-4">
       {/* Mode tabs */}
@@ -128,6 +139,36 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
             : operations.map((op) => {
                 const activeOp = customOps.find((o) => o.type === op.id)
                 const params = activeOp?.params ?? {}
+                const hasParams = Object.keys(op.params).length > 0
+
+                if (!hasParams) {
+                  const isEnabled = !!activeOp
+                  return (
+                    <div key={op.id} className="flex items-center justify-between py-2">
+                      <div>
+                        <Label className="text-sm font-medium">{op.name}</Label>
+                        <p className="text-xs text-muted mt-0.5">{op.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isEnabled}
+                        onClick={() => toggleOperation(op.id)}
+                        className={cn(
+                          'relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer',
+                          isEnabled ? 'bg-accent-strong' : 'bg-background-section'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                            isEnabled ? 'translate-x-4' : 'translate-x-0'
+                          )}
+                        />
+                      </button>
+                    </div>
+                  )
+                }
 
                 return (
                   <div key={op.id} className="space-y-2">

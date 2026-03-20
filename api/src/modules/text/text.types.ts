@@ -35,16 +35,7 @@ export const TEXT_OPERATIONS = {
   'json-to-toon': {
     name: 'JSON to Toon',
     description: 'Convert JSON blocks to TOON',
-    params: {
-      intensity: { type: 'number', min: 0, max: 100, default: 50 },
-    },
-  },
-  'summarize': {
-    name: 'Summarize',
-    description: 'AI-powered text summarization using Claude',
-    params: {
-      intensity: { type: 'number', min: 0, max: 100, default: 50 },
-    },
+    params: {},
   },
 } as const;
 
@@ -108,15 +99,6 @@ export const TextOperationSchema = t.Union([
   }),
   t.Object({
     type: t.Literal('json-to-toon'),
-    params: t.Optional(t.Object({
-      intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
-    })),
-  }),
-  t.Object({
-    type: t.Literal('summarize'),
-    params: t.Optional(t.Object({
-      intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
-    })),
   }),
 ]);
 

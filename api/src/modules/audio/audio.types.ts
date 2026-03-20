@@ -34,13 +34,6 @@ export const AUDIO_OPERATIONS = {
       rate: { type: 'number', min: 0.5, max: 5.0, default: 1.25 },
     },
   },
-  'transcribe': {
-    name: 'Transcribe',
-    description: 'AI-powered audio transcription using Claude',
-    params: {
-      lang: { type: 'string', default: 'EN' },
-    },
-  },
 } as const;
 
 export type AudioOperationType = keyof typeof AUDIO_OPERATIONS;
@@ -124,12 +117,6 @@ export const AudioOperationSchema = t.Union([
     type: t.Literal('speedup'),
     params: t.Optional(t.Object({
       rate: t.Optional(t.Number({ minimum: 0.5, maximum: 5.0 })),
-    })),
-  }),
-  t.Object({
-    type: t.Literal('transcribe'),
-    params: t.Optional(t.Object({
-      lang: t.Optional(t.Union([t.Literal('EN'), t.Literal('PT')])),
     })),
   }),
 ]);

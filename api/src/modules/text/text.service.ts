@@ -56,17 +56,11 @@ export class TextService {
     }
 
     const operations = this.resolveOperations(preset, customOps);
-
     const inputText = text!;
-
     const inputSize = Buffer.byteLength(inputText, 'utf8');
-
     const start = performance.now();
-
     const output = await processText(inputText, operations);
-    
     const processingMs = Math.round(performance.now() - start);
-
     const outputSize = Buffer.byteLength(output, 'utf8');
 
     return {

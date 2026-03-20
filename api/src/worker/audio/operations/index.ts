@@ -4,7 +4,6 @@ import { trimSilence } from './trim-silence';
 import { normalize } from './normalize';
 import { compress } from './compress';
 import { speedup } from './speedup';
-import { transcribe } from './transcribe';
 
 const handlers = new Map<string, AudioOperationHandler<AudioOperationType>>();
 
@@ -16,7 +15,6 @@ register(trimSilence);
 register(normalize);
 register(compress);
 register(speedup);
-register(transcribe);
 
 export function getHandler(type: string): AudioOperationHandler<AudioOperationType> {
   const handler = handlers.get(type);
