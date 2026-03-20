@@ -20,7 +20,7 @@ const toolNav = [
 ]
 
 const settingsNav = [
-  { href: '/dashboard/keys', icon: Key, label: 'API Keys' },
+  { href: '/dashboard/keys', icon: Key, label: 'API Keys', disabled: true, badge: 'Soon' as const },
   { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
 ]
 

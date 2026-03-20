@@ -1,14 +1,11 @@
 'use client'
-import { usePathname, useRouter } from 'next/navigation'
-import { useSession, signOut } from '@/app/lib/auth-client'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useSession } from '@/app/lib/auth-client'
 import { MessageSquare } from 'lucide-react'
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/app/components/ui/avatar'
 import { useChat } from '@/app/components/layout/ChatContext'
 import { cn } from '@/app/lib/utils'
-import { Logo } from './Logo'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard/home': 'Home',
@@ -24,20 +21,17 @@ const PAGE_TITLES: Record<string, string> = {
 export function Topbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const router = useRouter()
   const { chatOpen, toggleChat } = useChat()
   const title = PAGE_TITLES[pathname] ?? 'Dashboard'
   const initials = session?.user?.name?.slice(0, 2).toUpperCase() ?? 'U'
 
   return (
     <header className="h-14 bg-background border-b border-border flex items-center justify-between px-10 flex-shrink-0">
-      <div className="flex items-center gap-3 min-w-0">
-        <Logo size={24} />
+      <div className="flex items-center min-w-0">
         <h1 className="font-semibold text-base truncate">{title}</h1>
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Chat toggle */}
         <button
           onClick={toggleChat}
           aria-label={chatOpen ? 'Close chat' : 'Open chat'}
@@ -51,36 +45,17 @@ export function Topbar() {
           <MessageSquare className="w-4 h-4" />
         </button>
 
-        {/* User avatar */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="focus:outline-none">
-              <Avatar className="w-8 h-8 cursor-pointer">
-                <AvatarFallback className="bg-accent-light text-foreground text-xs font-medium">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => router.push('/dashboard/account')}>
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                try {
-                  await signOut()
-                } catch {
-                  // sign-out failure is non-critical; redirect anyway
-                }
-                router.push('/sign-in')
-              }}
-              className="text-red-600"
-            >
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Link
+          href="/dashboard/account"
+          aria-label="Account"
+          className="focus:outline-none rounded-full"
+        >
+          <Avatar className="w-8 h-8 cursor-pointer">
+            <AvatarFallback className="bg-accent-light text-foreground text-xs font-medium">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
       </div>
     </header>
   )

@@ -60,7 +60,12 @@ export default function KeysPage() {
     <div className="space-y-5 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">API Keys</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-lg font-semibold">API Keys</h2>
+            <span className="text-[10px] font-semibold uppercase tracking-wider bg-background-section text-muted px-1.5 py-0.5 rounded-md">
+              Soon
+            </span>
+          </div>
           <p className="text-sm text-muted mt-0.5">Manage your API keys. Maximum 5 active keys.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setNewKeyValue(null) }}>
