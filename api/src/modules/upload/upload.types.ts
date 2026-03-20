@@ -29,10 +29,12 @@ const MP3_SIGNATURES = [
 const WAV_RIFF = [0x52, 0x49, 0x46, 0x46]; // "RIFF"
 const WAV_WAVE = [0x57, 0x41, 0x56, 0x45]; // "WAVE" at offset 8
 
-export const ALLOWED_EXTENSIONS = ['.mp3', '.wav'] as const;
+const PDF_SIGNATURE = [0x25, 0x50, 0x44, 0x46]; // "%PDF"
+
+export const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.pdf', '.txt'] as const;
 export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
-export function validateMagicBytes(buffer: Uint8Array): 'mp3' | 'wav' | null {
+export function validateMagicBytes(buffer: Uint8Array): 'mp3' | 'wav' | 'pdf' | null {
   // Check MP3 signatures
   for (const sig of MP3_SIGNATURES) {
     if (sig.every((byte, i) => buffer[i] === byte)) {
@@ -46,6 +48,11 @@ export function validateMagicBytes(buffer: Uint8Array): 'mp3' | 'wav' | null {
 
   if (isRiff && isWave) {
     return 'wav';
+  }
+
+  // Check PDF: PDF header (bytes 0-3)
+  if (PDF_SIGNATURE.every((byte, i) => buffer[i] === byte)) {
+    return 'pdf';
   }
 
   return null;

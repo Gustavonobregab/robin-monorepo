@@ -147,12 +147,25 @@ export interface TextOperationInput {
 }
 
 export interface SubmitTextJobInput {
-  textUrl: string
+  text?: string
+  fileId?: string
   preset?: TextPreset
   operations?: TextOperationInput[]
 }
 
-// ─── Audio ───────────────────────────────────────────────────
+export interface TextSyncResult {
+  sync: true
+  output: string
+  metrics: JobMetrics
+}
+
+export interface TextAsyncResult {
+  sync: false
+  job: Job
+}
+
+export type TextProcessResult = TextSyncResult | TextAsyncResult
+
 export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture'
 
 export interface AudioPresetDef {

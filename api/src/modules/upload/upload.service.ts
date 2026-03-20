@@ -13,12 +13,19 @@ import { addHours } from 'date-fns';
 const MIME_MAP: Record<string, string> = {
   mp3: 'audio/mpeg',
   wav: 'audio/wav',
+  pdf: 'application/pdf',
+  txt: 'text/plain',
 };
 
 export class UploadService {
   async uploadAudio(userId: string, file: File): Promise<UploadResponse> {
+    return this.uploadFile(userId, file);
+  }
+
+  async uploadFile(userId: string, file: File): Promise<UploadResponse> {
+
     if (!file) {
-      throw new ApiError('MISSING_FILE', 'Audio file is required', 400);
+      throw new ApiError('MISSING_FILE', 'File is required', 400);
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -26,35 +33,46 @@ export class UploadService {
     }
 
     const ext = this.getExtension(file.name);
+
     if (!ALLOWED_EXTENSIONS.includes(ext as any)) {
       throw new ApiError('INVALID_FORMAT', `Only ${ALLOWED_EXTENSIONS.join(', ')} files are accepted`, 422);
     }
 
     const buffer = new Uint8Array(await file.arrayBuffer());
-    const detectedFormat = validateMagicBytes(buffer);
 
-    if (!detectedFormat) {
-      throw new ApiError('INVALID_FORMAT', 'File content does not match a valid audio format', 422);
+    let format: string;
+
+    if (ext === '.txt') {
+      format = 'txt';
+    } else {
+      const detectedFormat = validateMagicBytes(buffer);
+
+      if (!detectedFormat) {
+        throw new ApiError('INVALID_FORMAT', 'File content does not match a valid format', 422);
+      }
+
+      format = detectedFormat;
     }
 
     const { ulid } = await import('ulidx');
 
     const uploadId = ulid();
-      
-    const s3Key = `uploads/${userId}/${uploadId}.${detectedFormat}`;
+
+    const s3Key = `uploads/${userId}/${uploadId}.${format}`;
 
     await s3.send(new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: s3Key,
       Body: buffer,
-      ContentType: MIME_MAP[detectedFormat],
+      ContentType: MIME_MAP[format],
     }));
 
     const expiresAt = addHours(new Date(), 24);
+    
     const doc = await UploadModel.create({
       userId,
       originalName: file.name,
-      mimeType: MIME_MAP[detectedFormat],
+      mimeType: MIME_MAP[format],
       size: file.size,
       s3Key,
       status: 'ready',

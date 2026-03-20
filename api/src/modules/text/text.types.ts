@@ -129,7 +129,8 @@ export const TextPresetSchema = t.Union([
 ]);
 
 export interface ProcessTextInput {
-  textUrl: string;
+  text?: string;
+  fileId?: string;
   preset?: TextPreset;
   operations?: TextOperation[];
 }

@@ -22,4 +22,23 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
         tags: ['Upload'],
       },
     }
+  )
+  .post(
+    '/document',
+    async ({ body, userId }) => {
+      const { file } = body;
+      return uploadService.uploadFile(userId, file);
+    },
+    {
+      body: t.Object({
+        file: t.File({
+          maxSize: '100m',
+          type: ['application/pdf', 'text/plain'],
+        }),
+      }),
+      detail: {
+        summary: 'Upload document file',
+        tags: ['Upload'],
+      },
+    }
   );

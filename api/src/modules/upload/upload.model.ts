@@ -4,7 +4,7 @@ const uploadSchema = new Schema(
   {
     userId: { type: String, required: true },
     originalName: { type: String, required: true },
-    mimeType: { type: String, required: true, enum: ['audio/mpeg', 'audio/wav'] },
+    mimeType: { type: String, required: true, enum: ['audio/mpeg', 'audio/wav', 'application/pdf', 'text/plain'] },
     size: { type: Number, required: true },
     s3Key: { type: String, required: true },
     status: { type: String, enum: ['ready'], default: 'ready' },

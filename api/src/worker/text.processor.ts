@@ -4,6 +4,9 @@ import type { TextJobPayload } from '../modules/jobs/job.types';
 import { JobModel } from '../modules/jobs/job.model';
 import { processText } from './text/pipeline';
 import { usageService } from '../modules/usage/usage.service';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3, S3_BUCKET } from '../config/storage';
+import { PDFParse } from 'pdf-parse';
 
 const log = (jobId: string, msg: string) => console.log(`[TEXT:${jobId}] ${msg}`);
 
@@ -28,18 +31,44 @@ export default async function (job: Job<TextQueueJob>) {
   try {
     const start = Date.now();
     const source = payload.source;
-    const url = source.kind === 'url' ? source.url : source.ref;
+    let input: string;
 
-    log(id, `Downloading from ${url}`);
-    const response = await fetch(url);
+    if (source.kind === 'inline') {
+      input = source.text;
+      log(id, `Inline text — ${(new TextEncoder().encode(input).byteLength / 1024).toFixed(1)}KB`);
+    } else if (source.kind === 'storage') {
+      log(id, `Downloading from S3: ${source.ref}`);
 
-    if (!response.ok) {
-      throw new Error(`Failed to download text: ${response.status}`);
+      const response = await s3.send(new GetObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: source.ref,
+      }));
+
+      if (!response.Body) throw new Error('Empty response from S3');
+
+      const buffer = await response.Body.transformToByteArray();
+
+      if (source.ref.endsWith('.pdf')) {
+        log(id, 'Extracting text from PDF...');
+        const parser = new PDFParse({ data: Buffer.from(buffer) });
+        const pdfData = await parser.getText();
+        input = pdfData.text;
+        log(id, `Extracted ${input.length} chars from PDF`);
+      } else {
+        input = new TextDecoder().decode(buffer);
+      }
+      
+    } else {
+      // Legacy URL source
+      const url = (source as { kind: 'url'; url: string }).url;
+      log(id, `Fetching from URL: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to download text: ${response.status}`);
+      input = await response.text();
     }
 
-    const input = await response.text();
     const inputSize = new TextEncoder().encode(input).byteLength;
-    log(id, `Downloaded ${(inputSize / 1024).toFixed(1)}KB`);
+    log(id, `Input ready — ${(inputSize / 1024).toFixed(1)}KB`);
 
     log(id, 'Processing pipeline...');
     const output = await processText(input, payload.operations);

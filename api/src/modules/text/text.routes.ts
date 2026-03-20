@@ -10,13 +10,11 @@ export const textRoutes = new Elysia({ prefix: '/text' })
 
   .post(
     '/',
-    async ({ body, userId }) => {
-      const { job } = await textService.processText(userId, body);
-      return job;
-    },
+    async ({ body, userId }) => textService.processText(userId, body),
     {
       body: t.Object({
-        textUrl: t.String({ format: 'uri' }),
+        text: t.Optional(t.String({ maxLength: 5_000_000 })),
+        fileId: t.Optional(t.String()),
         preset: t.Optional(TextPresetSchema),
         operations: t.Optional(
           t.Array(TextOperationSchema, {

@@ -18,7 +18,8 @@ export type JobType =
 
   export type JobSource =
   | { kind: "url"; url: string }
-  | { kind: "storage"; ref: string };
+  | { kind: "storage"; ref: string }
+  | { kind: "inline"; text: string };
 
 export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
 

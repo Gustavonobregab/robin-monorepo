@@ -29,7 +29,9 @@
       "Bash(bun:*)",
       "Bash(ffmpeg -version)",
       "Bash(ffmpeg -h filter=silenceremove)",
-      "Bash(ffmpeg -f lavfi -i \"sine=frequency=440:duration=1\" -af \"silenceremove=start_periods=1:start_duration=0:start_threshold=-25dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-25dB\" -f null -)"
+      "Bash(ffmpeg -f lavfi -i \"sine=frequency=440:duration=1\" -af \"silenceremove=start_periods=1:start_duration=0:start_threshold=-25dB:stop_periods=-1:stop_duration=0.5:stop_threshold=-25dB\" -f null -)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(cat:*)"
     ]
   },
   "enabledPlugins": {
