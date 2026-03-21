@@ -5,30 +5,30 @@ import { Button } from '@/app/components/ui/button'
 export function Features() {
   return (
     <section id="features" className="py-16">
-      <div className="max-w-6xl mx-auto px-8">
-        {/* Two-column header */}
-        <div className="flex items-start justify-between gap-16 mb-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+        {/* Header — stacks on mobile */}
+        <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-start md:justify-between md:gap-16">
           <div>
             <p className="text-sm text-muted mb-3">Robin Platform</p>
-            <h2 className="text-[2.75rem] font-medium leading-[1.15] tracking-tight max-w-lg">
+            <h2 className="text-2xl sm:text-3xl md:text-[2.75rem] font-medium leading-[1.15] tracking-tight max-w-lg">
               Stop paying big tech for air
             </h2>
           </div>
-          <p className="text-base text-muted leading-relaxed max-w-sm pt-10">
+          <p className="text-base text-muted leading-relaxed max-w-sm md:pt-10">
             No AI, no black box. Pure algorithms that shrink your payloads before they hit the API. Fewer tokens sent, more money saved every month.
           </p>
         </div>
 
-        <div className="mb-12">
+        <div className="mb-8 md:mb-12">
           <Button className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light" asChild>
             <Link href="/sign-up">Get started</Link>
           </Button>
         </div>
 
-        {/* Two large feature cards */}
-        <div className="grid grid-cols-5 gap-4 mb-4">
-          {/* Card 1: API Pipeline (spans 3) with gradient + noise */}
-          <div className="col-span-3 relative rounded-2xl overflow-hidden flex flex-col" style={{ background: 'linear-gradient(135deg, #A0C878 0%, #DDEB9D 40%, #FFFDF6 70%, #A0C878 100%)' }}>
+        {/* Two large feature cards — stack on mobile, 3/2 split on lg */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+          {/* Card 1: API Pipeline (spans 3 on lg) */}
+          <div className="lg:col-span-3 relative rounded-2xl overflow-hidden flex flex-col" style={{ background: 'linear-gradient(135deg, #A0C878 0%, #DDEB9D 40%, #FFFDF6 70%, #A0C878 100%)' }}>
             {/* Noise overlay */}
             <div
               className="pointer-events-none absolute inset-0 z-0 mix-blend-overlay opacity-50"
@@ -38,15 +38,15 @@ export function Features() {
                 imageRendering: 'pixelated' as React.CSSProperties['imageRendering'],
               }}
             />
-            <div className="relative z-10 flex-1 p-8">
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 shadow-sm border border-white/30 mb-4">
+            <div className="relative z-10 flex-1 p-5 sm:p-8">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-5 shadow-sm border border-white/30 mb-4">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-3 h-3 rounded-full bg-red-300" />
                   <div className="w-3 h-3 rounded-full bg-yellow-300" />
                   <div className="w-3 h-3 rounded-full bg-accent-strong" />
                   <span className="text-xs text-foreground/60 ml-2 font-mono">POST /api/text</span>
                 </div>
-                <pre className="text-xs text-foreground/70 font-mono leading-relaxed">
+                <pre className="text-xs text-foreground/70 font-mono leading-relaxed overflow-x-auto">
 {`{
   "textUrl": "https://...",
   "operations": [
@@ -56,14 +56,14 @@ export function Features() {
 }`}
                 </pre>
               </div>
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/30">
-                <div className="flex items-center gap-2 text-xs font-mono">
+              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 shadow-sm border border-white/30">
+                <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
                   <span className="text-emerald-700 font-semibold">200</span>
                   <span className="text-foreground/60">compressionRatio: 0.42 · tokensSaved: 1,248</span>
                 </div>
               </div>
             </div>
-            <div className="relative z-10 px-8 pb-8">
+            <div className="relative z-10 px-5 pb-5 sm:px-8 sm:pb-8">
               <h3 className="font-semibold text-lg mb-1 text-foreground">Unified API pipeline</h3>
               <p className="text-sm text-foreground/70 leading-relaxed">
                 Chain operations in a single request. Trim, compress, normalize, and send a fraction of what you used to.
@@ -71,9 +71,9 @@ export function Features() {
             </div>
           </div>
 
-          {/* Card 2: Smart compression (spans 2) */}
-          <div className="col-span-2 bg-background rounded-2xl border border-border flex flex-col">
-            <div className="flex-1 p-8">
+          {/* Card 2: Smart compression (spans 2 on lg) */}
+          <div className="lg:col-span-2 bg-background rounded-2xl border border-border flex flex-col">
+            <div className="flex-1 p-5 sm:p-8">
               <div className="text-sm text-muted leading-relaxed space-y-3">
                 <p>
                   The quick brown fox jumps over the lazy dog. <span className="text-accent-strong bg-accent-light/40 px-1 rounded">[trimmed]</span> This sample demonstrates Robin&apos;s text pipeline with real-time compression feedback.
@@ -82,7 +82,7 @@ export function Features() {
                   Result: <span className="font-semibold">42% compression</span> with zero quality loss across 70+ languages.
                 </p>
               </div>
-              <div className="flex items-center gap-4 mt-6">
+              <div className="flex items-center gap-4 mt-6 flex-wrap">
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted">Input</span>
                   <span className="font-mono font-medium">2,400 tokens</span>
@@ -94,7 +94,7 @@ export function Features() {
                 </div>
               </div>
             </div>
-            <div className="px-8 pb-8">
+            <div className="px-5 pb-5 sm:px-8 sm:pb-8">
               <h3 className="font-semibold text-lg mb-1">Smart compression</h3>
               <p className="text-sm text-muted leading-relaxed">
                 Algorithms that preserve meaning while cutting size. Your LLM gets the gist, your bank account gets the rest.
@@ -103,8 +103,8 @@ export function Features() {
           </div>
         </div>
 
-        {/* Four smaller cards */}
-        <div className="grid grid-cols-4 gap-4">
+        {/* Four smaller cards — 1 col mobile, 2 col sm, 4 col lg */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               icon: FileText,
@@ -128,11 +128,11 @@ export function Features() {
               description: 'Common jobs, one click. Or stack operations exactly how you want.',
             },
           ].map(({ icon: Icon, title, description, badge }) => (
-            <div key={title} className="bg-background rounded-2xl border border-border p-6 flex flex-col">
+            <div key={title} className="bg-background rounded-2xl border border-border p-5 sm:p-6 flex flex-col">
               <div className="w-10 h-10 rounded-xl bg-background-section flex items-center justify-center mb-auto">
                 <Icon className="w-5 h-5 text-foreground" />
               </div>
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <h3 className="font-semibold mb-1 flex items-center gap-2">
                   {title}
                   {badge && (

@@ -8,10 +8,10 @@ import { Pricing } from '@/app/components/landing/Pricing'
 
 function SectionDivider() {
   return (
-    <div className="relative h-px bg-border/60">
-      {/* Corner dots */}
-      <div className="absolute -left-[3px] -top-[3px] w-1.5 h-1.5 rounded-full bg-border" />
-      <div className="absolute -right-[3px] -top-[3px] w-1.5 h-1.5 rounded-full bg-border" />
+    <div className="relative h-px bg-border/60 mx-4 md:mx-0">
+      {/* Corner dots — hidden on mobile to avoid overflow */}
+      <div className="absolute left-0 -top-[3px] w-1.5 h-1.5 rounded-full bg-border hidden md:block" />
+      <div className="absolute right-0 -top-[3px] w-1.5 h-1.5 rounded-full bg-border hidden md:block" />
     </div>
   )
 }

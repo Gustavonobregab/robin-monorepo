@@ -11,21 +11,21 @@ export function Hero() {
 
   return (
     <section className="pt-12 pb-8">
-      <div className="max-w-6xl mx-auto px-8">
-        {/* Two-column header */}
-        <div className="flex items-start justify-between gap-16 mb-16">
-          <h1 className="text-[3.5rem] font-medium leading-[1.1] tracking-tight max-w-2xl">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+        {/* Header — stacks on mobile, side-by-side on md+ */}
+        <div className="flex flex-col gap-4 mb-8 md:flex-row md:items-start md:justify-between md:gap-16 md:mb-16">
+          <h1 className="text-3xl sm:text-4xl md:text-[3.5rem] font-medium leading-[1.1] tracking-tight max-w-2xl">
             Compress data,{' '}
             <br />
             save money.
           </h1>
-          <p className="text-lg text-muted leading-relaxed max-w-sm pt-2">
+          <p className="text-base md:text-lg text-muted leading-relaxed max-w-sm md:pt-2">
             Every token you send to OpenAI or Anthropic gets billed. Robin compresses your data before it gets there, no AI, just algorithms, and quietly starts stealing back your budget.
           </p>
         </div>
 
         {/* CTA buttons */}
-        <div className="flex items-center gap-3 mb-16">
+        <div className="flex items-center gap-3 mb-8 md:mb-16">
           <Button className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light px-6" asChild>
             <Link href="/sign-up">Sign up</Link>
           </Button>
@@ -36,15 +36,15 @@ export function Hero() {
 
         {/* Demo card */}
         <div className="bg-background-section rounded-2xl border border-border overflow-hidden">
-          {/* Tabs inside card */}
-          <div className="flex items-center gap-1 px-6 pt-5">
+          {/* Tabs — horizontal scroll on small screens */}
+          <div className="flex items-center gap-1 px-4 sm:px-6 pt-4 sm:pt-5 overflow-x-auto no-scrollbar">
             {DEMO_TABS.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors',
+                  'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm transition-colors whitespace-nowrap shrink-0',
                   activeTab === tab
                     ? 'bg-background text-foreground shadow-sm border border-border'
                     : 'text-muted hover:text-foreground'
@@ -52,7 +52,7 @@ export function Hero() {
               >
                 <span
                   className={cn(
-                    'w-2 h-2 rounded-full',
+                    'w-2 h-2 rounded-full shrink-0',
                     tab === 'Text Compression' && 'bg-accent-strong',
                     tab === 'Audio Processing' && 'bg-emerald-400',
                     tab === 'Image Optimization' && 'bg-blue-400'
@@ -64,11 +64,11 @@ export function Hero() {
           </div>
 
           {/* Demo content */}
-          <div className="p-6">
-            <div className="bg-background rounded-xl border border-border shadow-sm">
+          <div className="p-3 sm:p-4 md:p-6">
+            <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
               {activeTab === 'Text Compression' && (
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="p-6 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-border">
+                  <div className="p-4 sm:p-6 space-y-3 border-b sm:border-b-0 border-border">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Operations</div>
                     {['Trim whitespace', 'Remove stopwords', 'Minify', 'Summarize'].map((op, i) => (
                       <div
@@ -83,7 +83,7 @@ export function Hero() {
                       </div>
                     ))}
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Preview</div>
                     <div className="text-sm text-muted leading-relaxed">
                       <p className="mb-3">The quick brown fox jumps over the lazy dog. This is a sample text that would be compressed using Robin&apos;s text pipeline.</p>
@@ -94,8 +94,8 @@ export function Hero() {
               )}
 
               {activeTab === 'Audio Processing' && (
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="p-6 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-border">
+                  <div className="p-4 sm:p-6 space-y-3 border-b sm:border-b-0 border-border">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Pipeline</div>
                     {['Trim silence', 'Normalize', 'Compress dynamics', 'Speed up'].map((op, i) => (
                       <div
@@ -110,10 +110,10 @@ export function Hero() {
                       </div>
                     ))}
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Output</div>
                     <div className="space-y-4">
-                      <div className="h-12 bg-background-section rounded-lg flex items-center px-4">
+                      <div className="h-12 bg-background-section rounded-lg flex items-center px-4 overflow-hidden">
                         <div className="flex gap-0.5">
                           {Array.from({ length: 40 }).map((_, i) => (
                             <div
@@ -131,14 +131,14 @@ export function Hero() {
               )}
 
               {activeTab === 'Image Optimization' && (
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-border">
+                  <div className="p-4 sm:p-6 border-b sm:border-b-0 border-border">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Original</div>
                     <div className="aspect-video bg-background-section rounded-lg flex items-center justify-center">
                       <span className="text-muted text-sm">2.4 MB · 1920x1080</span>
                     </div>
                   </div>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Compressed</div>
                     <div className="aspect-video bg-accent-light/30 rounded-lg flex items-center justify-center">
                       <span className="text-muted text-sm">420 KB · 1920x1080</span>
@@ -151,8 +151,8 @@ export function Hero() {
           </div>
 
           {/* Bottom bar */}
-          <div className="flex items-center justify-between px-6 pb-5">
-            <div className="flex items-center gap-1 bg-background rounded-full border border-border p-1">
+          <div className="flex flex-col gap-3 px-4 sm:px-6 pb-4 sm:pb-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-1 bg-background rounded-full border border-border p-1 self-start">
               {['Text', 'Audio', 'Image'].map((label) => (
                 <button
                   key={label}
@@ -163,7 +163,7 @@ export function Hero() {
                     )
                   }
                   className={cn(
-                    'px-4 py-1.5 rounded-full text-sm transition-colors',
+                    'px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm transition-colors',
                     (label === 'Text' && activeTab === 'Text Compression') ||
                     (label === 'Audio' && activeTab === 'Audio Processing') ||
                     (label === 'Image' && activeTab === 'Image Optimization')
@@ -175,7 +175,7 @@ export function Hero() {
                 </button>
               ))}
             </div>
-            <Button className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light" asChild>
+            <Button className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light self-start sm:self-auto" asChild>
               <Link href="/sign-up">Try it free</Link>
             </Button>
           </div>
