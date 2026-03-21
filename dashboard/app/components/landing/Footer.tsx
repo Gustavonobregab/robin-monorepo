@@ -31,7 +31,7 @@ export function Footer() {
               <span className="font-bold text-lg">Robin</span>
             </div>
             <p className="text-sm text-muted mt-3 max-w-xs leading-relaxed">
-              The compression API for modern applications. Reduce size, reduce cost, keep quality.
+              Compress before you send. Pay less to the cloud giants. Keep the quality.
             </p>
           </div>
 

@@ -5,7 +5,7 @@ const plans = [
   {
     name: 'Free',
     price: '$0',
-    description: 'For getting started',
+    description: 'For the curious thief',
     features: ['10,000 tokens/month', '1 API key', 'Text + Audio compression', 'Community support'],
     cta: 'Start for free',
     href: '/sign-up',
@@ -14,7 +14,7 @@ const plans = [
   {
     name: 'Pro',
     price: '$19',
-    description: 'For teams shipping fast',
+    description: 'For teams serious about saving',
     features: ['500,000 tokens/month', '5 API keys', 'Text + Audio + Image', 'Priority processing', 'Webhook notifications'],
     cta: 'Get Pro',
     href: '/sign-up',
@@ -23,7 +23,7 @@ const plans = [
   {
     name: 'Enterprise',
     price: 'Custom',
-    description: 'For large scale needs',
+    description: 'For large-scale operations',
     features: ['Unlimited tokens', 'Unlimited API keys', 'Dedicated support', 'SLA & uptime guarantee', 'Custom integrations'],
     cta: 'Contact us',
     href: '/sign-up',
@@ -36,9 +36,9 @@ export function Pricing() {
     <section id="pricing" className="py-16">
       <div className="max-w-6xl mx-auto px-8">
         <h2 className="text-[2.75rem] font-medium leading-[1.15] tracking-tight text-center mb-4">
-          Simple pricing
+          Simple pricing, serious savings
         </h2>
-        <p className="text-muted text-center mb-16 text-lg">Start free, scale as you grow.</p>
+        <p className="text-muted text-center mb-16 text-lg">Start free. Pay us a fraction of what you'll stop paying big tech.</p>
 
         <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
           {plans.map((plan) => (

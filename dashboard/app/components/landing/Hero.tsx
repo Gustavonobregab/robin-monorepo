@@ -15,10 +15,12 @@ export function Hero() {
         {/* Two-column header */}
         <div className="flex items-start justify-between gap-16 mb-16">
           <h1 className="text-[3.5rem] font-medium leading-[1.1] tracking-tight max-w-2xl">
-            Compression API that powers modern applications
+            Compress data,{' '}
+            <br />
+            save money.
           </h1>
           <p className="text-lg text-muted leading-relaxed max-w-sm pt-2">
-            Powering developers and teams worldwide. From text compression for token savings, audio processing for media, to the most efficient compression pipeline.
+            Every token you send to OpenAI or Anthropic gets billed. Robin compresses your data before it gets there, no AI, just algorithms, and quietly starts stealing back your budget.
           </p>
         </div>
 

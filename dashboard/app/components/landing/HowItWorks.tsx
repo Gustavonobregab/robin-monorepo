@@ -16,13 +16,13 @@ export function HowItWorks() {
           <div>
             <h3 className="font-semibold mb-1">Dashboard</h3>
             <p className="text-sm text-muted leading-relaxed">
-              Upload files and configure operations visually. Perfect for one-off jobs and exploration.
+              Upload files and configure operations visually. Perfect for one-off jobs and watching the savings stack up.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-1">API</h3>
             <p className="text-sm text-muted leading-relaxed">
-              Integrate compression directly into your pipeline. SDKs for Node, Python, and more.
+              Plug Robin into your pipeline. SDKs for Node, Python, and more. A noticeably smaller cloud bill included.
             </p>
           </div>
         </div>

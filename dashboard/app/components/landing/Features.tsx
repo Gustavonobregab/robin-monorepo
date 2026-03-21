@@ -11,11 +11,11 @@ export function Features() {
           <div>
             <p className="text-sm text-muted mb-3">Robin Platform</p>
             <h2 className="text-[2.75rem] font-medium leading-[1.15] tracking-tight max-w-lg">
-              Compress, process and optimize in one API
+              Stop paying big tech for air
             </h2>
           </div>
           <p className="text-base text-muted leading-relaxed max-w-sm pt-10">
-            Reduce file sizes, cut token costs, and speed up your applications with our unified compression platform. One API for text, audio, and images.
+            No AI, no black box. Pure algorithms that shrink your payloads before they hit the API. Fewer tokens sent, more money saved every month.
           </p>
         </div>
 
@@ -66,7 +66,7 @@ export function Features() {
             <div className="relative z-10 px-8 pb-8">
               <h3 className="font-semibold text-lg mb-1 text-foreground">Unified API pipeline</h3>
               <p className="text-sm text-foreground/70 leading-relaxed">
-                Chain multiple operations in a single API call. Trim, compress, normalize, built on our optimized processing engine.
+                Chain operations in a single request. Trim, compress, normalize, and send a fraction of what you used to.
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function Features() {
             <div className="px-8 pb-8">
               <h3 className="font-semibold text-lg mb-1">Smart compression</h3>
               <p className="text-sm text-muted leading-relaxed">
-                Intelligent algorithms that preserve meaning while reducing size. Perfect for LLM context optimization.
+                Algorithms that preserve meaning while cutting size. Your LLM gets the gist, your bank account gets the rest.
               </p>
             </div>
           </div>
@@ -109,12 +109,12 @@ export function Features() {
             {
               icon: FileText,
               title: 'Text',
-              description: 'Trim, minify, remove stopwords, and summarize. Save tokens and reduce costs.',
+              description: 'Trim, minify, remove stopwords. Put your prompts on a diet before they hit the API.',
             },
             {
               icon: Music,
               title: 'Audio',
-              description: 'Remove silence, normalize levels, compress dynamics. Presets for podcasts and lectures.',
+              description: "Silence, padding, dead air. All gone. You're not paying OpenAI to transcribe a pause.",
             },
             {
               icon: ImageIcon,
@@ -125,7 +125,7 @@ export function Features() {
             {
               icon: Zap,
               title: 'Presets',
-              description: 'One-click presets for common workflows. Or build custom pipelines operation by operation.',
+              description: 'Common jobs, one click. Or stack operations exactly how you want.',
             },
           ].map(({ icon: Icon, title, description, badge }) => (
             <div key={title} className="bg-background rounded-2xl border border-border p-6 flex flex-col">
