@@ -1,11 +1,11 @@
 'use client'
 import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
 import { signIn } from '@/app/lib/auth-client'
 
-export default function SignInPage() {
+function SignInForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard/home'
   const [loading, setLoading] = useState(false)
@@ -35,5 +35,13 @@ export default function SignInPage() {
         {loading ? 'Redirecting...' : 'Continue with Google'}
       </Button>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   )
 }
