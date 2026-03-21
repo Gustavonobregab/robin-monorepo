@@ -25,6 +25,12 @@ export const auth = betterAuth({
           secure: true,
         },
       },
+      session_token: {
+        attributes: {
+          sameSite: 'none',
+          secure: true,
+        },
+      },
     },
   },
   socialProviders: {
