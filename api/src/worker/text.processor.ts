@@ -7,7 +7,6 @@ import { usageService } from '../modules/usage/usage.service';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3, S3_BUCKET } from '../config/storage';
-import { PDFParse } from 'pdf-parse';
 
 const SIGNED_URL_TTL = 72 * 60 * 60; // 72h in seconds
 
@@ -38,6 +37,7 @@ async function resolveStorageInput(id: string, ref: string): Promise<string> {
 
   if (ref.endsWith('.pdf')) {
     log(id, 'Extracting text from PDF...');
+    const { PDFParse } = await import('pdf-parse');
     const { text } = await new PDFParse({ data: Buffer.from(buffer) }).getText();
     log(id, `Extracted ${text.length} chars from PDF`);
     return text;

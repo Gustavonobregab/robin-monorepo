@@ -1,3 +1,8 @@
+// Polyfill browser APIs required by pdfjs-dist
+if (typeof (globalThis as Record<string, unknown>).DOMMatrix === 'undefined') {
+  (globalThis as Record<string, unknown>).DOMMatrix = class DOMMatrix {};
+}
+
 import { Worker } from 'bullmq';
 import { redisConnection } from '../config/redis';
 import { connectDatabase } from '../config/database';
