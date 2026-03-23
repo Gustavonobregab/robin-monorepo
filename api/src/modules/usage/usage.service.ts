@@ -123,14 +123,14 @@ export class UsageService {
     };
   }
 
-  async getCurrentUsage(userId: string): Promise<CurrentUsage> {
+  async getCurrentUsage(userId: string, periodStart?: Date, periodEnd?: Date): Promise<CurrentUsage> {
     const now = new Date();
-    const periodStart = startOfMonth(now);
-    const periodEnd = endOfMonth(now);
+    const start = periodStart || startOfMonth(now);
+    const end = periodEnd || endOfMonth(now);
 
     const events = await UsageEventModel.find({
       userId,
-      timestamp: { $gte: periodStart, $lte: periodEnd },
+      timestamp: { $gte: start, $lte: end },
     }).lean();
 
     const audioEvents = events.filter(e => e.pipelineType === 'audio');
@@ -139,7 +139,7 @@ export class UsageService {
     const videoEvents = events.filter(e => e.pipelineType === 'video');
 
     return {
-      period: { start: periodStart, end: periodEnd },
+      period: { start, end },
       audio: {
         requests: audioEvents.length,
         minutes: audioEvents.reduce((acc, e) => acc + (e.audio?.durationMs || 0), 0) / 60_000,
