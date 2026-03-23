@@ -1,7 +1,6 @@
 import { UserModel } from '../modules/users/users.model';
 import { PlanModel } from '../modules/plans/plans.model';
 import { ApiError } from '../utils/api-error';
-import { addDays } from 'date-fns';
 import type { PipelineType } from '../modules/usage/usage.types';
 
 async function renewCycleIfExpired(userId: string) {

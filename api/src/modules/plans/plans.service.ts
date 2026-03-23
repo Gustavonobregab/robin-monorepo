@@ -1,6 +1,5 @@
 import { PlanModel } from './plans.model';
 import { ApiError } from '../../utils/api-error';
-import type { Plan } from './plans.types';
 
 export class PlansService {
   async getPublicPlans() {

@@ -27,17 +27,3 @@ export interface Plan {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export type SubscriptionStatus = 'active' | 'canceled';
-
-export interface Subscription {
-  status: SubscriptionStatus;         // subscription state
-  credits: {
-    limit: number;                    // total credits for this cycle, snapshotted from plan
-    used: number;                     // credits consumed in the current billing cycle
-  };
-  currentPeriodStart: Date;           // when the current billing cycle started
-  currentPeriodEnd: Date;             // when the current billing cycle ends
-  canceledAt?: Date;                  // timestamp when the user canceled
-  planChangedAt?: Date;               // timestamp of last plan change
-}

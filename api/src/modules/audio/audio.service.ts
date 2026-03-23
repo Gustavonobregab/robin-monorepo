@@ -9,7 +9,7 @@ import { ApiError } from '../../utils/api-error';
 import { jobService } from '../jobs/job.service';
 import type { Job } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
-import { reserveCredits } from '../../middlewares/credits';
+import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 
 export class AudioService {
 
@@ -32,19 +32,24 @@ export class AudioService {
     // Reserve credits before enqueueing
     const creditCost = await reserveCredits(userId, 'audio');
 
-    const job = await jobService.create({ userId,
-     payload:
-     { type: 'audio',
-       preset,
-       operations,
-       source: { kind: 'storage', ref: upload.s3Key },
-       name: upload.originalName,
-       creditCost,
-     } });
+    try {
+      const job = await jobService.create({ userId,
+       payload:
+       { type: 'audio',
+         preset,
+         operations,
+         source: { kind: 'storage', ref: upload.s3Key },
+         name: upload.originalName,
+         creditCost,
+       } });
 
-    await jobService.enqueue(job);
+      await jobService.enqueue(job);
 
-    return { job };
+      return { job };
+    } catch (err) {
+      await rollbackCredits(userId, creditCost);
+      throw err;
+    }
   }
 
   private resolveOperations(

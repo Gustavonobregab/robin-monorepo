@@ -105,29 +105,34 @@ export class TextService {
     // Reserve credits before enqueueing
     const creditCost = await reserveCredits(userId, 'text');
 
-    let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
+    try {
+      let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
 
-    if (fileId) {
-      const upload = await uploadService.getUpload(fileId, userId);
-      source = { kind: 'storage', ref: upload.s3Key };
-    } else {
-      source = { kind: 'inline', text: text! };
+      if (fileId) {
+        const upload = await uploadService.getUpload(fileId, userId);
+        source = { kind: 'storage', ref: upload.s3Key };
+      } else {
+        source = { kind: 'inline', text: text! };
+      }
+
+      const job = await jobService.create({
+        userId,
+        payload: {
+          type: 'text',
+          preset,
+          operations,
+          source,
+          creditCost,
+        },
+      });
+
+      await jobService.enqueue(job);
+
+      return { job };
+    } catch (err) {
+      await rollbackCredits(userId, creditCost);
+      throw err;
     }
-
-    const job = await jobService.create({
-      userId,
-      payload: {
-        type: 'text',
-        preset,
-        operations,
-        source,
-        creditCost,
-      },
-    });
-
-    await jobService.enqueue(job);
-
-    return { job };
   }
 
   private resolveOperations(
