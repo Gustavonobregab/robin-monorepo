@@ -9,6 +9,8 @@ import {
   type UploadResponse,
 } from './upload.types';
 import { addHours } from 'date-fns';
+import { UserModel } from '../users/users.model';
+import { PlanModel } from '../plans/plans.model';
 
 const MIME_MAP: Record<string, string> = {
   mp3: 'audio/mpeg',
@@ -28,8 +30,21 @@ export class UploadService {
       throw new ApiError('MISSING_FILE', 'File is required', 400);
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      throw new ApiError('FILE_TOO_LARGE', `File exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`, 413);
+    // Use plan-based file size limit, fallback to global MAX_FILE_SIZE
+    let maxSize = MAX_FILE_SIZE;
+    const user = await UserModel.findOne({
+      $or: [{ oderId: userId }, { _id: userId }],
+    }).lean();
+
+    if (user?.plan) {
+      const plan = await PlanModel.findById(user.plan).lean();
+      if (plan) {
+        maxSize = plan.features.maxFileSize;
+      }
+    }
+
+    if (file.size > maxSize) {
+      throw new ApiError('FILE_TOO_LARGE', `File exceeds ${Math.round(maxSize / 1024 / 1024)}MB limit on your plan`, 413);
     }
 
     const ext = this.getExtension(file.name);
