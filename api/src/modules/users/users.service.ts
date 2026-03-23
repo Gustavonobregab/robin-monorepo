@@ -1,6 +1,7 @@
 import { UserModel } from './users.model';
 import { ApiError } from '../../utils/api-error';
 import { usageService } from '../usage/usage.service';
+import { PlanModel } from '../plans/plans.model';
 
 export class UsersService {
   async getProfile(userId: string) {
@@ -14,14 +15,33 @@ export class UsersService {
 
     const stats = await usageService.getUserStats(userId);
 
+    // Fetch plan details if user has one
+    let plan = null;
+    if (user.plan) {
+      plan = await PlanModel.findById(user.plan).lean();
+    }
+
+    // Use rolling cycle dates for current usage if available
+    const currentUsage = await usageService.getCurrentUsage(
+      userId,
+      user.subscription?.currentPeriodStart,
+      user.subscription?.currentPeriodEnd,
+    );
+
     return {
       name: user.name,
       email: user.email,
       image: user.image,
       createdAt: user.createdAt,
       totalRequests: stats.totalRequests,
-      tokensUsed: user.tokens?.used,
-      tokensLimit: user.tokens?.limit,
+      plan: plan ? { name: plan.name, slug: plan.slug, credits: plan.credits } : null,
+      subscription: user.subscription ? {
+        status: user.subscription.status,
+        credits: user.subscription.credits,
+        currentPeriodStart: user.subscription.currentPeriodStart,
+        currentPeriodEnd: user.subscription.currentPeriodEnd,
+      } : null,
+      currentUsage,
     };
   }
 
@@ -40,16 +60,29 @@ export class UsersService {
   }
 
   async updateWebhookUrl(userId: string, url: string) {
-    const user = await UserModel.findOneAndUpdate(
+    const user = await UserModel.findOne({
+      $or: [{ oderId: userId }, { _id: userId }],
+    }).lean();
+
+    if (!user) {
+      throw new ApiError('USER_NOT_FOUND', 'User not found', 404);
+    }
+
+    // Check if plan allows webhooks
+    if (user.plan) {
+      const plan = await PlanModel.findById(user.plan).lean();
+      if (plan && !plan.features.webhooks) {
+        throw new ApiError('FEATURE_NOT_AVAILABLE', 'Webhooks are not available on your current plan. Please upgrade.', 403);
+      }
+    }
+
+    const updated = await UserModel.findOneAndUpdate(
       { $or: [{ oderId: userId }, { _id: userId }] },
       { $set: { webhookUrl: url } },
       { new: true },
     );
 
-    if (!user) {
-      throw new ApiError('USER_NOT_FOUND', 'User not found', 404);
-    }
-    return { webhookUrl: user.webhookUrl! };
+    return { webhookUrl: updated!.webhookUrl! };
   }
 }
 

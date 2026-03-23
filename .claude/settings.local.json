@@ -37,7 +37,10 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:vercel.com)",
       "WebFetch(domain:station.railway.com)",
-      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''''text'''']\\)\")"
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''''text'''']\\)\")",
+      "Bash(grep -r \"stripe\\\\|payment\\\\|subscription\\\\|billing\" /Users/gustavonobregab/Programming/robin-monorepo --include=*.ts --include=*.tsx --include=*.json)",
+      "Bash(wc -l /Users/gustavonobregab/Programming/robin-monorepo/api/src/modules/*/*.ts)",
+      "Bash(find /Users/gustavonobregab/Programming/robin-monorepo/api/src -name *.ts -path *seed* -o -name *.ts -path *script*)"
     ]
   },
   "enabledPlugins": {
