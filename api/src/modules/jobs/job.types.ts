@@ -29,6 +29,7 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
     source: { kind: "storage"; ref: string };
     operations: AudioOperation[];
     name?: string;
+    creditCost?: number;   // credits reserved for this job, used for rollback on failure
   };
   
   export type TextJobPayload = {
@@ -36,6 +37,7 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
     preset?: TextPreset;
     source: JobSource;
     operations: TextOperation[];
+    creditCost?: number;   // credits reserved for this job, used for rollback on failure
   };
   
   export type ImageJobPayload = {

@@ -15,6 +15,7 @@ const jobSchema = new Schema(
       source: { type: Schema.Types.Mixed },
       preset: { type: String },
       name: { type: String },
+      creditCost: { type: Number },    // credits reserved, for rollback on failure
     },
     completedAt: { type: Date },
     error: { type: String },

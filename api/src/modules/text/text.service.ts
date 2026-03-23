@@ -10,6 +10,7 @@ import { jobService } from '../jobs/job.service';
 import { uploadService } from '../upload/upload.service';
 import { processText } from '../../worker/text/pipeline';
 import type { Job } from '../jobs/job.types';
+import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 
 const SYNC_SIZE_LIMIT = 50 * 1024; // 50 KB
 
@@ -56,23 +57,33 @@ export class TextService {
     }
 
     const operations = this.resolveOperations(preset, customOps);
-    const inputText = text!;
-    const inputSize = Buffer.byteLength(inputText, 'utf8');
-    const start = performance.now();
-    const output = await processText(inputText, operations);
-    const processingMs = Math.round(performance.now() - start);
-    const outputSize = Buffer.byteLength(output, 'utf8');
 
-    return {
-      output,
-      metrics: {
-        inputSize,
-        outputSize,
-        compressionRatio: inputSize > 0 ? +(outputSize / inputSize).toFixed(4) : 0,
-        processingMs,
-        operationsApplied: operations.map((op) => op.type),
-      },
-    };
+    // Reserve credits before processing
+    const creditCost = await reserveCredits(userId, 'text');
+
+    try {
+      const inputText = text!;
+      const inputSize = Buffer.byteLength(inputText, 'utf8');
+      const start = performance.now();
+      const output = await processText(inputText, operations);
+      const processingMs = Math.round(performance.now() - start);
+      const outputSize = Buffer.byteLength(output, 'utf8');
+
+      return {
+        output,
+        metrics: {
+          inputSize,
+          outputSize,
+          compressionRatio: inputSize > 0 ? +(outputSize / inputSize).toFixed(4) : 0,
+          processingMs,
+          operationsApplied: operations.map((op) => op.type),
+        },
+      };
+    } catch (err) {
+      // Rollback credits on sync processing failure
+      await rollbackCredits(userId, creditCost);
+      throw err;
+    }
   }
 
   async processTextAsync(
@@ -91,6 +102,9 @@ export class TextService {
 
     const operations = this.resolveOperations(preset, customOps);
 
+    // Reserve credits before enqueueing
+    const creditCost = await reserveCredits(userId, 'text');
+
     let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
 
     if (fileId) {
@@ -107,6 +121,7 @@ export class TextService {
         preset,
         operations,
         source,
+        creditCost,
       },
     });
 

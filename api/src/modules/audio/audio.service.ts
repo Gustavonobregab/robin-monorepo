@@ -9,6 +9,7 @@ import { ApiError } from '../../utils/api-error';
 import { jobService } from '../jobs/job.service';
 import type { Job } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
+import { reserveCredits } from '../../middlewares/credits';
 
 export class AudioService {
 
@@ -28,6 +29,9 @@ export class AudioService {
 
     const operations = this.resolveOperations(preset, customOps);
 
+    // Reserve credits before enqueueing
+    const creditCost = await reserveCredits(userId, 'audio');
+
     const job = await jobService.create({ userId,
      payload:
      { type: 'audio',
@@ -35,6 +39,7 @@ export class AudioService {
        operations,
        source: { kind: 'storage', ref: upload.s3Key },
        name: upload.originalName,
+       creditCost,
      } });
 
     await jobService.enqueue(job);
