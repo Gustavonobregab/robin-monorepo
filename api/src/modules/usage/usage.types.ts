@@ -46,6 +46,7 @@ export interface UsageEvent {
   outputBytes: number;
   processingMs: number;
   timestamp: Date;
+  creditsConsumed?: number;    // credits consumed for this event, for accurate historical billing
   audio?: AudioMetadata;
   text?: TextMetadata;
   image?: ImageMetadata;
@@ -67,6 +68,7 @@ export interface RecordUsageInput {
   text?: TextMetadata;
   image?: ImageMetadata;
   video?: VideoMetadata;
+  creditsConsumed?: number;
 }
 
 export interface RecordUsageResult {

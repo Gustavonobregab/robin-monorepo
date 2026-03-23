@@ -4,6 +4,7 @@ import type { TextJobPayload, JobSource } from '../modules/jobs/job.types';
 import { JobModel } from '../modules/jobs/job.model';
 import { processText } from './text/pipeline';
 import { usageService } from '../modules/usage/usage.service';
+import { rollbackCredits } from '../middlewares/credits';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3, S3_BUCKET } from '../config/storage';
@@ -139,6 +140,7 @@ export default async function (job: Job<TextQueueJob>) {
         wordCount: input.split(/\s+/).filter(Boolean).length,
         encoding: 'utf-8',
       },
+      creditsConsumed: payload.creditCost || 0,
     });
     log(id, `Usage recorded: ${input.length} chars`);
   } catch (err) {
@@ -147,6 +149,12 @@ export default async function (job: Job<TextQueueJob>) {
       status: 'failed',
       error: err instanceof Error ? err.message : 'Unknown error',
     });
+    // Rollback reserved credits on failure
+    const creditCost = payload.creditCost;
+    if (creditCost) {
+      await rollbackCredits(jobDoc.userId, creditCost);
+      log(id, `Rolled back ${creditCost} credits`);
+    }
     throw err;
   }
 }

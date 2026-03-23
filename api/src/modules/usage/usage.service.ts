@@ -33,6 +33,7 @@ export class UsageService {
       text: input.text,
       image: input.image,
       video: input.video,
+      creditsConsumed: input.creditsConsumed,
     });
 
     return { eventId: event._id.toString() };

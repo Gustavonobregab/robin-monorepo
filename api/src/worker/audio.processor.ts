@@ -11,6 +11,7 @@ import { processAudioFile } from './audio/pipeline';
 import { s3, S3_BUCKET } from '../config/storage';
 import { probeAudio } from './audio/probe';
 import { usageService } from '../modules/usage/usage.service';
+import { rollbackCredits } from '../middlewares/credits';
 
 const HOURS_72 = 72 * 60 * 60; // seconds
 
@@ -125,6 +126,7 @@ export default async function (job: Job<AudioQueueJob>) {
         sampleRate: probeResult.sampleRate,
         channels: probeResult.channels,
       },
+      creditsConsumed: payload.creditCost || 0,
     });
 
     log(id, 'Usage recorded');
@@ -134,6 +136,12 @@ export default async function (job: Job<AudioQueueJob>) {
       status: 'failed',
       error: err instanceof Error ? err.message : 'Unknown error',
     });
+    // Rollback reserved credits on failure
+    const creditCost = payload.creditCost;
+    if (creditCost) {
+      await rollbackCredits(jobDoc.userId, creditCost);
+      log(id, `Rolled back ${creditCost} credits`);
+    }
     throw err;
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});

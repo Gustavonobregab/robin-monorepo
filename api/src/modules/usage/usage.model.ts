@@ -15,6 +15,7 @@ const usageEventSchema = new Schema<UsageEvent>({
 
   processingMs: { type: Number, required: true },
   timestamp: { type: Date, default: Date.now, index: true },
+  creditsConsumed: { type: Number },   // credits consumed for this event
 
   // Per-pipeline metadata (only one is populated per event)
   audio: {
