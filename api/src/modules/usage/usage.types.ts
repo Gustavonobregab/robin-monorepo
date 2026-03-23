@@ -125,6 +125,3 @@ export interface CurrentUsage {
   image: { requests: number; megapixels: number; inputBytes: number };
   video: { requests: number; minutes: number; inputBytes: number };
 }
-
-// Default free tier (500MB); kept for users.model.ts schema default
-export const DEFAULT_TOKENS_LIMIT = 500_000_000;
