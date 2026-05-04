@@ -4,11 +4,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/server.ts",
+    "dev": "bun run src/dev.ts",
     "start": "bun run src/server.ts",
     "worker": "bun run src/worker/index.ts",
-    "seed": "bun run src/scripts/seed-api-keys.ts",
-    "seed:plans": "bun run src/scripts/seed-plans.ts"
+    "seed:plans": "bun run src/scripts/seed-plans.ts",
+    "backfill:free": "bun run src/scripts/backfill-free-plan.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
