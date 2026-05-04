@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
 import { ToolLayout } from '@/app/components/tools/ToolLayout'
-import { AudioFileInput } from '@/app/components/tools/AudioFileInput'
-import { MetricsPanel } from '@/app/components/tools/MetricsPanel'
+import { AudioWorkspace } from '@/app/components/tools/AudioWorkspace'
 import { AudioSettingsPanel, type AudioSettings } from '@/app/components/tools/AudioSettingsPanel'
 import { ToolHistoryPanel } from '@/app/components/tools/ToolHistoryPanel'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
@@ -25,15 +24,16 @@ export default function AudioPage() {
     settings.mode === 'preset' ||
     (settings.mode === 'custom' && settings.operations.length > 0)
 
+  const isProcessing = submitting || isPolling
+
   async function handleSubmit() {
     if (!file) return toast.error('Please select an audio file')
-
     if (!canSubmit) return toast.error('Enable at least one operation')
+
     setJobId(null)
     setSubmitting(true)
     try {
       const uploadRes = await uploadAudio(file)
-
       const audioId = uploadRes.data.id
 
       const input =
@@ -42,7 +42,6 @@ export default function AudioPage() {
           : { audioId, operations: settings.operations }
 
       const res = await submitAudioJob(input)
-      
       setJobId(res.id)
     } catch {
       toast.error('Failed to submit job. Check your file and try again.')
@@ -58,10 +57,16 @@ export default function AudioPage() {
   return (
     <ToolLayout
       title="Audio compression"
-      inputPanel={
-        <AudioFileInput
+      mainPanel={
+        <AudioWorkspace
           file={file}
-          onChange={setFile}
+          onFileChange={setFile}
+          status={job?.status}
+          metrics={job?.result?.metrics}
+          outputUrl={job?.result?.outputUrl}
+          error={job?.error}
+          isProcessing={isProcessing}
+          timedOut={timedOut}
         />
       }
       settingsPanel={<AudioSettingsPanel value={settings} onChange={setSettings} />}
@@ -76,15 +81,6 @@ export default function AudioPage() {
             </svg>
           }
           emptyLabel="Your processed audio will appear here"
-        />
-      }
-      outputPanel={
-        <MetricsPanel
-          status={job?.status}
-          metrics={job?.result?.metrics}
-          outputUrl={job?.result?.outputUrl}
-          error={job?.error}
-          timedOut={timedOut}
         />
       }
       action={

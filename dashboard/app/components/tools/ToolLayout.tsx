@@ -6,15 +6,16 @@ import { cn } from '@/app/lib/utils'
 interface ToolLayoutProps {
   title: string
   description?: string
-  inputPanel: ReactNode
-  outputPanel: ReactNode
+  inputPanel?: ReactNode
+  outputPanel?: ReactNode
+  mainPanel?: ReactNode
   settingsPanel?: ReactNode
   historyPanel?: ReactNode
   action: ReactNode
   credits?: number
 }
 
-export function ToolLayout({ title, description, inputPanel, outputPanel, settingsPanel, historyPanel, action, credits }: ToolLayoutProps) {
+export function ToolLayout({ title, description, inputPanel, outputPanel, mainPanel, settingsPanel, historyPanel, action, credits }: ToolLayoutProps) {
   const [tab, setTab] = useState<'settings' | 'history'>('settings')
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
   const hasTabs = !!historyPanel
@@ -86,12 +87,20 @@ export function ToolLayout({ title, description, inputPanel, outputPanel, settin
       <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-10 overflow-y-auto">
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="w-full max-w-3xl space-y-4">
-            <div className="bg-background rounded-xl border border-border shadow-sm p-4 sm:p-6">
-              {inputPanel}
-            </div>
-            <div className="bg-background rounded-xl border border-border shadow-sm p-4 sm:p-6">
-              {outputPanel}
-            </div>
+            {mainPanel ? (
+              <div className="bg-background rounded-xl border border-border shadow-sm p-4 sm:p-6">
+                {mainPanel}
+              </div>
+            ) : (
+              <>
+                <div className="bg-background rounded-xl border border-border shadow-sm p-4 sm:p-6">
+                  {inputPanel}
+                </div>
+                <div className="bg-background rounded-xl border border-border shadow-sm p-4 sm:p-6">
+                  {outputPanel}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
