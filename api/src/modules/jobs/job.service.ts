@@ -7,14 +7,20 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
 export class JobService {
-  async create(input: { userId: string; payload: JobPayload }): Promise<Job> {
+  async create(input: { userId: string; payload: JobPayload; idempotencyKey?: string }): Promise<Job> {
     const doc = await JobModel.create({
       userId: input.userId,
       status: 'created',
       payload: input.payload,
+      ...(input.idempotencyKey && { idempotencyKey: input.idempotencyKey }),
     });
 
     return this.toJob(doc);
+  }
+
+  async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Job | null> {
+    const doc = await JobModel.findOne({ userId, idempotencyKey });
+    return doc ? this.toJob(doc) : null;
   }
 
   async findById(jobId: string): Promise<Job | null> {

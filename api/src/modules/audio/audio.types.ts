@@ -136,4 +136,5 @@ export interface ProcessAudioInput {
   preset?: AudioPreset;
   operations?: AudioOperation[];
   webhookUrl?: string;
+  idempotencyKey?: string;
 }

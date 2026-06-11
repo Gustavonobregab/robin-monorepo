@@ -39,7 +39,8 @@ export interface UsageEvent {
   _id: ObjectId;
   idempotencyKey: string;
   userId: string;
-  jobId: string;
+  jobId?: string;              // absent for synchronous processing
+  sync: boolean;
   pipelineType: PipelineType;
   operations: string[];
   inputBytes: number;
@@ -58,7 +59,8 @@ export interface UsageEvent {
 export interface RecordUsageInput {
   idempotencyKey: string;
   userId: string;
-  jobId: string;
+  jobId?: string;
+  sync?: boolean;
   pipelineType: PipelineType;
   operations: string[];
   inputBytes: number;

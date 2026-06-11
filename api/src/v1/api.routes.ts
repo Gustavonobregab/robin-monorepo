@@ -17,8 +17,11 @@ export const apiRoutes = new Elysia()
   // ─── Audio ─────────────────────────────────────────
   .post(
     '/audio',
-    async ({ body, userId }) => {
-      const { job } = await audioService.processAudio(userId, body);
+    async ({ body, userId, headers }) => {
+      const { job } = await audioService.processAudio(userId, {
+        ...body,
+        idempotencyKey: headers['idempotency-key'],
+      });
       return job;
     },
     {
@@ -30,6 +33,9 @@ export const apiRoutes = new Elysia()
         ),
         webhookUrl: t.Optional(t.String({ format: 'uri' })),
       }),
+      headers: t.Object({
+        'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+      }),
     }
   )
 
@@ -40,7 +46,8 @@ export const apiRoutes = new Elysia()
   // ─── Text ──────────────────────────────────────────
   .post(
     '/text',
-    async ({ body, userId }) => textService.processText(userId, body),
+    async ({ body, userId, headers }) =>
+      textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] }),
     {
       body: t.Object({
         text: t.Optional(t.String({ maxLength: 5_000_000 })),
@@ -50,6 +57,9 @@ export const apiRoutes = new Elysia()
           t.Array(TextOperationSchema, { minItems: 1, maxItems: 10 })
         ),
         webhookUrl: t.Optional(t.String({ format: 'uri' })),
+      }),
+      headers: t.Object({
+        'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
       }),
     }
   )

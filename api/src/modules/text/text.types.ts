@@ -101,4 +101,5 @@ export interface ProcessTextInput {
   preset?: TextPreset;
   operations?: TextOperation[];
   webhookUrl?: string;
+  idempotencyKey?: string;
 }

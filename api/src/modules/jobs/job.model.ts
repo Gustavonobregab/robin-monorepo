@@ -3,6 +3,7 @@ import { Schema, model } from 'mongoose';
 const jobSchema = new Schema(
   {
     userId: { type: String, required: true, index: true },
+    idempotencyKey: { type: String },
     status: {
       type: String,
       enum: ['created', 'pending', 'processing', 'completed', 'failed'],
@@ -10,7 +11,7 @@ const jobSchema = new Schema(
       index: true,
     },
     payload: {
-      type: { type: String, enum: ['audio', 'text'], required: true },
+      type: { type: String, enum: ['audio', 'text', 'image', 'video'], required: true },
       operations: { type: [Schema.Types.Mixed], required: true },
       source: { type: Schema.Types.Mixed },
       preset: { type: String },
@@ -33,5 +34,9 @@ const jobSchema = new Schema(
 
 jobSchema.index({ userId: 1, createdAt: -1 });
 jobSchema.index({ status: 1, createdAt: 1 });
+jobSchema.index(
+  { userId: 1, idempotencyKey: 1 },
+  { unique: true, partialFilterExpression: { idempotencyKey: { $exists: true } } },
+);
 
 export const JobModel = model('Job', jobSchema);

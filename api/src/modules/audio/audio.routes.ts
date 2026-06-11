@@ -8,8 +8,11 @@ export const audioRoutes = new Elysia({ prefix: '/audio' })
 
   .post(
     '/',
-    async ({ body, userId }) => {
-        const { job } = await audioService.processAudio(userId, body);
+    async ({ body, userId, headers }) => {
+        const { job } = await audioService.processAudio(userId, {
+          ...body,
+          idempotencyKey: headers['idempotency-key'],
+        });
         return job;
       },
     {
@@ -23,6 +26,9 @@ export const audioRoutes = new Elysia({ prefix: '/audio' })
           })
         ),
         webhookUrl: t.Optional(t.String({ format: 'uri' })),
+      }),
+      headers: t.Object({
+        'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
       }),
       detail: {
         summary: 'Create audio processing job',

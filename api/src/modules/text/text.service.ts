@@ -12,6 +12,9 @@ import { processText } from '../../worker/text/pipeline';
 import type { Job } from '../jobs/job.types';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 import { usersService } from '../users/users.service';
+import { usageService } from '../usage/usage.service';
+import { isDuplicateKeyError } from '../../utils/mongo';
+import { ulid } from 'ulidx';
 
 const SYNC_SIZE_LIMIT = 50 * 1024; // 50 KB
 
@@ -76,6 +79,15 @@ export class TextService {
       const processingMs = Math.round(performance.now() - start);
       const outputSize = Buffer.byteLength(output, 'utf8');
 
+      await this.recordSyncUsage(userId, {
+        inputText,
+        inputSize,
+        outputSize,
+        processingMs,
+        operations,
+        creditCost,
+      });
+
       return {
         output,
         metrics: {
@@ -90,6 +102,40 @@ export class TextService {
       // Rollback credits on sync processing failure
       await rollbackCredits(userId, creditCost);
       throw err;
+    }
+  }
+
+  // Usage is telemetry: a failed write must never fail a request that processed
+  private async recordSyncUsage(
+    userId: string,
+    data: {
+      inputText: string;
+      inputSize: number;
+      outputSize: number;
+      processingMs: number;
+      operations: TextOperation[];
+      creditCost: number;
+    },
+  ) {
+    try {
+      await usageService.record({
+        idempotencyKey: `sync:${ulid()}`,
+        userId,
+        sync: true,
+        pipelineType: 'text',
+        operations: data.operations.map((op) => op.type),
+        inputBytes: data.inputSize,
+        outputBytes: data.outputSize,
+        processingMs: data.processingMs,
+        text: {
+          characterCount: data.inputText.length,
+          wordCount: data.inputText.split(/\s+/).filter(Boolean).length,
+          encoding: 'utf-8',
+        },
+        creditsConsumed: data.creditCost,
+      });
+    } catch (err) {
+      console.error(`[TEXT:sync] Failed to record usage: ${err instanceof Error ? err.message : err}`);
     }
   }
 
@@ -108,6 +154,11 @@ export class TextService {
     }
 
     const operations = this.resolveOperations(preset, customOps);
+
+    if (input.idempotencyKey) {
+      const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
+      if (existing) return { job: existing };
+    }
 
     if (input.webhookUrl) {
       await usersService.assertWebhookAccess(userId);
@@ -141,6 +192,7 @@ export class TextService {
           creditCost,
           webhookUrl: input.webhookUrl,
         },
+        idempotencyKey: input.idempotencyKey,
       });
 
       await jobService.enqueue(job.id, 'text');
@@ -148,6 +200,13 @@ export class TextService {
       return { job };
     } catch (err) {
       await rollbackCredits(userId, creditCost);
+
+      // Concurrent request with the same idempotency key won the race
+      if (input.idempotencyKey && isDuplicateKeyError(err)) {
+        const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
+        if (existing) return { job: existing };
+      }
+
       throw err;
     }
   }

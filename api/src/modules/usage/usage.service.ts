@@ -1,5 +1,6 @@
 import { UsageEventModel } from './usage.model';
-import { subDays, format, startOfMonth, endOfMonth } from 'date-fns';
+import { subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { isDuplicateKeyError } from '../../utils/mongo';
 import type {
   RecordUsageInput,
   RecordUsageResult,
@@ -7,120 +8,130 @@ import type {
   UsageAnalytics,
   CurrentUsage,
   UsageEvent,
+  PipelineType,
 } from './usage.types';
 
+const RANGE_DAYS: Record<TimeRange, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+
+// Sums every per-pipeline counter in one pass; irrelevant fields stay 0
+const PIPELINE_TOTALS = {
+  requests: { $sum: 1 },
+  inputBytes: { $sum: '$inputBytes' },
+  outputBytes: { $sum: '$outputBytes' },
+  durationMs: { $sum: { $ifNull: ['$audio.durationMs', { $ifNull: ['$video.durationMs', 0] }] } },
+  characters: { $sum: { $ifNull: ['$text.characterCount', 0] } },
+  words: { $sum: { $ifNull: ['$text.wordCount', 0] } },
+  megapixels: { $sum: { $ifNull: ['$image.megapixels', 0] } },
+} as const;
+
+type PipelineTotals = {
+  requests: number;
+  inputBytes: number;
+  outputBytes: number;
+  durationMs: number;
+  characters: number;
+  words: number;
+  megapixels: number;
+};
+
+const EMPTY_TOTALS: PipelineTotals = {
+  requests: 0,
+  inputBytes: 0,
+  outputBytes: 0,
+  durationMs: 0,
+  characters: 0,
+  words: 0,
+  megapixels: 0,
+};
+
 export class UsageService {
+  // The unique index on idempotencyKey is the concurrency guarantee:
+  // a duplicate insert means the event was already recorded.
   async record(input: RecordUsageInput): Promise<RecordUsageResult> {
-    const existingEvent = await UsageEventModel.findOne({
-      idempotencyKey: input.idempotencyKey,
-    });
+    try {
+      const event = await UsageEventModel.create({
+        ...input,
+        timestamp: new Date(),
+      });
 
-    if (existingEvent) {
-      return { eventId: existingEvent._id.toString() };
+      return { eventId: event._id.toString() };
+    } catch (err) {
+      if (isDuplicateKeyError(err)) {
+        const existing = await UsageEventModel.findOne({
+          idempotencyKey: input.idempotencyKey,
+        }).lean();
+
+        if (existing) return { eventId: existing._id.toString() };
+      }
+
+      throw err;
     }
-
-    const event = await UsageEventModel.create({
-      idempotencyKey: input.idempotencyKey,
-      userId: input.userId,
-      jobId: input.jobId,
-      pipelineType: input.pipelineType,
-      operations: input.operations,
-      inputBytes: input.inputBytes,
-      outputBytes: input.outputBytes,
-      processingMs: input.processingMs,
-      timestamp: new Date(),
-      audio: input.audio,
-      text: input.text,
-      image: input.image,
-      video: input.video,
-      creditsConsumed: input.creditsConsumed,
-    });
-
-    return { eventId: event._id.toString() };
   }
 
   async getAnalytics(userId: string, range: TimeRange = '30d'): Promise<UsageAnalytics> {
     const now = new Date();
-    const rangeDays: Record<TimeRange, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
-    const startDate = subDays(now, rangeDays[range]);
+    const startDate = subDays(now, RANGE_DAYS[range]);
+    const match = { userId, timestamp: { $gte: startDate } };
 
-    const events = await UsageEventModel.find({
-      userId,
-      timestamp: { $gte: startDate },
-    }).sort({ timestamp: -1 }).lean();
+    const [groups, daily, recent] = await Promise.all([
+      this.totalsByPipeline(match),
+      UsageEventModel.aggregate<{ _id: string; requests: number }>([
+        { $match: match },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
+            requests: { $sum: 1 },
+          },
+        },
+      ]),
+      UsageEventModel.find(match).sort({ timestamp: -1 }).limit(10).lean(),
+    ]);
 
-    // Summary
-    const totalRequests = events.length;
-    const totalInputBytes = events.reduce((acc, e) => acc + e.inputBytes, 0);
-    const totalOutputBytes = events.reduce((acc, e) => acc + e.outputBytes, 0);
+    const summary: UsageAnalytics['summary'] = {
+      totalRequests: 0,
+      totalInputBytes: 0,
+      totalOutputBytes: 0,
+      byPipeline: {},
+    };
 
-    // Per-pipeline breakdown
-    const byPipeline: UsageAnalytics['summary']['byPipeline'] = {};
+    for (const [type, totals] of groups) {
+      summary.totalRequests += totals.requests;
+      summary.totalInputBytes += totals.inputBytes;
+      summary.totalOutputBytes += totals.outputBytes;
 
-    const audioEvents = events.filter(e => e.pipelineType === 'audio');
-    if (audioEvents.length > 0) {
-      byPipeline.audio = {
-        requests: audioEvents.length,
-        totalInputBytes: audioEvents.reduce((acc, e) => acc + e.inputBytes, 0),
-        totalOutputBytes: audioEvents.reduce((acc, e) => acc + e.outputBytes, 0),
-        totalMinutes: audioEvents.reduce((acc, e) => acc + (e.audio?.durationMs || 0), 0) / 60_000,
+      const base = {
+        requests: totals.requests,
+        totalInputBytes: totals.inputBytes,
+        totalOutputBytes: totals.outputBytes,
       };
+
+      switch (type) {
+        case 'audio':
+          summary.byPipeline.audio = { ...base, totalMinutes: totals.durationMs / 60_000 };
+          break;
+        case 'text':
+          summary.byPipeline.text = { ...base, totalCharacters: totals.characters, totalWords: totals.words };
+          break;
+        case 'image':
+          summary.byPipeline.image = { ...base, totalMegapixels: totals.megapixels };
+          break;
+        case 'video':
+          summary.byPipeline.video = { ...base, totalMinutes: totals.durationMs / 60_000 };
+          break;
+      }
     }
 
-    const textEvents = events.filter(e => e.pipelineType === 'text');
-    if (textEvents.length > 0) {
-      byPipeline.text = {
-        requests: textEvents.length,
-        totalInputBytes: textEvents.reduce((acc, e) => acc + e.inputBytes, 0),
-        totalOutputBytes: textEvents.reduce((acc, e) => acc + e.outputBytes, 0),
-        totalCharacters: textEvents.reduce((acc, e) => acc + (e.text?.characterCount || 0), 0),
-        totalWords: textEvents.reduce((acc, e) => acc + (e.text?.wordCount || 0), 0),
-      };
-    }
+    const requestsByDay = new Map(daily.map((day) => [day._id, day.requests]));
+    const chart: UsageAnalytics['chart'] = [];
+    const loopDate = new Date(startDate);
 
-    const imageEvents = events.filter(e => e.pipelineType === 'image');
-    if (imageEvents.length > 0) {
-      byPipeline.image = {
-        requests: imageEvents.length,
-        totalInputBytes: imageEvents.reduce((acc, e) => acc + e.inputBytes, 0),
-        totalOutputBytes: imageEvents.reduce((acc, e) => acc + e.outputBytes, 0),
-        totalMegapixels: imageEvents.reduce((acc, e) => acc + (e.image?.megapixels || 0), 0),
-      };
-    }
-
-    const videoEvents = events.filter(e => e.pipelineType === 'video');
-    if (videoEvents.length > 0) {
-      byPipeline.video = {
-        requests: videoEvents.length,
-        totalInputBytes: videoEvents.reduce((acc, e) => acc + e.inputBytes, 0),
-        totalOutputBytes: videoEvents.reduce((acc, e) => acc + e.outputBytes, 0),
-        totalMinutes: videoEvents.reduce((acc, e) => acc + (e.video?.durationMs || 0), 0) / 60_000,
-      };
-    }
-
-    // Chart: daily request counts
-    const chartMap = new Map<string, number>();
-    let loopDate = new Date(startDate);
     while (loopDate <= now) {
-      chartMap.set(format(loopDate, 'yyyy-MM-dd'), 0);
+      const key = loopDate.toISOString().slice(0, 10);
+      chart.push({ date: key, requests: requestsByDay.get(key) ?? 0 });
       loopDate.setDate(loopDate.getDate() + 1);
     }
-    events.forEach(e => {
-      const key = format(new Date(e.timestamp), 'yyyy-MM-dd');
-      if (chartMap.has(key)) {
-        chartMap.set(key, (chartMap.get(key) || 0) + 1);
-      }
-    });
-    const chart = Array.from(chartMap.entries()).map(([date, requests]) => ({ date, requests }));
 
-    // Recent: last 10 raw events
-    const recent = events.slice(0, 10) as unknown as UsageEvent[];
-
-    return {
-      summary: { totalRequests, totalInputBytes, totalOutputBytes, byPipeline },
-      chart,
-      recent,
-    };
+    return { summary, chart, recent: recent as unknown as UsageEvent[] };
   }
 
   async getCurrentUsage(userId: string, periodStart?: Date, periodEnd?: Date): Promise<CurrentUsage> {
@@ -128,37 +139,30 @@ export class UsageService {
     const start = periodStart || startOfMonth(now);
     const end = periodEnd || endOfMonth(now);
 
-    const events = await UsageEventModel.find({
-      userId,
-      timestamp: { $gte: start, $lte: end },
-    }).lean();
-
-    const audioEvents = events.filter(e => e.pipelineType === 'audio');
-    const textEvents = events.filter(e => e.pipelineType === 'text');
-    const imageEvents = events.filter(e => e.pipelineType === 'image');
-    const videoEvents = events.filter(e => e.pipelineType === 'video');
+    const groups = await this.totalsByPipeline({ userId, timestamp: { $gte: start, $lte: end } });
+    const totals = (type: PipelineType) => groups.get(type) ?? EMPTY_TOTALS;
 
     return {
       period: { start, end },
       audio: {
-        requests: audioEvents.length,
-        minutes: audioEvents.reduce((acc, e) => acc + (e.audio?.durationMs || 0), 0) / 60_000,
-        inputBytes: audioEvents.reduce((acc, e) => acc + e.inputBytes, 0),
+        requests: totals('audio').requests,
+        minutes: totals('audio').durationMs / 60_000,
+        inputBytes: totals('audio').inputBytes,
       },
       text: {
-        requests: textEvents.length,
-        characters: textEvents.reduce((acc, e) => acc + (e.text?.characterCount || 0), 0),
-        inputBytes: textEvents.reduce((acc, e) => acc + e.inputBytes, 0),
+        requests: totals('text').requests,
+        characters: totals('text').characters,
+        inputBytes: totals('text').inputBytes,
       },
       image: {
-        requests: imageEvents.length,
-        megapixels: imageEvents.reduce((acc, e) => acc + (e.image?.megapixels || 0), 0),
-        inputBytes: imageEvents.reduce((acc, e) => acc + e.inputBytes, 0),
+        requests: totals('image').requests,
+        megapixels: totals('image').megapixels,
+        inputBytes: totals('image').inputBytes,
       },
       video: {
-        requests: videoEvents.length,
-        minutes: videoEvents.reduce((acc, e) => acc + (e.video?.durationMs || 0), 0) / 60_000,
-        inputBytes: videoEvents.reduce((acc, e) => acc + e.inputBytes, 0),
+        requests: totals('video').requests,
+        minutes: totals('video').durationMs / 60_000,
+        inputBytes: totals('video').inputBytes,
       },
     };
   }
@@ -166,6 +170,15 @@ export class UsageService {
   async getUserStats(userId: string) {
     const totalRequests = await UsageEventModel.countDocuments({ userId });
     return { totalRequests };
+  }
+
+  private async totalsByPipeline(match: Record<string, unknown>): Promise<Map<PipelineType, PipelineTotals>> {
+    const groups = await UsageEventModel.aggregate<PipelineTotals & { _id: PipelineType }>([
+      { $match: match },
+      { $group: { _id: '$pipelineType', ...PIPELINE_TOTALS } },
+    ]);
+
+    return new Map(groups.map(({ _id, ...totals }) => [_id, totals]));
   }
 }
 

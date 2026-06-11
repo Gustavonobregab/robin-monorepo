@@ -8,7 +8,8 @@ export const textRoutes = new Elysia({ prefix: '/text' })
 
   .post(
     '/',
-    async ({ body, userId }) => textService.processText(userId, body),
+    async ({ body, userId, headers }) =>
+      textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] }),
     {
       body: t.Object({
         text: t.Optional(t.String({ maxLength: 5_000_000 })),
@@ -21,6 +22,9 @@ export const textRoutes = new Elysia({ prefix: '/text' })
           })
         ),
         webhookUrl: t.Optional(t.String({ format: 'uri' })),
+      }),
+      headers: t.Object({
+        'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
       }),
       detail: {
         summary: 'Create text processing job',

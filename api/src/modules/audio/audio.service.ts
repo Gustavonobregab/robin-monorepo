@@ -11,6 +11,7 @@ import type { Job } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 import { usersService } from '../users/users.service';
+import { isDuplicateKeyError } from '../../utils/mongo';
 
 export class AudioService {
 
@@ -23,6 +24,11 @@ export class AudioService {
         'Either preset or operations must be provided',
         400
       );
+    }
+
+    if (input.idempotencyKey) {
+      const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
+      if (existing) return { job: existing };
     }
 
     // Resolve audioId to upload document; validates ownership and expiry
@@ -51,13 +57,21 @@ export class AudioService {
          name: upload.originalName,
          creditCost,
          webhookUrl: input.webhookUrl,
-       } });
+       },
+       idempotencyKey: input.idempotencyKey });
 
       await jobService.enqueue(job.id, 'audio');
 
       return { job };
     } catch (err) {
       await rollbackCredits(userId, creditCost);
+
+      // Concurrent request with the same idempotency key won the race
+      if (input.idempotencyKey && isDuplicateKeyError(err)) {
+        const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
+        if (existing) return { job: existing };
+      }
+
       throw err;
     }
   }
