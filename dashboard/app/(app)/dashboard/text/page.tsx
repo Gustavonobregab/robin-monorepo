@@ -8,8 +8,9 @@ import { MetricsPanel } from '@/app/components/tools/MetricsPanel'
 import { TextSettingsPanel, type TextSettings } from '@/app/components/tools/TextSettingsPanel'
 import { ToolHistoryPanel } from '@/app/components/tools/ToolHistoryPanel'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
-import { submitTextJob, uploadDocument } from '@/app/http/text'
-import { getTextJobStatus } from '@/app/http/jobs'
+import { submitTextJob } from '@/app/http/text'
+import { uploadFile } from '@/app/http/upload'
+import { getJobStatus } from '@/app/http/jobs'
 import type { JobMetrics } from '@/types'
 
 export default function TextPage() {
@@ -23,7 +24,7 @@ export default function TextPage() {
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({
     jobId,
-    fetcher: getTextJobStatus,
+    fetcher: getJobStatus,
   })
 
   useEffect(() => {
@@ -54,8 +55,8 @@ export default function TextPage() {
       let fileId: string | undefined
 
       if (inputMode === 'file' && file) {
-        const uploadRes = await uploadDocument(file)
-        fileId = uploadRes.data.id
+        const upload = await uploadFile(file)
+        fileId = upload.id
       }
 
       const base = fileId ? { fileId } : { text }

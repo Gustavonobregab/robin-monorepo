@@ -112,7 +112,7 @@ export type KeyStatus = 'active' | 'revoked'
 export interface ApiKey {
   _id: string
   name: string
-  key: string
+  keyPrefix: string
   status: KeyStatus
   createdAt: string
   lastUsedAt?: string
@@ -195,10 +195,11 @@ export interface AudioOperationInput {
   params?: Record<string, number | string | boolean>
 }
 
-export interface UploadAudioResponse {
+export interface CreateUploadResponse {
   id: string
-  originalName: string
-  size: number
+  uploadUrl: string
+  contentType: string
+  uploadUrlExpiresIn: number
   expiresAt: string
 }
 

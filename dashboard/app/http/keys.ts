@@ -6,7 +6,7 @@ export const getApiKeys = () =>
   clientApi.get('keys').json<ApiResponse<ApiKey[]>>()
 
 export const createApiKey = (name: string) =>
-  clientApi.post('keys', { json: { name } }).json<ApiResponse<ApiKey>>()
+  clientApi.post('keys', { json: { name } }).json<ApiResponse<ApiKey & { key: string }>>()
 
 export const revokeApiKey = (id: string) =>
   clientApi.delete(`keys/${id}`).json<ApiResponse<{ revoked: boolean }>>()

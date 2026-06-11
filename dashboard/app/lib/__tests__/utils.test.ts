@@ -1,19 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { maskKey, formatBytes } from '../utils'
-
-describe('maskKey', () => {
-  it('returns short keys unchanged', () => {
-    expect(maskKey('short')).toBe('short')
-  })
-
-  it('returns 12-char key unchanged', () => {
-    expect(maskKey('sk_live_a1b2')).toBe('sk_live_a1b2')
-  })
-
-  it('truncates key longer than 12 chars with ellipsis', () => {
-    expect(maskKey('sk_live_a1b2c3d4e5f6g7h8')).toBe('sk_live_a1b2…')
-  })
-})
+import { formatBytes } from '../utils'
 
 describe('formatBytes', () => {
   it('returns 0 B for 0', () => {

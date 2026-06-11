@@ -1,17 +1,9 @@
 // dashboard/app/http/text.ts
 import { clientApi } from './api'
-import type { ApiResponse, SubmitTextJobInput, TextPresetDef, TextOperationDef, TextProcessResult, UploadAudioResponse } from '@/types'
+import type { ApiResponse, SubmitTextJobInput, TextPresetDef, TextOperationDef, TextProcessResult } from '@/types'
 
 export const submitTextJob = (input: SubmitTextJobInput) =>
   clientApi.post('text', { json: input }).json<ApiResponse<TextProcessResult>>()
-
-export const uploadDocument = (file: File) => {
-  const form = new FormData()
-
-  form.append('file', file)
-  
-  return clientApi.post('upload/document', { body: form }).json<ApiResponse<UploadAudioResponse>>()
-}
 
 export const getTextPresets = () =>
   clientApi.get('text/presets').json<ApiResponse<TextPresetDef[]>>()

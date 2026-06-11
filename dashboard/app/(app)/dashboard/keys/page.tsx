@@ -18,7 +18,6 @@ import {
 } from '@/app/components/ui/alert-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table'
 import { getApiKeys, createApiKey, revokeApiKey } from '@/app/http/keys'
-import { maskKey } from '@/app/lib/utils'
 import type { ApiResponse, ApiKey } from '@/types'
 
 export default function KeysPage() {
@@ -170,7 +169,7 @@ export default function KeysPage() {
                 <TableRow key={key._id}>
                   <TableCell className="font-medium">{key.name}</TableCell>
                   <TableCell>
-                    <code className="text-sm font-mono text-muted">{maskKey(key.key)}</code>
+                    <code className="text-sm font-mono text-muted">{key.keyPrefix}…</code>
                   </TableCell>
                   <TableCell>
                     <Badge className={`text-xs border-0 rounded-full ${

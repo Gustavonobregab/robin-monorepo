@@ -7,8 +7,9 @@ import { AudioWorkspace } from '@/app/components/tools/AudioWorkspace'
 import { AudioSettingsPanel, type AudioSettings } from '@/app/components/tools/AudioSettingsPanel'
 import { ToolHistoryPanel } from '@/app/components/tools/ToolHistoryPanel'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
-import { uploadAudio, submitAudioJob } from '@/app/http/audio'
-import { getAudioJobStatus } from '@/app/http/jobs'
+import { submitAudioJob } from '@/app/http/audio'
+import { uploadFile } from '@/app/http/upload'
+import { getJobStatus } from '@/app/http/jobs'
 
 export default function AudioPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -17,7 +18,7 @@ export default function AudioPage() {
   const [submitting, setSubmitting] = useState(false)
   const { job, isPolling, isFailed, timedOut } = useJobPoll({
     jobId,
-    fetcher: getAudioJobStatus,
+    fetcher: getJobStatus,
   })
 
   const canSubmit =
@@ -33,8 +34,7 @@ export default function AudioPage() {
     setJobId(null)
     setSubmitting(true)
     try {
-      const uploadRes = await uploadAudio(file)
-      const audioId = uploadRes.data.id
+      const { id: audioId } = await uploadFile(file)
 
       const input =
         settings.mode === 'preset'
