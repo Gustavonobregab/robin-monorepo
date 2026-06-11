@@ -16,6 +16,7 @@ const jobSchema = new Schema(
       preset: { type: String },
       name: { type: String },
       creditCost: { type: Number },    // credits reserved, for rollback on failure
+      webhookUrl: { type: String },    // per-job override; falls back to user.webhookUrl
     },
     completedAt: { type: Date },
     error: { type: String },

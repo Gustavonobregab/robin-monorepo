@@ -25,6 +25,7 @@ export const apiRoutes = new Elysia()
         operations: t.Optional(
           t.Array(AudioOperationSchema, { minItems: 1, maxItems: 10 })
         ),
+        webhookUrl: t.Optional(t.String({ format: 'uri' })),
       }),
     }
   )
@@ -51,6 +52,7 @@ export const apiRoutes = new Elysia()
         operations: t.Optional(
           t.Array(TextOperationSchema, { minItems: 1, maxItems: 10 })
         ),
+        webhookUrl: t.Optional(t.String({ format: 'uri' })),
       }),
     }
   )

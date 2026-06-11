@@ -24,6 +24,7 @@ export const audioRoutes = new Elysia({ prefix: '/audio' })
             maxItems: 10,
           })
         ),
+        webhookUrl: t.Optional(t.String({ format: 'uri' })),
       }),
       detail: {
         summary: 'Create audio processing job',

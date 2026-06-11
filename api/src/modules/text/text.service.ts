@@ -11,6 +11,7 @@ import { uploadService } from '../upload/upload.service';
 import { processText } from '../../worker/text/pipeline';
 import type { Job } from '../jobs/job.types';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
+import { usersService } from '../users/users.service';
 
 const SYNC_SIZE_LIMIT = 50 * 1024; // 50 KB
 
@@ -39,7 +40,13 @@ export class TextService {
   }
 
   private isSyncEligible(input: ProcessTextInput): boolean {
-    return !!input.text && !input.fileId && Buffer.byteLength(input.text, 'utf8') <= SYNC_SIZE_LIMIT;
+    // webhookUrl implies the caller wants the async contract (job + callback)
+    return (
+      !input.webhookUrl &&
+      !!input.text &&
+      !input.fileId &&
+      Buffer.byteLength(input.text, 'utf8') <= SYNC_SIZE_LIMIT
+    );
   }
 
   async processTextSync(
@@ -102,6 +109,10 @@ export class TextService {
 
     const operations = this.resolveOperations(preset, customOps);
 
+    if (input.webhookUrl) {
+      await usersService.assertWebhookAccess(userId);
+    }
+
     // Reserve credits before enqueueing
     const creditCost = await reserveCredits(userId, 'text');
 
@@ -123,10 +134,11 @@ export class TextService {
           operations,
           source,
           creditCost,
+          webhookUrl: input.webhookUrl,
         },
       });
 
-      await jobService.enqueue(job);
+      await jobService.enqueue(job.id, 'text');
 
       return { job };
     } catch (err) {

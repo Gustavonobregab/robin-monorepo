@@ -10,6 +10,7 @@ import { jobService } from '../jobs/job.service';
 import type { Job } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
+import { usersService } from '../users/users.service';
 
 export class AudioService {
 
@@ -29,6 +30,10 @@ export class AudioService {
 
     const operations = this.resolveOperations(preset, customOps);
 
+    if (input.webhookUrl) {
+      await usersService.assertWebhookAccess(userId);
+    }
+
     // Reserve credits before enqueueing
     const creditCost = await reserveCredits(userId, 'audio');
 
@@ -41,9 +46,10 @@ export class AudioService {
          source: { kind: 'storage', ref: upload.s3Key },
          name: upload.originalName,
          creditCost,
+         webhookUrl: input.webhookUrl,
        } });
 
-      await jobService.enqueue(job);
+      await jobService.enqueue(job.id, 'audio');
 
       return { job };
     } catch (err) {

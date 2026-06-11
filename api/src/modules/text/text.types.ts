@@ -100,4 +100,5 @@ export interface ProcessTextInput {
   fileId?: string;
   preset?: TextPreset;
   operations?: TextOperation[];
+  webhookUrl?: string;
 }

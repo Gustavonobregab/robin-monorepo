@@ -30,14 +30,16 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
     operations: AudioOperation[];
     name?: string;
     creditCost?: number;   // credits reserved for this job, used for rollback on failure
+    webhookUrl?: string;   // per-job override; falls back to user.webhookUrl
   };
-  
+
   export type TextJobPayload = {
     type: "text";
     preset?: TextPreset;
     source: JobSource;
     operations: TextOperation[];
     creditCost?: number;   // credits reserved for this job, used for rollback on failure
+    webhookUrl?: string;   // per-job override; falls back to user.webhookUrl
   };
   
   export type ImageJobPayload = {

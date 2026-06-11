@@ -22,6 +22,7 @@ export const textRoutes = new Elysia({ prefix: '/text' })
             maxItems: 10,
           })
         ),
+        webhookUrl: t.Optional(t.String({ format: 'uri' })),
       }),
       detail: {
         summary: 'Create text processing job',

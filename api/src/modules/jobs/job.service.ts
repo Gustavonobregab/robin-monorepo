@@ -34,20 +34,18 @@ export class JobService {
     return docs.map((doc) => this.toJob(doc));
   }
 
-  async enqueue(job: Job): Promise<void> {
+  async enqueue(jobId: string, type: 'text' | 'audio'): Promise<void> {
     const { queues } = await import('../../queues/queue');
-    const jobDoc = await JobModel.findById(job.id);
-    
-    if (!jobDoc) return;
+    const queue = type === 'text' ? queues.text : queues.audio;
 
-    const jobType = jobDoc.payload?.type as 'text' | 'audio';
-    
-    const queue = jobType === 'text' ? queues.text : queues.audio;
-
-    await queue.add(jobType, {
-      data: { jobId: job.id },
-      metadata: { step: 'CREATED' },
-    });
+    await queue.add(
+      type,
+      {
+        data: { jobId },
+        metadata: { step: 'CREATED' },
+      },
+      { jobId },
+    );
   }
 
   private toJob(doc: any): Job {

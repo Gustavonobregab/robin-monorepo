@@ -8,6 +8,7 @@ const userSchema = new Schema<User>({
   image: { type: String },
   oderId: { type: String, unique: true, sparse: true },
   webhookUrl: { type: String },
+  webhookSecret: { type: String },
   plan: { type: Schema.Types.ObjectId, ref: 'Plan' },            // reference to active plan
   subscription: {
     status: {                                                      // subscription state

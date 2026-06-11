@@ -8,6 +8,7 @@ export interface User {
   emailVerified: boolean;
   image?: string;
   webhookUrl?: string;
+  webhookSecret?: string;
   plan?: ObjectId;                     // reference to the active plan document
   subscription?: {
     status: 'active' | 'canceled';     // subscription state

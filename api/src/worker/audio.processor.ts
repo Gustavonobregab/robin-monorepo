@@ -12,6 +12,7 @@ import { s3, S3_BUCKET } from '../config/storage';
 import { probeAudio } from './audio/probe';
 import { usageService } from '../modules/usage/usage.service';
 import { rollbackCredits } from '../middlewares/credits';
+import { webhooksService } from '../modules/webhooks/webhooks.service';
 
 const HOURS_72 = 72 * 60 * 60; // seconds
 
@@ -130,18 +131,31 @@ export default async function (job: Job<AudioQueueJob>) {
     });
 
     log(id, 'Usage recorded');
+
+    await webhooksService.sendJobWebhook(id, 'job.completed');
   } catch (err) {
     log(id, `Failed: ${err instanceof Error ? err.message : err}`);
+
+    // BullMQ will retry until the last attempt; only then the failure is final
+    const isFinalAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+
+    if (!isFinalAttempt) {
+      await JobModel.findByIdAndUpdate(id, { status: 'pending' });
+      throw err;
+    }
+
     await JobModel.findByIdAndUpdate(id, {
       status: 'failed',
       error: err instanceof Error ? err.message : 'Unknown error',
     });
-    // Rollback reserved credits on failure
+
     const creditCost = payload.creditCost;
     if (creditCost) {
       await rollbackCredits(jobDoc.userId, creditCost);
       log(id, `Rolled back ${creditCost} credits`);
     }
+
+    await webhooksService.sendJobWebhook(id, 'job.failed');
     throw err;
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});

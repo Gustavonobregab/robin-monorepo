@@ -1,7 +1,16 @@
+import { randomBytes } from 'crypto';
 import { UserModel } from './users.model';
 import { ApiError } from '../../utils/api-error';
 import { usageService } from '../usage/usage.service';
 import { PlanModel } from '../plans/plans.model';
+
+export async function ensureWebhookSecret(user: { _id: unknown; webhookSecret?: string | null }): Promise<string> {
+  if (user.webhookSecret) return user.webhookSecret;
+
+  const secret = `whsec_${randomBytes(24).toString('hex')}`;
+  await UserModel.updateOne({ _id: user._id }, { $set: { webhookSecret: secret } });
+  return secret;
+}
 
 export class UsersService {
   async getProfile(userId: string) {
@@ -59,7 +68,7 @@ export class UsersService {
     return user;
   }
 
-  async updateWebhookUrl(userId: string, url: string) {
+  async assertWebhookAccess(userId: string) {
     const user = await UserModel.findOne({
       $or: [{ oderId: userId }, { _id: userId }],
     }).lean();
@@ -68,13 +77,16 @@ export class UsersService {
       throw new ApiError('USER_NOT_FOUND', 'User not found', 404);
     }
 
-    // Check if plan allows webhooks
     if (user.plan) {
       const plan = await PlanModel.findById(user.plan).lean();
       if (plan && !plan.features.webhooks) {
         throw new ApiError('FEATURE_NOT_AVAILABLE', 'Webhooks are not available on your current plan. Please upgrade.', 403);
       }
     }
+  }
+
+  async updateWebhookUrl(userId: string, url: string) {
+    await this.assertWebhookAccess(userId);
 
     const updated = await UserModel.findOneAndUpdate(
       { $or: [{ oderId: userId }, { _id: userId }] },
@@ -82,7 +94,9 @@ export class UsersService {
       { new: true },
     );
 
-    return { webhookUrl: updated!.webhookUrl! };
+    const webhookSecret = await ensureWebhookSecret(updated!);
+
+    return { webhookUrl: updated!.webhookUrl!, webhookSecret };
   }
 }
 
