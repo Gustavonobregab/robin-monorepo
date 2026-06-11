@@ -18,6 +18,7 @@ const textWorker = new Worker<TextQueueJob>(
   textProcessor,
   {
     connection: redisConnection,
+    concurrency: Number(process.env.TEXT_WORKER_CONCURRENCY ?? 10),
   },
 );
 
@@ -26,10 +27,14 @@ const audioWorker = new Worker<AudioQueueJob>(
   audioProcessor,
   {
     connection: redisConnection,
+    // ffmpeg is CPU-bound; keep this close to the core count of the host
+    concurrency: Number(process.env.AUDIO_WORKER_CONCURRENCY ?? 4),
   },
 );
 
-for (const worker of [textWorker, audioWorker]) {
+const workers = [textWorker, audioWorker];
+
+for (const worker of workers) {
   worker.on('failed', (job, err) => {
     console.error(`[Worker] Job ${job?.data.data.jobId} failed: ${err.message}`);
   });
@@ -38,5 +43,14 @@ for (const worker of [textWorker, audioWorker]) {
     console.log(`[Worker] Job ${job.data.data.jobId} completed`);
   });
 }
+
+const shutdown = async (signal: string) => {
+  console.log(`[Worker] ${signal} received, finishing active jobs...`);
+  await Promise.all(workers.map((worker) => worker.close()));
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 console.log('[Worker] Ready - listening for jobs');

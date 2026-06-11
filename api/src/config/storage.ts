@@ -1,4 +1,5 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
@@ -18,3 +19,11 @@ export const s3 = new S3Client({
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
 });
+
+const DOWNLOAD_URL_TTL = 60 * 60; // 1h; URLs are regenerated on every status read
+
+export function getSignedDownloadUrl(key: string): Promise<string> {
+  return getSignedUrl(s3, new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }), {
+    expiresIn: DOWNLOAD_URL_TTL,
+  });
+}

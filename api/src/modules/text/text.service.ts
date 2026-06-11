@@ -121,6 +121,11 @@ export class TextService {
 
       if (fileId) {
         const upload = await uploadService.getUpload(fileId, userId);
+
+        if (upload.mimeType !== 'application/pdf' && upload.mimeType !== 'text/plain') {
+          throw new ApiError('TEXT_INVALID_INPUT', 'Uploaded file is not a text document', 422);
+        }
+
         source = { kind: 'storage', ref: upload.s3Key };
       } else {
         source = { kind: 'inline', text: text! };

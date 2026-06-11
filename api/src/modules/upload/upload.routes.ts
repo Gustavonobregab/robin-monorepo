@@ -6,38 +6,15 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
   .use(validateAuth)
   .post(
     '/',
-    async ({ body, userId }) => {
-      const { audio } = body;
-      return uploadService.uploadAudio(userId, audio);
-    },
+    async ({ body, userId }) => uploadService.createUpload(userId, body),
     {
       body: t.Object({
-        audio: t.File({
-          maxSize: '100m',
-          type: ['audio/mpeg', 'audio/wav', 'audio/x-wav'],
-        }),
+        filename: t.String({ minLength: 1, maxLength: 255 }),
+        size: t.Number({ minimum: 1 }),
       }),
       detail: {
-        summary: 'Upload audio file',
+        summary: 'Create a presigned upload URL',
         tags: ['Upload'],
       },
-    }
-  )
-  .post(
-    '/document',
-    async ({ body, userId }) => {
-      const { file } = body;
-      return uploadService.uploadFile(userId, file);
     },
-    {
-      body: t.Object({
-        file: t.File({
-          maxSize: '100m',
-        }),
-      }),
-      detail: {
-        summary: 'Upload document file',
-        tags: ['Upload'],
-      },
-    }
   );

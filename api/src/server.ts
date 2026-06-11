@@ -12,6 +12,7 @@ const { usageRoutes } = await import('./modules/usage/usage.routes');
 const { usersRoutes } = await import('./modules/users/users.routes');
 const { audioRoutes } = await import('./modules/audio/audio.routes');
 const { textRoutes } = await import('./modules/text/text.routes');
+const { jobRoutes } = await import('./modules/jobs/job.routes');
 const { uploadRoutes } = await import('./modules/upload/upload.routes');
 const { plansRoutes } = await import('./modules/plans/plans.routes');
 const { v1Routes } = await import('./v1/index');
@@ -30,6 +31,7 @@ const app = new Elysia()
   .use(usersRoutes)
   .use(audioRoutes)
   .use(textRoutes)
+  .use(jobRoutes)
   .use(uploadRoutes)
   .use(plansRoutes)
   .use(v1Routes)

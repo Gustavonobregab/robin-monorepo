@@ -1,3 +1,5 @@
+export {};
+
 const procs = [
   Bun.spawn(['bun', 'run', 'src/server.ts'], { stdout: 'inherit', stderr: 'inherit' }),
   Bun.spawn(['bun', 'run', 'src/worker/index.ts'], { stdout: 'inherit', stderr: 'inherit' }),

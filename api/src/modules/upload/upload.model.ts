@@ -1,4 +1,5 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, type Model } from 'mongoose';
+import type { UploadDocument } from './upload.types';
 
 const uploadSchema = new Schema(
   {
@@ -7,7 +8,7 @@ const uploadSchema = new Schema(
     mimeType: { type: String, required: true, enum: ['audio/mpeg', 'audio/wav', 'application/pdf', 'text/plain'] },
     size: { type: Number, required: true },
     s3Key: { type: String, required: true },
-    status: { type: String, enum: ['ready'], default: 'ready' },
+    status: { type: String, enum: ['pending', 'ready'], default: 'pending' },
     expiresAt: { type: Date, required: true },
   },
   { timestamps: true }
@@ -16,4 +17,4 @@ const uploadSchema = new Schema(
 uploadSchema.index({ userId: 1, createdAt: -1 });
 uploadSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const UploadModel = model('Upload', uploadSchema);
+export const UploadModel: Model<UploadDocument> = model<UploadDocument>('Upload', uploadSchema);

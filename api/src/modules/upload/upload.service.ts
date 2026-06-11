@@ -1,4 +1,8 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { addHours } from 'date-fns';
+import { ulid } from 'ulidx';
+import type { HydratedDocument } from 'mongoose';
 import { s3, S3_BUCKET } from '../../config/storage';
 import { UploadModel } from './upload.model';
 import { ApiError } from '../../utils/api-error';
@@ -6,98 +10,65 @@ import {
   validateMagicBytes,
   ALLOWED_EXTENSIONS,
   MAX_FILE_SIZE,
-  type UploadResponse,
+  type CreateUploadResponse,
+  type UploadDocument,
 } from './upload.types';
-import { addHours } from 'date-fns';
 import { UserModel } from '../users/users.model';
 import { PlanModel } from '../plans/plans.model';
 
 const MIME_MAP: Record<string, string> = {
-  mp3: 'audio/mpeg',
-  wav: 'audio/wav',
-  pdf: 'application/pdf',
-  txt: 'text/plain',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain',
 };
 
+const UPLOAD_URL_TTL = 15 * 60; // seconds
+const UPLOAD_RETENTION_HOURS = 24;
+
 export class UploadService {
-  async uploadAudio(userId: string, file: File): Promise<UploadResponse> {
-    return this.uploadFile(userId, file);
-  }
+  async createUpload(
+    userId: string,
+    input: { filename: string; size: number },
+  ): Promise<CreateUploadResponse> {
+    const ext = this.getExtension(input.filename);
 
-  async uploadFile(userId: string, file: File): Promise<UploadResponse> {
-
-    if (!file) {
-      throw new ApiError('MISSING_FILE', 'File is required', 400);
-    }
-
-    // Use plan-based file size limit, fallback to global MAX_FILE_SIZE
-    let maxSize = MAX_FILE_SIZE;
-    const user = await UserModel.findOne({
-      $or: [{ oderId: userId }, { _id: userId }],
-    }).lean();
-
-    if (user?.plan) {
-      const plan = await PlanModel.findById(user.plan).lean();
-      if (plan) {
-        maxSize = plan.features.maxFileSize;
-      }
-    }
-
-    if (file.size > maxSize) {
-      throw new ApiError('FILE_TOO_LARGE', `File exceeds ${Math.round(maxSize / 1024 / 1024)}MB limit on your plan`, 413);
-    }
-
-    const ext = this.getExtension(file.name);
-
-    if (!ALLOWED_EXTENSIONS.includes(ext as any)) {
+    if (!ALLOWED_EXTENSIONS.includes(ext as (typeof ALLOWED_EXTENSIONS)[number])) {
       throw new ApiError('INVALID_FORMAT', `Only ${ALLOWED_EXTENSIONS.join(', ')} files are accepted`, 422);
     }
 
-    const buffer = new Uint8Array(await file.arrayBuffer());
+    const maxSize = await this.getMaxFileSize(userId);
 
-    let format: string;
-
-    if (ext === '.txt') {
-      format = 'txt';
-    } else {
-      const detectedFormat = validateMagicBytes(buffer);
-
-      if (!detectedFormat) {
-        throw new ApiError('INVALID_FORMAT', 'File content does not match a valid format', 422);
-      }
-
-      format = detectedFormat;
+    if (input.size > maxSize) {
+      throw new ApiError('FILE_TOO_LARGE', `File exceeds ${Math.round(maxSize / 1024 / 1024)}MB limit on your plan`, 413);
     }
 
-    const { ulid } = await import('ulidx');
+    const s3Key = `uploads/${userId}/${ulid()}${ext}`;
+    const mimeType = MIME_MAP[ext];
 
-    const uploadId = ulid();
+    const uploadUrl = await getSignedUrl(
+      s3,
+      new PutObjectCommand({ Bucket: S3_BUCKET, Key: s3Key, ContentType: mimeType }),
+      { expiresIn: UPLOAD_URL_TTL },
+    );
 
-    const s3Key = `uploads/${userId}/${uploadId}.${format}`;
+    const expiresAt = addHours(new Date(), UPLOAD_RETENTION_HOURS);
 
-    await s3.send(new PutObjectCommand({
-      Bucket: S3_BUCKET,
-      Key: s3Key,
-      Body: buffer,
-      ContentType: MIME_MAP[format],
-    }));
-
-    const expiresAt = addHours(new Date(), 24);
-    
     const doc = await UploadModel.create({
       userId,
-      originalName: file.name,
-      mimeType: MIME_MAP[format],
-      size: file.size,
+      originalName: input.filename,
+      mimeType,
+      size: input.size,
       s3Key,
-      status: 'ready',
+      status: 'pending',
       expiresAt,
     });
 
     return {
       id: doc._id.toString(),
-      originalName: doc.originalName,
-      size: doc.size,
+      uploadUrl,
+      contentType: mimeType,
+      uploadUrlExpiresIn: UPLOAD_URL_TTL,
       expiresAt: expiresAt.toISOString(),
     };
   }
@@ -113,15 +84,62 @@ export class UploadService {
       throw new ApiError('UPLOAD_NOT_FOUND', 'Upload not found', 404);
     }
 
-    if (doc.status !== 'ready') {
-      throw new ApiError('UPLOAD_NOT_FOUND', 'Upload not found', 404);
-    }
-
     if (doc.expiresAt < new Date()) {
       throw new ApiError('UPLOAD_EXPIRED', 'Upload has expired', 410);
     }
 
+    if (doc.status === 'pending') {
+      await this.finalizeUpload(doc);
+    }
+
     return doc;
+  }
+
+  // First consumption of an upload: confirm the object landed in storage and
+  // matches the declared size/format before any job processes it.
+  private async finalizeUpload(doc: HydratedDocument<UploadDocument>) {
+    let contentLength: number;
+
+    try {
+      const head = await s3.send(new HeadObjectCommand({ Bucket: S3_BUCKET, Key: doc.s3Key }));
+      contentLength = head.ContentLength ?? 0;
+    } catch {
+      throw new ApiError('UPLOAD_NOT_COMPLETED', 'File was not uploaded to the provided URL', 409);
+    }
+
+    const maxSize = await this.getMaxFileSize(doc.userId);
+
+    if (contentLength > maxSize) {
+      throw new ApiError('FILE_TOO_LARGE', `File exceeds ${Math.round(maxSize / 1024 / 1024)}MB limit on your plan`, 413);
+    }
+
+    if (doc.mimeType !== 'text/plain') {
+      const range = await s3.send(
+        new GetObjectCommand({ Bucket: S3_BUCKET, Key: doc.s3Key, Range: 'bytes=0-11' }),
+      );
+      const headerBytes = await range.Body!.transformToByteArray();
+
+      if (!validateMagicBytes(headerBytes)) {
+        throw new ApiError('INVALID_FORMAT', 'File content does not match a valid format', 422);
+      }
+    }
+
+    doc.size = contentLength;
+    doc.status = 'ready';
+    await doc.save();
+  }
+
+  private async getMaxFileSize(userId: string): Promise<number> {
+    const user = await UserModel.findOne({
+      $or: [{ oderId: userId }, { _id: userId }],
+    }).lean();
+
+    if (user?.plan) {
+      const plan = await PlanModel.findById(user.plan).lean();
+      if (plan) return plan.features.maxFileSize;
+    }
+
+    return MAX_FILE_SIZE;
   }
 
   private getExtension(filename: string): string {

@@ -7,10 +7,7 @@ import { usageService } from '../modules/usage/usage.service';
 import { rollbackCredits } from '../middlewares/credits';
 import { webhooksService } from '../modules/webhooks/webhooks.service';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3, S3_BUCKET } from '../config/storage';
-
-const SIGNED_URL_TTL = 72 * 60 * 60; // 72h in seconds
 
 const log = (jobId: string, msg: string) => console.log(`[TEXT:${jobId}] ${msg}`);
 
@@ -69,13 +66,7 @@ async function persistOutput(id: string, output: string, isFile: boolean) {
   }));
   log(id, `Uploaded output to S3: ${outputKey}`);
 
-  const outputUrl = await getSignedUrl(
-    s3,
-    new GetObjectCommand({ Bucket: S3_BUCKET, Key: outputKey }),
-    { expiresIn: SIGNED_URL_TTL },
-  );
-
-  return { outputUrl };
+  return { outputKey };
 }
 
 const kb = (text: string) => (new TextEncoder().encode(text).byteLength / 1024).toFixed(1);

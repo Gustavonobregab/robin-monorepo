@@ -3,7 +3,6 @@ import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import type { Job } from 'bullmq';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { AudioQueueJob } from '../queues/audio.queue';
 import type { AudioJobPayload } from '../modules/jobs/job.types';
 import { JobModel } from '../modules/jobs/job.model';
@@ -13,8 +12,6 @@ import { probeAudio } from './audio/probe';
 import { usageService } from '../modules/usage/usage.service';
 import { rollbackCredits } from '../middlewares/credits';
 import { webhooksService } from '../modules/webhooks/webhooks.service';
-
-const HOURS_72 = 72 * 60 * 60; // seconds
 
 const log = (jobId: string, msg: string) => console.log(`[AUDIO:${jobId}] ${msg}`);
 
@@ -88,18 +85,11 @@ export default async function (job: Job<AudioQueueJob>) {
 
     log(id, `Uploaded output to S3: ${outputKey}`);
 
-    // Generate presigned URL (72h; aligned with S3 lifecycle since PutObject runs first)
-    const outputUrl = await getSignedUrl(
-      s3,
-      new GetObjectCommand({ Bucket: S3_BUCKET, Key: outputKey }),
-      { expiresIn: HOURS_72 }
-    );
-
     await JobModel.findByIdAndUpdate(id, {
       status: 'completed',
       completedAt: new Date(),
       result: {
-        outputUrl,
+        outputKey,
         metrics: {
           inputSize,
           outputSize,

@@ -3,7 +3,8 @@ import type { ApiKey } from './keys.types';
 
 const apiKeySchema = new Schema<ApiKey>({
   userId: { type: String, required: true },
-  key: { type: String, required: true },
+  keyHash: { type: String, required: true },
+  keyPrefix: { type: String, required: true },
   name: { type: String, required: true },
   status: { type: String, enum: ['active', 'revoked'], default: 'active' },
   revokedAt: Date,
@@ -11,7 +12,7 @@ const apiKeySchema = new Schema<ApiKey>({
   lastUsedAt: Date,
 });
 
-apiKeySchema.index({ key: 1 }, { unique: true });
+apiKeySchema.index({ keyHash: 1 }, { unique: true });
 apiKeySchema.index({ userId: 1 });
 
 export const ApiKeyModel: Model<ApiKey> = model<ApiKey>('ApiKey', apiKeySchema);

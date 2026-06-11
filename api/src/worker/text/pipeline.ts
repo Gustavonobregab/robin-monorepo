@@ -9,7 +9,8 @@ export async function processText(
 
   for (const op of operations) {
     const handler = getHandler(op.type);
-    current = await handler.process(current, op.params as any);
+    const params = 'params' in op ? op.params : undefined;
+    current = await handler.process(current, params as any);
   }
 
   return current;

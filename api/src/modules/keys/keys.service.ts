@@ -1,9 +1,11 @@
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { ApiKeyModel } from './keys.model';
-import type { ApiKey } from './keys.types';
+import type { ApiKey, ApiKeyView } from './keys.types';
 import { ApiError } from '../../utils/api-error';
 import { UserModel } from '../users/users.model';
 import { PlanModel } from '../plans/plans.model';
+
+const LAST_USED_THROTTLE_MS = 60_000;
 
 export class KeysService {
   private generateApiKey(): string {
@@ -12,7 +14,11 @@ export class KeysService {
     return `${prefix}${randomPart}`;
   }
 
-  async createKey(userId: string, name: string): Promise<ApiKey> {
+  private hashKey(key: string): string {
+    return createHash('sha256').update(key).digest('hex');
+  }
+
+  async createKey(userId: string, name: string): Promise<ApiKeyView & { key: string }> {
     const existingKeys = await ApiKeyModel.countDocuments({ userId, status: 'active' });
 
     // Get max keys from user's plan, fallback to 5
@@ -36,18 +42,20 @@ export class KeysService {
 
     const apiKey = await ApiKeyModel.create({
       userId,
-      key,
+      keyHash: this.hashKey(key),
+      keyPrefix: key.slice(0, 12),
       name,
       status: 'active',
       createdAt: new Date(),
     });
 
-    return apiKey;
+    // The raw key is returned exactly once; only its hash is stored
+    return { ...this.toView(apiKey.toObject()), key };
   }
 
-  async getKeysByUserId(userId: string): Promise<ApiKey[]> {
+  async getKeysByUserId(userId: string): Promise<ApiKeyView[]> {
     const keys = await ApiKeyModel.find({ userId }).sort({ createdAt: -1 }).lean();
-    return keys;
+    return keys.map((key) => this.toView(key));
   }
 
   async revokeKey(userId: string, keyId: string): Promise<void> {
@@ -72,13 +80,16 @@ export class KeysService {
       throw new ApiError('API_KEY_REQUIRED', 'API key is required', 401);
     }
 
-    const keyRecord = await ApiKeyModel.findOne({ key, status: 'active' });
+    const keyRecord = await ApiKeyModel.findOne({ keyHash: this.hashKey(key), status: 'active' });
 
     if (!keyRecord) {
       throw new ApiError('INVALID_API_KEY', 'Invalid or revoked API key', 401);
     }
 
-    await ApiKeyModel.updateOne({ _id: keyRecord._id }, { lastUsedAt: new Date() });
+    const lastUsed = keyRecord.lastUsedAt?.getTime() ?? 0;
+    if (Date.now() - lastUsed > LAST_USED_THROTTLE_MS) {
+      await ApiKeyModel.updateOne({ _id: keyRecord._id }, { lastUsedAt: new Date() });
+    }
 
     return {
       valid: true,
@@ -88,8 +99,12 @@ export class KeysService {
     };
   }
 
-  async getKeyById(userId: string, keyId: string): Promise<ApiKey | null> {
+  async getKeyById(userId: string, keyId: string): Promise<ApiKeyView | null> {
     const key = await ApiKeyModel.findOne({ _id: keyId, userId }).lean();
+    return key ? this.toView(key) : null;
+  }
+
+  private toView({ keyHash: _, ...key }: ApiKey): ApiKeyView {
     return key;
   }
 }

@@ -1,3 +1,4 @@
+import { t } from "elysia";
 import type { AudioPreset } from "../audio/audio.types";
 import type { AudioOperation } from "../audio/audio.types";
 import type { TextPreset } from "../text/text.types";
@@ -63,7 +64,7 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
     completedAt?: Date;
     error?: string;
     result?: {
-      outputUrl?: string;
+      outputKey?: string;
       outputText?: string;
       metrics?: Record<string, unknown>;
     };
@@ -90,4 +91,36 @@ export type JobPayload = AudioJobPayload | TextJobPayload | ImageJobPayload;
       metrics?: Record<string, unknown>;
     };
   };
-    
+
+  export type JobListItem = {
+    id: string;
+    type: JobType;
+    status: JobStatus;
+    name?: string;
+    error?: string;
+    metrics?: Record<string, unknown>;
+    createdAt: Date;
+    completedAt?: Date;
+  };
+
+  export type JobListQuery = {
+    type?: 'text' | 'audio';
+    status?: JobStatus;
+    limit?: number;
+    cursor?: string;
+  };
+
+  export const JobListQuerySchema = t.Object({
+    type: t.Optional(t.Union([t.Literal('text'), t.Literal('audio')])),
+    status: t.Optional(
+      t.Union([
+        t.Literal('created'),
+        t.Literal('pending'),
+        t.Literal('processing'),
+        t.Literal('completed'),
+        t.Literal('failed'),
+      ]),
+    ),
+    limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+    cursor: t.Optional(t.String({ pattern: '^[a-f0-9]{24}$' })),
+  });

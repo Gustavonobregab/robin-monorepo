@@ -2,8 +2,6 @@ import { Elysia, t } from 'elysia';
 import { validateAuth } from '../../middlewares/auth';
 import { audioService } from './audio.service';
 import { AudioOperationSchema, AudioPresetSchema } from './audio.types';
-import { jobService } from '../jobs/job.service';
-import { ApiError } from '../../utils/api-error';
 
 export const audioRoutes = new Elysia({ prefix: '/audio' })
   .use(validateAuth)
@@ -28,25 +26,6 @@ export const audioRoutes = new Elysia({ prefix: '/audio' })
       }),
       detail: {
         summary: 'Create audio processing job',
-        tags: ['Audio'],
-      },
-    }
-  )
-
-  .get(
-    '/jobs/:id',
-    async ({ params: { id }, userId }) => {
-      const job = await jobService.getStatus(userId, id);
-
-      if (!job) {
-        throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
-      }
-
-      return job;
-    },
-    {
-      detail: {
-        summary: 'Get audio job status',
         tags: ['Audio'],
       },
     }

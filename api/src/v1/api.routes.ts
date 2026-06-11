@@ -1,15 +1,18 @@
 import { Elysia, t } from 'elysia';
+import { apiKeyAuth } from './api.middleware';
 import { audioService } from '../modules/audio/audio.service';
 import { textService } from '../modules/text/text.service';
 import { uploadService } from '../modules/upload/upload.service';
 import { usageService } from '../modules/usage/usage.service';
 import { jobService } from '../modules/jobs/job.service';
+import { JobListQuerySchema } from '../modules/jobs/job.types';
 import { AudioOperationSchema, AudioPresetSchema } from '../modules/audio/audio.types';
 import { TextOperationSchema, TextPresetSchema } from '../modules/text/text.types';
 import { ApiError } from '../utils/api-error';
 import { UserModel } from '../modules/users/users.model';
 
 export const apiRoutes = new Elysia()
+  .use(apiKeyAuth)
 
   // ─── Audio ─────────────────────────────────────────
   .post(
@@ -29,12 +32,6 @@ export const apiRoutes = new Elysia()
       }),
     }
   )
-
-  .get('/audio/jobs/:id', async ({ params: { id }, userId }) => {
-    const job = await jobService.getStatus(userId, id);
-    if (!job) throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
-    return job;
-  })
 
   .get('/audio/presets', () => audioService.listPresets())
 
@@ -57,42 +54,31 @@ export const apiRoutes = new Elysia()
     }
   )
 
-  .get('/text/jobs/:id', async ({ params: { id }, userId }) => {
+  .get('/text/presets', () => textService.listPresets())
+
+  .get('/text/operations', () => textService.listOperations())
+
+  // ─── Jobs ──────────────────────────────────────────
+  .get(
+    '/jobs',
+    async ({ query, userId }) => jobService.list(userId, query),
+    { query: JobListQuerySchema }
+  )
+
+  .get('/jobs/:id', async ({ params: { id }, userId }) => {
     const job = await jobService.getStatus(userId, id);
     if (!job) throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
     return job;
   })
 
-  .get('/text/presets', () => textService.listPresets())
-
-  .get('/text/operations', () => textService.listOperations())
-
   // ─── Upload ────────────────────────────────────────
   .post(
     '/upload',
-    async ({ body, userId }) => {
-      const { audio } = body;
-      return uploadService.uploadAudio(userId, audio);
-    },
+    async ({ body, userId }) => uploadService.createUpload(userId, body),
     {
       body: t.Object({
-        audio: t.File({
-          maxSize: '100m',
-          type: ['audio/mpeg', 'audio/wav', 'audio/x-wav'],
-        }),
-      }),
-    }
-  )
-
-  .post(
-    '/upload/document',
-    async ({ body, userId }) => {
-      const { file } = body;
-      return uploadService.uploadFile(userId, file);
-    },
-    {
-      body: t.Object({
-        file: t.File({ maxSize: '100m' }),
+        filename: t.String({ minLength: 1, maxLength: 255 }),
+        size: t.Number({ minimum: 1 }),
       }),
     }
   )

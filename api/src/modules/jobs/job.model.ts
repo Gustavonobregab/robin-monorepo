@@ -21,7 +21,7 @@ const jobSchema = new Schema(
     completedAt: { type: Date },
     error: { type: String },
     result: {
-      outputUrl: { type: String },
+      outputKey: { type: String },
       outputText: { type: String },
       metrics: { type: Schema.Types.Mixed },
     },

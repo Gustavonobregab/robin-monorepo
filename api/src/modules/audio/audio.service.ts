@@ -28,6 +28,10 @@ export class AudioService {
     // Resolve audioId to upload document; validates ownership and expiry
     const upload = await uploadService.getUpload(audioId, userId);
 
+    if (!upload.mimeType.startsWith('audio/')) {
+      throw new ApiError('AUDIO_INVALID_INPUT', 'Uploaded file is not an audio file', 422);
+    }
+
     const operations = this.resolveOperations(preset, customOps);
 
     if (input.webhookUrl) {

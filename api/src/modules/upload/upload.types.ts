@@ -5,16 +5,17 @@ export type UploadDocument = {
   mimeType: string;
   size: number;
   s3Key: string;
-  status: 'ready';
+  status: 'pending' | 'ready';
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type UploadResponse = {
+export type CreateUploadResponse = {
   id: string;
-  originalName: string;
-  size: number;
+  uploadUrl: string;
+  contentType: string;
+  uploadUrlExpiresIn: number;
   expiresAt: string;
 };
 
