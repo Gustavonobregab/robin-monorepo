@@ -4,29 +4,14 @@ import { t, type Static } from 'elysia';
 export const TEXT_OPERATIONS = {
   'trim': {
     name: 'Trim',
-    description: 'Advanced cleaning & punctuation fix',
-    params: {
-      intensity: { type: 'number', min: 0, max: 100, default: 50 },
-    },
-  },
-  'shorten': {
-    name: 'Shorten',
-    description: 'Dictionary replacement (PT/EN)',
-    params: {
-      lang: { type: 'string', default: 'EN' },
-      intensity: { type: 'number', min: 0, max: 100, default: 50 },
-    },
-  },
-  'minify': {
-    name: 'Minify',
-    description: 'Aggressive compression',
+    description: 'Whitespace, punctuation and unicode cleanup — lossless for meaning',
     params: {
       intensity: { type: 'number', min: 0, max: 100, default: 50 },
     },
   },
   'json-to-toon': {
-    name: 'JSON to Toon',
-    description: 'Convert JSON blocks to TOON',
+    name: 'JSON to TOON',
+    description: 'Convert large JSON blocks to TOON tabular notation (skips blocks too small to benefit)',
     params: {},
   },
 } as const;
@@ -43,18 +28,17 @@ export const TEXT_PRESETS = {
   },
   medium: {
     name: 'Medium',
-    description: 'Trim + Shorten for balanced compression',
+    description: 'Full cleanup: whitespace, punctuation and unicode normalization',
     operations: [
-      { type: 'trim', params: { intensity: 50 } },
-      { type: 'shorten', params: { lang: 'EN', intensity: 50 } },
+      { type: 'trim', params: { intensity: 70 } },
     ],
   },
   aggressive: {
     name: 'Aggressive',
-    description: 'Shorten + Minify for maximum compression',
+    description: 'Full cleanup + JSON blocks converted to TOON',
     operations: [
-      { type: 'shorten', params: { lang: 'PT', intensity: 80 } },
-      { type: 'minify', params: { intensity: 80 } },
+      { type: 'trim', params: { intensity: 80 } },
+      { type: 'json-to-toon' },
     ],
   },
 } as const;
@@ -65,19 +49,6 @@ export type TextPreset = keyof typeof TEXT_PRESETS;
 export const TextOperationSchema = t.Union([
   t.Object({
     type: t.Literal('trim'),
-    params: t.Optional(t.Object({
-      intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
-    })),
-  }),
-  t.Object({
-    type: t.Literal('shorten'),
-    params: t.Optional(t.Object({
-      lang: t.Optional(t.Union([t.Literal('EN'), t.Literal('PT')])),
-      intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
-    })),
-  }),
-  t.Object({
-    type: t.Literal('minify'),
     params: t.Optional(t.Object({
       intensity: t.Optional(t.Number({ minimum: 0, maximum: 100 })),
     })),

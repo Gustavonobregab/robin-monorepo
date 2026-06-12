@@ -33,9 +33,14 @@ export default async function (job: Job<AudioQueueJob>) {
 
   await JobModel.findByIdAndUpdate(id, { status: 'processing' });
 
+  const encodeOp = payload.operations.find((op) => op.type === 'encode');
+  const format = (encodeOp?.params as { format?: string } | undefined)?.format === 'mp3' ? 'mp3' : 'opus';
+  const outputExt = format === 'mp3' ? 'mp3' : 'ogg';
+  const outputContentType = format === 'mp3' ? 'audio/mpeg' : 'audio/ogg';
+
   const workDir = await mkdtemp(join(tmpdir(), 'rw-audio-'));
   const inputPath = join(workDir, 'input');
-  const outputPath = join(workDir, 'output.mp3');
+  const outputPath = join(workDir, `output.${outputExt}`);
 
   try {
     const start = Date.now();
@@ -72,7 +77,7 @@ export default async function (job: Job<AudioQueueJob>) {
     log(id, `Done: ${(inputSize / 1024 / 1024).toFixed(2)}MB to ${(outputSize / 1024 / 1024).toFixed(2)}MB (ratio: ${ratio}x)`);
 
     // Upload output to S3
-    const outputKey = `outputs/${id}/result.mp3`;
+    const outputKey = `outputs/${id}/result.${outputExt}`;
 
     const outputBuffer = await outputFile.arrayBuffer();
 
@@ -80,7 +85,7 @@ export default async function (job: Job<AudioQueueJob>) {
       Bucket: S3_BUCKET,
       Key: outputKey,
       Body: new Uint8Array(outputBuffer),
-      ContentType: 'audio/mpeg',
+      ContentType: outputContentType,
     }));
 
     log(id, `Uploaded output to S3: ${outputKey}`);

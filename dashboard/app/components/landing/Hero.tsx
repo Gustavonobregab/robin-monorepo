@@ -66,7 +66,7 @@ export function Hero() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-border">
                   <div className="p-4 sm:p-6 space-y-3 border-b sm:border-b-0 border-border">
                     <div className="text-xs text-muted uppercase tracking-wider mb-4">Operations</div>
-                    {['Trim whitespace', 'Remove stopwords', 'Minify', 'Summarize'].map((op, i) => (
+                    {['Trim whitespace', 'Fix punctuation', 'Normalize unicode', 'JSON to TOON'].map((op, i) => (
                       <div
                         key={op}
                         className={cn(

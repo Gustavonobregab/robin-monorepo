@@ -76,7 +76,7 @@ function ImageVisual() {
 const TOOLS = [
   {
     label: 'Text',
-    subtitle: 'Compress & minify text',
+    subtitle: 'Clean & compress text',
     href: '/dashboard/text',
     bg: 'bg-accent-light/25',
     Visual: TextVisual,

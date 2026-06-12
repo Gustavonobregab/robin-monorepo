@@ -34,6 +34,15 @@ export const AUDIO_OPERATIONS = {
       rate: { type: 'number', min: 0.5, max: 5.0, default: 1.25 },
     },
   },
+  'encode': {
+    name: 'Encode',
+    description: 'Output encoding — Opus mono VBR by default (best quality per bitrate for voice), MP3 for compatibility',
+    params: {
+      format: { type: 'string', default: 'opus' },
+      bitrate: { type: 'number', min: 12, max: 128, default: 24 },
+      channels: { type: 'number', min: 1, max: 2, default: 1 },
+    },
+  },
 } as const;
 
 export type AudioOperationType = keyof typeof AUDIO_OPERATIONS;
@@ -41,47 +50,52 @@ export type AudioOperationType = keyof typeof AUDIO_OPERATIONS;
 export const AUDIO_PRESETS = {
   chill: {
     name: 'Chill',
-    description: 'Light processing, preserves original dynamics',
+    description: 'Light processing, near-transparent quality (Opus 32k)',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.2 } },
       { type: 'normalize', params: { targetLevel: -16 } },
+      { type: 'encode', params: { bitrate: 32 } },
     ],
   },
   medium: {
     name: 'Medium',
-    description: 'Balanced processing for general use',
+    description: 'Balanced processing for general use (Opus 24k)',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.5 } },
       { type: 'normalize', params: { targetLevel: -14 } },
       { type: 'compress', params: { ratio: 3, threshold: -24 } },
+      { type: 'encode', params: { bitrate: 24 } },
     ],
   },
   aggressive: {
     name: 'Aggressive',
-    description: 'Heavy processing, maximizes loudness',
+    description: 'Maximum size reduction, VoIP-grade quality (Opus 12k)',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.8 } },
       { type: 'speedup', params: { rate: 1.75 } },
       { type: 'normalize', params: { targetLevel: -10 } },
       { type: 'compress', params: { ratio: 8, threshold: -18 } },
+      { type: 'encode', params: { bitrate: 12 } },
     ],
   },
   podcast: {
     name: 'Podcast',
-    description: 'Optimized for voice content',
+    description: 'Optimized for voice content (Opus 24k)',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.6, minSilenceDuration: 800 } },
       { type: 'normalize', params: { targetLevel: -16, peakNormalize: false } },
       { type: 'compress', params: { ratio: 4, threshold: -20, attack: 5, release: 150 } },
+      { type: 'encode', params: { bitrate: 24 } },
     ],
   },
   lecture: {
     name: 'Lecture Mode',
-    description: 'Trim silence + 1.5x Speed + Normalize',
+    description: 'Trim silence + 1.5x Speed + Normalize (Opus 16k)',
     operations: [
       { type: 'trim-silence', params: { aggressiveness: 0.4, minSilenceDuration: 500 } },
       { type: 'speedup', params: { rate: 1.5 } },
       { type: 'normalize', params: { targetLevel: -14 } },
+      { type: 'encode', params: { bitrate: 16 } },
     ],
   },
 } as const;
@@ -117,6 +131,14 @@ export const AudioOperationSchema = t.Union([
     type: t.Literal('speedup'),
     params: t.Optional(t.Object({
       rate: t.Optional(t.Number({ minimum: 0.5, maximum: 5.0 })),
+    })),
+  }),
+  t.Object({
+    type: t.Literal('encode'),
+    params: t.Optional(t.Object({
+      format: t.Optional(t.Union([t.Literal('opus'), t.Literal('mp3')])),
+      bitrate: t.Optional(t.Number({ minimum: 12, maximum: 128 })),
+      channels: t.Optional(t.Union([t.Literal(1), t.Literal(2)])),
     })),
   }),
 ]);

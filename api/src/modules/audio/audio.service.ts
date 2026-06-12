@@ -93,7 +93,11 @@ export class AudioService {
       ops = customOps!;
     }
 
-    return ops.map((op) => {
+    if (!ops.some((op) => op.type === 'encode')) {
+      ops = [...ops, { type: 'encode' } as AudioOperation];
+    }
+
+    const merged = ops.map((op) => {
       const definition = AUDIO_OPERATIONS[op.type as keyof typeof AUDIO_OPERATIONS];
       if (!definition) return op;
 
@@ -103,6 +107,10 @@ export class AudioService {
 
       return { ...op, params: { ...defaults, ...op.params } };
     });
+
+    // Encoding always runs last; if several were sent, the last one wins
+    const encodeOp = merged.filter((op) => op.type === 'encode').pop()!;
+    return [...merged.filter((op) => op.type !== 'encode'), encodeOp];
   }
 
   listPresets() {

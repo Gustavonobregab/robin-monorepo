@@ -1,0 +1,329 @@
+{
+  "summary": "Deep research harness — fan-out web searches, fetch sources, adversarially verify claims, synthesize a cited report.",
+  "agentCount": 106,
+  "logs": [
+    "Q: Two-track research for Robin Wood, a compression-as-a-service API (Bun/TypeScrip…",
+    "Decomposed into 5 angles: Text: LLM prompt compression state-of-art and tradeoffs, Text: compact serialization formats vs classic lossless (skeptical angle), Audio: speech codec quality-per-bitrate benchmarks, Audio: practitioner ffmpeg pipeline parameters, Competitive landscape and commercial practice",
+    "Audio: speech codec quality-per-bitrate benchmarks: 6 results",
+    "Competitive landscape and commercial practice: 6 results",
+    "Text: LLM prompt compression state-of-art and tradeoffs: 6 results",
+    "Text: LLM prompt compression state-of-art and tradeoffs: 4 novel (2 filtered)",
+    "Audio: practitioner ffmpeg pipeline parameters: 6 results",
+    "Audio: practitioner ffmpeg pipeline parameters: 4 novel (2 filtered)",
+    "Text: compact serialization formats vs classic lossless (skeptical angle): 6 results",
+    "Text: compact serialization formats vs classic lossless (skeptical angle): 4 novel (2 filtered)",
+    "Fetched 24 sources → 120 claims → verifying top 25",
+    "\"LLMLingua-2 does not require a large LLM in the in…\": 3-0 ✓",
+    "\"LLMLingua-2 is 3x-6x faster than prior prompt comp…\": 3-0 ✓",
+    "\"LLMLingua-2 achieves prompt compression ratios of …\": 3-0 ✓",
+    "\"LLMLingua requires a small language model (SLM) in…\": 3-0 ✓",
+    "\"LLMLingua achieves up to 20x prompt compression wi…\": 3-0 ✓",
+    "\"LLMLingua-2 reduces the in-the-loop model requirem…\": 3-0 ✓",
+    "\"Prompt compression can improve rather than degrade…\": 3-0 ✓",
+    "\"Prompt compression with LLMLingua-2 yields at most…\": 1-2 ✗",
+    "\"Quality preservation under LLMLingua-2 compression…\": 3-0 ✓",
+    "\"When the target model is served behind a commercia…\": 3-0 ✓",
+    "\"LLMLingua-2 (encoder/token-classification approach…\": 3-0 ✓",
+    "\"Aggressive truncation-based prompt compression (fi…\": 2-1 ✓",
+    "\"Aggressive prompt compression can paradoxically in…\": 3-0 ✓",
+    "\"In a benchmark of structured-data generation, plai…\": 3-0 ✓",
+    "\"TOON's token-savings advantage in generation tasks…\": 3-0 ✓",
+    "\"For simple data structures, JSON with constrained …\": 3-0 ✓",
+    "\"In HydrogenAudio ABC/HR listening tests on 48 kHz …\": 3-0 ✓",
+    "\"In HydrogenAudio ABC/HR tests at 96 kb/s, Opus out…\": 3-0 ✓",
+    "\"In MUSHRA listening tests, Opus at 20 kb/s outperf…\": 3-0 ✓",
+    "\"Opus achieves better speech quality in VBR mode th…\": 3-0 ✓",
+    "\"Opus at 32 kbps is nearly transparent against full…\": 3-0 ✓",
+    "\"For VoIP-grade mono speech, Opus is usable down to…\": 3-0 ✓",
+    "\"For audiobooks and podcasts, Opus needs only 24 kb…\": 3-0 ✓",
+    "\"Opus at 20 kb/s wideband speech matches the percei…\": 3-0 ✓",
+    "\"Mono speech audio bandwidth scales with Opus bitra…\": 0-3 ✗",
+    "Verify done: 25 claims → 23 confirmed, 2 killed"
+  ],
+  "result": {
+    "question": "Two-track research for Robin Wood, a compression-as-a-service API (Bun/TypeScript, ffmpeg available on workers; current MVP ops — text: whitespace/punctuation trim, PT/EN dictionary word shortening, aggressive minify, JSON→TOON conversion; audio: ffmpeg silence-trim, loudness normalize, dynamic range compression, speed-up, MP3 output).\n\nTrack 1 — Text compression that delivers measurable value via an API in 2026: (a) LLM-context/prompt compression techniques and their real token-reduction vs quality tradeoffs (LLMLingua family, TOON and compact serialization formats, extractive/abstractive summarization, semantic deduplication), (b) classic lossless compression (gzip/brotli/zstd) and when an API returning compressed text actually makes sense, (c) what competing products/APIs offer and charge for. Which techniques reliably produce relevant results without an LLM in the loop, and which require one?\n\nTrack 2 — Audio compression for voice/podcast content: best-practice ffmpeg pipelines for maximum size reduction with acceptable voice quality — codec choice (Opus vs AAC vs MP3: quality-per-bitrate at 16-64kbps for speech, compatibility tradeoffs), mono downmix + sample-rate reduction for speech, VBR settings, silence removal (silenceremove vs VAD), loudness standards (EBU R128 / LUFS targets for podcasts), dynamic range compression defaults that do not ruin audio. What do transcription-prep and podcast tools (Auphonic, Descript, ElevenLabs, AssemblyAI preprocessing) actually do?\n\nDeliverable: evidence-backed recommendations of what an MVP compression API should keep, drop, and add — ranked by impact vs implementation effort, with concrete parameter recommendations (codecs, bitrates, technique choices) we can implement directly in our ffmpeg/TypeScript pipeline.",
+    "summary": "For Track 1 (text), the evidence says Robin Wood's current LLM-context ops are backwards: aggressive minify and dictionary word-shortening risk destroying instruction semantics and can increase total customer cost via output-token explosion (up to 38x-56x longer outputs at heavy compression, with output tokens ~3x the input price), while the technique that actually delivers — LLMLingua-2-style token classification — gives 2x-5x reduction with predictable output size using only a BERT-sized encoder (110M-355M params), no LLM call per request. The defensible value proposition is token/cost savings, not latency: behind commercial APIs (GPT-3.5/4o-mini) compression yields no reliable speedup. JSON-to-TOON should be demoted to an opt-in for large uniform tabular input payloads only — two independent benchmarks show TOON loses accuracy for generation and its \"prompt tax\" negates savings on small payloads. For Track 2 (audio), the highest-impact, lowest-effort change is switching default output from MP3 to Opus: blind listening tests show MP3 needs ~40% more bitrate and still loses, and Opus mono speech is near-transparent at 32 kbps, fullband at 24 kbps, usable down to 10-12 kbps — concretely, `-c:a libopus -ac 1 -b:a 24k -vbr on` (with a 32k \"high\" and 16k \"economy\" tier), keeping the existing silence-trim/loudnorm stages. Ranked by impact-vs-effort: (1) Opus mono VBR default, (2) reposition text marketing around cost-not-latency and add task-aware guardrails, (3) add an LLMLingua-2 encoder endpoint as the real text-compression differentiator, (4) gate TOON behind a payload-size threshold, (5) drop or clearly flag aggressive minify/dictionary shortening as lossy and unsafe for LLM instructions.",
+    "findings": [
+      {
+        "claim": "ADD (highest text-track impact): LLMLingua-2-style prompt compression is the only technique in the verified evidence that delivers real, API-servable token reduction without an LLM in the inference loop. It achieves 2x-5x compression with 1.6x-2.9x end-to-end latency acceleration, runs 3x-6x faster than prior compressors, and uses only a small Transformer encoder (XLM-RoBERTa-large 355M, or mBERT 110M for CPU) trained via GPT-4 data distillation — the large LLM is only in the training pipeline, never at inference. The original LLMLingua/LongLLMLingua, by contrast, require a causal SLM (e.g., LLaMA-7B perplexity scoring) per request.",
+        "confidence": "high",
+        "vote": "12-0 across 4 merged claims",
+        "sources": [
+          "https://arxiv.org/abs/2403.12968",
+          "https://www.llmlingua.com/",
+          "https://aclanthology.org/2024.findings-acl.57"
+        ],
+        "evidence": "ACL 2024 Findings abstract verbatim: \"our model is 3x-6x faster than existing prompt compression methods, while accelerating the end-to-end latency by 1.6x-2.9x with compression ratios of 2x-5x\" and \"explicitly learning the compression objective with smaller models such as XLM-RoBERTa-large and mBERT.\" Merged claims [0],[1],[2],[5] (all 3-0). Deployment nuance: the 355M encoder is GPU-friendly; the 110M mBERT variant is the realistic CPU-worker option with some quality loss."
+      },
+      {
+        "claim": "LLMLingua-2 is the only variant with predictable output size — it reliably hits its target compression rate across all tested prompt lengths (100-48K tokens), while original LLMLingua's mean absolute error exceeds 0.15 above 8,000 tokens. Predictable compression ratio is a prerequisite for API pricing and SLAs, which makes LLMLingua-2 the correct architecture choice for Robin Wood specifically.",
+        "confidence": "high",
+        "vote": "3-0",
+        "sources": [
+          "https://arxiv.org/pdf/2604.02985"
+        ],
+        "evidence": "Independent (non-Microsoft) 30,000+-run benchmark, ECIR 2026: \"LLMLingua generally fails to maintain consistent compression rates, whereas LLMLingua-2 reliably adheres to the specified target... For prompts exceeding 8,000 tokens, the error surpasses 0.15.\" Paper conclusion: \"Among all evaluated variants, only LLMLingua-2 proved practical.\""
+      },
+      {
+        "claim": "MARKET AS COST SAVINGS, NOT LATENCY: when customers call hosted LLM APIs (GPT-3.5 Turbo, GPT-4o mini) or optimized inference (vLLM), prompt compression provides no reliable latency benefit — variation was attributable to network latency, and for long prompts speedups often dropped below 0.5x. Token/cost reduction is the only defensible value proposition for a compression API serving customers of commercial LLM APIs.",
+        "confidence": "high",
+        "vote": "3-0",
+        "sources": [
+          "https://arxiv.org/pdf/2604.02985"
+        ],
+        "evidence": "Verbatim from the paper (Kummer et al., TU Dresden, Apr 2026): \"Commercial APIs such as OpenAI's GPT-3.5 Turbo and GPT-4o mini showed no reliable speed-up... rendering external compression ineffective.\" Minor exception: Llama 3.1 70B on vLLM showed up to 1.4x at 16k-token prompts."
+      },
+      {
+        "claim": "ADD GUARDRAILS: quality preservation under prompt compression is highly task-dependent — summarization survives up to 5.7x compression with stable performance, but structure-dependent tasks collapse (Passage Counting accuracy <20% to <4.5%) and few-shot classification loses up to 52%. A generic compression API needs task-aware presets or warnings (e.g., per-endpoint 'safe ratio' defaults), not a single aggressive default.",
+        "confidence": "high",
+        "vote": "3-0",
+        "sources": [
+          "https://arxiv.org/pdf/2604.02985",
+          "https://arxiv.org/abs/2403.12968"
+        ],
+        "evidence": "Section 4.3 of the 2604.02985 benchmark (LLMLingua-2 as compressor): \"For summarization tasks, performance remains stable under high compression ratios—up to 5.7x... TREC and LSHT-ZH—both classification tasks—suffer performance drops up to 52%.\" Also caveats on structured/synthetic data and non-English (~75% retention on Chinese MultiFieldQA)."
+      },
+      {
+        "claim": "DROP/FLAG (direct warning for current MVP ops): aggressive lossy text compression can paradoxically increase total LLM cost. At compression ratio 0.3, DeepSeek-Chat produced 38x longer outputs on average (798 vs 21 tokens) — 56x on MBPP vs only 5x on HumanEval, because where the task instruction sits in the prompt determines whether truncation destroys it — and output tokens cost ~3x input tokens, negating input savings. Robin Wood's 'aggressive minify' and PT/EN dictionary word-shortening are unsafe defaults for LLM-context use cases insofar as they damage instruction semantics; they should be opt-in with explicit lossy warnings, or dropped for the LLM-context product line.",
+        "confidence": "medium",
+        "vote": "5-1 across 2 merged claims",
+        "sources": [
+          "https://arxiv.org/pdf/2603.23527",
+          "https://arxiv.org/abs/2505.00019"
+        ],
+        "evidence": "Quote: \"this explosion negated any savings from input reduction.\" Caveats: single-author preprint (Plexor Labs) self-replicating a companion paper; effect is model-dependent (GPT-4o-mini stable, even -26% output at r=0.5) and was measured with token-pruning, not literal whitespace minify — the warning applies to semantic-content loss, not pure whitespace removal. Independent corroboration: arXiv 2505.00019 found all compression methods increased response length for GPT-3.5-turbo/GPT-4o-mini. Merged claims [10] (2-1) and [11] (3-0)."
+      },
+      {
+        "claim": "DEMOTE TOON: convert JSON-to-TOON only as an opt-in for large, uniform/tabular INPUT payloads — never as a default and never for LLM OUTPUT formats. Plain JSON generation beats TOON on accuracy (one-shot 88.9% vs 54.9%; independent benchmark: TOON generation correctness 0.513 vs JSON 0.840, parsability 0.630 vs 0.990); TOON's token savings are frequently negated on short payloads by the instructional 'prompt tax' of teaching the model the format; and for simple structures, JSON with constrained decoding used fewer total tokens than TOON (556 vs 840). TOON input/comprehension remains fine (-39.9% tokens at comparable comprehension accuracy), so a payload-size threshold gate preserves the legitimate use case.",
+        "confidence": "high",
+        "vote": "9-0 across 3 merged claims",
+        "sources": [
+          "https://arxiv.org/abs/2603.03306",
+          "https://arxiv.org/abs/2601.12014"
+        ],
+        "evidence": "Two independent benchmarks agree. 2603.03306 (21 models, 4 tasks): \"Plain JSON generation shows the best one-shot and final accuracy, even compared with constrained decoding structured output\" and the prompt-tax finding verbatim. 2601.12014: TOON generation -38.9% correctness vs JSON. Merged claims [12],[13],[14] (all 3-0). Caveat: both are non-peer-reviewed preprints; gap narrows with larger models (near-parity for Llama 3.3 70B)."
+      },
+      {
+        "claim": "SWITCH CODEC (highest audio-track impact, lowest effort): replace MP3 output with Opus as the default. In blind ABC/HR tests Opus beat two HE-AAC encoders and Vorbis at 64 kb/s (HydrogenAudio 2011, >99.9% confidence) and beat two LC-AAC encoders, Vorbis, and MP3-at-136kb/s while itself running at 96 kb/s (2014, 38 listeners) — MP3 needs ~40% more bitrate and still loses. In MUSHRA tests Opus at 20 kb/s also beat AMR-WB, the then-standard wideband speech codec. Keep MP3 only as an opt-in compatibility format.",
+        "confidence": "high",
+        "vote": "9-0 across 3 merged claims",
+        "sources": [
+          "https://opus-codec.org/comparison/",
+          "https://listening-tests.hydrogenaudio.org/igorc/results.html",
+          "https://www.ietf.org/archive/id/draft-ietf-codec-results-00.html"
+        ],
+        "evidence": "Independent HydrogenAudio tests (not vendor benchmarks): Opus 3.999 vs Apple HE-AAC 3.817 at 64 kb/s; Opus 4.65 vs MP3 4.24 (MP3 at ~136 kb/s actual vs Opus ~96 kb/s). IETF doc: \"Opus at 20 kb/s was shown to out-perform AMR-WB at the same rate.\" Merged claims [15],[16],[18]. Caveat: 2011-2014 tests on stereo music; for speech at low bitrates Opus's advantage is generally larger, so this is conservative for the voice use case."
+      },
+      {
+        "claim": "CONCRETE BITRATE LADDER for voice (Opus, mono downmix): 32 kbps = near-transparent ceiling (\"almost transparent, although there is a small, but statistically significant, difference from the fullband reference\" — MUSHRA on mono speech; RFC 6716 fullband-speech sweet spot 28-40 kb/s brackets it); 24 kbps mono = podcast/audiobook default delivering fullband audio (Xiph/Opus developers' recommendation; 32 kbps for stereo); 20 kbps = perceptually matches a 7 kHz lowpass of the original; 10-12 kbps = VoIP-grade floor for maximum size reduction. Recommended ffmpeg defaults: -c:a libopus -ac 1 -b:a 24k (tiers: high=32k, economy=16k, max-compression=12k).",
+        "confidence": "high",
+        "vote": "12-0 across 4 merged claims",
+        "sources": [
+          "https://www.ietf.org/archive/id/draft-ietf-codec-results-00.html",
+          "https://wiki.xiph.org/Opus_Recommended_Settings",
+          "https://datatracker.ietf.org/doc/rfc6716/"
+        ],
+        "evidence": "IETF MUSHRA tests (Google, 16-18 listeners, mono speech material) plus the Opus developers' own recommended-settings table: \"Audiobooks & Podcasts — Mono: 24 Kb/s | Stereo: 32 Kb/s... Bitrates from here on up tend to deliver fullband audio\" and \"VoIP — 10 Kb/s will deliver narrowband most of the time, 24 Kb/s should give fullband.\" Merged claims [19],[20],[21],[22]. Note: a more granular bitrate-to-bandwidth tier mapping claim was REFUTED 0-3 — do not assert exact kHz tiers per bitrate; only the endpoints above are verified."
+      },
+      {
+        "claim": "USE VBR (Opus default): Opus achieves better speech quality in VBR than CBR mode — published Nokia/Interspeech 2011 quality curves measured CBR and understate VBR quality, and the Opus developers quantify CBR as needing ~8% more bitrate for equivalent quality. ffmpeg: -vbr on (libopus default; do not force CBR).",
+        "confidence": "high",
+        "vote": "3-0",
+        "sources": [
+          "https://opus-codec.org/comparison/",
+          "https://arxiv.org/abs/1602.04845",
+          "https://datatracker.ietf.org/doc/rfc6716/"
+        ],
+        "evidence": "opus-codec.org: CBR curves are \"not as good as the quality Opus achieves with variable bitrate (VBR)\"; corroborated by RFC 6716 (VBR is the default, most efficient mode) and the developers' paper quantifying ~8% CBR penalty."
+      },
+      {
+        "claim": "CONTEXT/UPSIDE for marketing the text track: prompt compression can sometimes improve downstream quality, not just cut cost — LongLLMLingua raised NaturalQuestions multi-document QA accuracy from 54.1 to 75.5 (+21.4 points) at ~4x fewer tokens by mitigating 'lost in the middle' positional effects, and the family's headline figures are up to 20x compression with minimal loss (GSM8K best case) and +17.1% at 4x in long-context scenarios. Use as evidence in positioning, but do not promise these numbers: they are best-case, task-specific, and measured against GPT-3.5-Turbo (2023), whose positional weaknesses modern long-context models have partly fixed.",
+        "confidence": "high",
+        "vote": "6-0 across 2 merged claims",
+        "sources": [
+          "https://www.llmlingua.com/",
+          "https://aclanthology.org/2024.acl-long.91",
+          "https://aclanthology.org/2023.emnlp-main.825"
+        ],
+        "evidence": "Microsoft Research project page table (54.1 -> 75.5, 2,946 -> 313 tokens) backed by peer-reviewed ACL 2024 / EMNLP 2023 papers: \"boosts performance by up to 21.4% with around 4x fewer tokens in GPT-3.5-Turbo.\" Merged claims [3],[6]. Follow-up work (arXiv 2503.19114, 2406.02376) shows gains shrink at higher ratios and on retrieval/classification tasks."
+      }
+    ],
+    "caveats": "Coverage gaps: the verified claim set covers only part of the research question. Nothing survived verification on (a) classic lossless compression (gzip/brotli/zstd) and when an API returning compressed text makes sense, (b) competing text-compression products and their pricing, (c) silence removal (silenceremove vs VAD), EBU R128/LUFS podcast loudness targets, or dynamic-range-compression defaults, (d) what Auphonic/Descript/ElevenLabs/AssemblyAI actually do in preprocessing. Recommendations to 'keep' the existing silence-trim/loudnorm stages are therefore by omission, not positive evidence. Source-quality notes: the output-explosion warning (finding 5) rests heavily on a single-author preprint with self-replication, partially corroborated independently — treat magnitudes (38x/56x) as illustrative, not typical; both TOON benchmarks are non-peer-reviewed preprints; the key latency/quality benchmark (arXiv 2604.02985) is an April 2026 preprint, rigorous (30k+ runs) but not yet peer-reviewed. Time-sensitivity: audio listening tests date from 2011-2014 (codec bitstreams are frozen and libopus has only improved, so they are conservative for Opus, but they used stereo music rather than speech); LLMLingua headline gains were measured on GPT-3.5-Turbo (2023) and likely shrink on 2026 long-context models. One refuted claim (Opus bitrate-to-bandwidth kHz tiers, 0-3) means precise per-bitrate bandwidth specs should not appear in docs or marketing — only the verified endpoints (10/20/24/32 kbps). Finally, LLMLingua-2 quality numbers are benchmark-specific (MeetingBank-derived training data); replication on arbitrary customer text is not guaranteed, and serving the 355M encoder on CPU-only Bun workers needs feasibility testing (the 110M mBERT variant is the realistic CPU option, with quality loss).",
+    "openQuestions": [
+      "What do Auphonic, Descript, and transcription-prep pipelines (ElevenLabs/AssemblyAI) actually do for silence removal, loudness (LUFS targets), and dynamic range — and which ffmpeg silenceremove/VAD parameters and acompressor defaults are safe? This whole sub-track returned no surviving claims.",
+      "Is serving LLMLingua-2 (XLM-RoBERTa-large 355M or mBERT 110M, likely via ONNX) feasible on Robin Wood's current worker infrastructure (Bun, CPU-only?) at acceptable latency and cost per request, and what is its license posture for commercial API use?",
+      "What do competing compression/prompt-optimization APIs offer and charge (e.g., per-token pricing models), and when does an API returning gzip/brotli/zstd-compressed text actually beat client-side compression? No competitor or lossless-compression claims survived verification.",
+      "How well does LLMLingua-2 quality hold on Portuguese text (Robin Wood's PT/EN market), given documented degradation on non-English tasks (~75% retention on Chinese MultiFieldQA) and English/meeting-transcript training data?"
+    ],
+    "refuted": [
+      {
+        "claim": "Prompt compression with LLMLingua-2 yields at most ~18% end-to-end latency reduction, and only within a narrow operating window where prompt length, compression ratio, and hardware are well matched; outside that window the compression step itself cancels out the gains.",
+        "vote": "1-2",
+        "source": "https://arxiv.org/pdf/2604.02985"
+      },
+      {
+        "claim": "Mono speech audio bandwidth scales with Opus bitrate in defined tiers: ~12 kb/s gives narrowband (3-4 kHz), 16-20 kb/s wideband (3-8 kHz), 24-28 kb/s superwideband (3-12 kHz), and 28-40 kb/s fullband (3-20 kHz) — concrete quality-per-bitrate data for choosing encoder parameters.",
+        "vote": "0-3",
+        "source": "https://wiki.xiph.org/Opus_Recommended_Settings"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://arxiv.org/abs/2403.12968",
+        "quality": "primary",
+        "angle": "Text: LLM prompt compression state-of-art and tradeoffs",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.llmlingua.com/",
+        "quality": "primary",
+        "angle": "Text: LLM prompt compression state-of-art and tradeoffs",
+        "claimCount": 5
+      },
+      {
+        "url": "https://arxiv.org/pdf/2604.02985",
+        "quality": "primary",
+        "angle": "Text: LLM prompt compression state-of-art and tradeoffs",
+        "claimCount": 5
+      },
+      {
+        "url": "https://arxiv.org/pdf/2603.23527",
+        "quality": "primary",
+        "angle": "Text: LLM prompt compression state-of-art and tradeoffs",
+        "claimCount": 5
+      },
+      {
+        "url": "https://arxiv.org/abs/2603.03306",
+        "quality": "primary",
+        "angle": "Text: compact serialization formats vs classic lossless (skeptical angle)",
+        "claimCount": 5
+      },
+      {
+        "url": "https://dev.to/ikaganacar/toon-benchmarks-a-critical-analysis-of-different-results-5h66",
+        "quality": "blog",
+        "angle": "Text: compact serialization formats vs classic lossless (skeptical angle)",
+        "claimCount": 5
+      },
+      {
+        "url": "https://adam.holter.com/toon-vs-json-for-llms-token-efficiency-retrieval-accuracy-and-where-it-actually-helps/",
+        "quality": "blog",
+        "angle": "Text: compact serialization formats vs classic lossless (skeptical angle)",
+        "claimCount": 5
+      },
+      {
+        "url": "https://news.ycombinator.com/item?id=45715632",
+        "quality": "forum",
+        "angle": "Text: compact serialization formats vs classic lossless (skeptical angle)",
+        "claimCount": 5
+      },
+      {
+        "url": "https://opus-codec.org/comparison/",
+        "quality": "primary",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.ietf.org/archive/id/draft-ietf-codec-results-00.html",
+        "quality": "primary",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://wiki.xiph.org/Opus_Recommended_Settings",
+        "quality": "primary",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://auphonic.com/blog/2012/09/26/opus-revolutionary-open-audio-codec-podcasts-and-internet-audio/",
+        "quality": "blog",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://listening-tests.hydrogenaudio.org/igorc/results.html",
+        "quality": "primary",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://wiki.hydrogenaudio.org/index.php?title=Opus",
+        "quality": "secondary",
+        "angle": "Audio: speech codec quality-per-bitrate benchmarks",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.ffmpeg.media/articles/audio-processing-aac-mp3-opus-loudness",
+        "quality": "blog",
+        "angle": "Audio: practitioner ffmpeg pipeline parameters",
+        "claimCount": 5
+      },
+      {
+        "url": "https://ayosec.github.io/ffmpeg-filters-docs/8.0/Filters/Audio/silenceremove.html",
+        "quality": "primary",
+        "angle": "Audio: practitioner ffmpeg pipeline parameters",
+        "claimCount": 5
+      },
+      {
+        "url": "https://gist.github.com/danielrosehill/06fb17e7462980f99efa9fdab2335a14",
+        "quality": "blog",
+        "angle": "Audio: practitioner ffmpeg pipeline parameters",
+        "claimCount": 5
+      },
+      {
+        "url": "https://gist.github.com/kidpixo/be810cd9089bc03f74290cb7c567ac89",
+        "quality": "blog",
+        "angle": "Audio: practitioner ffmpeg pipeline parameters",
+        "claimCount": 5
+      },
+      {
+        "url": "https://auphonic.com/help/algorithms/singletrack.html",
+        "quality": "primary",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      },
+      {
+        "url": "https://auphonic.com/features",
+        "quality": "primary",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      },
+      {
+        "url": "https://cleanvoice.ai/blog/descript-api-pricing/",
+        "quality": "blog",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.capterra.com/p/214213/Dolby-io/",
+        "quality": "secondary",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      },
+      {
+        "url": "https://developer.konghq.com/plugins/ai-prompt-compressor/",
+        "quality": "primary",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      },
+      {
+        "url": "https://github.com/microsoft/LLMLingua",
+        "quality": "primary",
+        "angle": "Competitive landscape and commercial practice",
+        "claimCount": 5
+      }
+    ],
+    "stats": {
+      "angles": 5,
+      "sourcesFetched": 24,
+      "claimsExtracted": 120,
+      "claimsVerified": 25,
+      "confirmed": 23,
+      "killed": 2,
+      "afterSynthesis": 10,
+      "urlDupes": 0,
+      "budgetDropped": 6,
+      "agentCalls": 106
+    }
+  }
+}

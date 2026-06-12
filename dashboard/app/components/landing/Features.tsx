@@ -42,8 +42,8 @@ export function Features() {
 {`{
   "textUrl": "https://...",
   "operations": [
-    { "type": "trim" },
-    { "type": "minify", "params": { "level": 8 } }
+    { "type": "trim", "params": { "intensity": 70 } },
+    { "type": "json-to-toon" }
   ]
 }`}
                 </pre>
@@ -100,7 +100,7 @@ export function Features() {
             {
               icon: FileText,
               title: 'Text',
-              description: 'Trim, minify, remove stopwords. Put your prompts on a diet before they hit the API.',
+              description: 'Clean up noise and convert JSON to TOON. Put your prompts on a diet before they hit the API.',
             },
             {
               icon: Music,

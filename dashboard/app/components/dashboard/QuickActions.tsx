@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { FileText, Music, Image as ImageIcon } from 'lucide-react'
 
 const actions = [
-  { href: '/dashboard/text', icon: FileText, label: 'Compress Text', description: 'Trim, shorten, or summarize' },
+  { href: '/dashboard/text', icon: FileText, label: 'Compress Text', description: 'Clean up and convert JSON to TOON' },
   { href: '/dashboard/audio', icon: Music, label: 'Compress Audio', description: 'Remove silence, normalize' },
   { href: '/dashboard/image', icon: ImageIcon, label: 'Compress Image', description: 'Coming soon', disabled: true },
 ]
