@@ -43,6 +43,8 @@ export class UsersService {
       image: user.image,
       createdAt: user.createdAt,
       totalRequests: stats.totalRequests,
+      webhookUrl: user.webhookUrl ?? null,
+      webhooksEnabled: plan?.features.webhooks ?? false,
       plan: plan ? { name: plan.name, slug: plan.slug, credits: plan.credits } : null,
       subscription: user.subscription ? {
         status: user.subscription.status,

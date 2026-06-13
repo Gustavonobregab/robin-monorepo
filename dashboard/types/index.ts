@@ -32,6 +32,24 @@ export interface Job {
   createdAt: string
 }
 
+export type JobPipeline = 'audio' | 'text' | 'image' | 'video'
+
+export interface JobListItem {
+  id: string
+  type: JobPipeline
+  status: JobStatus
+  name?: string
+  error?: string
+  metrics?: JobMetrics
+  createdAt: string
+  completedAt?: string
+}
+
+export interface JobListResponse {
+  items: JobListItem[]
+  nextCursor: string | null
+}
+
 // ─── Usage ───────────────────────────────────────────────────
 export interface UsageChartPoint {
   date: string
@@ -229,6 +247,8 @@ export interface UserProfile {
   image?: string
   createdAt: string
   totalRequests: number
+  webhookUrl: string | null
+  webhooksEnabled: boolean
   plan: PlanSummary | null
   subscription: SubscriptionSummary | null
   currentUsage: CurrentUsage

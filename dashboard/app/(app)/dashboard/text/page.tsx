@@ -64,7 +64,7 @@ export default function TextPage() {
         ? { ...base, preset: settings.preset }
         : { ...base, operations: settings.operations }
 
-      const res = await submitTextJob(input as Parameters<typeof submitTextJob>[0])
+      const res = await submitTextJob(input as Parameters<typeof submitTextJob>[0], crypto.randomUUID())
 
       const data = res.data as any
 
