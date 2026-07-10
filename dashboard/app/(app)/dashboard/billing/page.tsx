@@ -75,7 +75,7 @@ function CreditBar({ used, limit }: { used: number; limit: number }) {
       </div>
       <div className="h-2 rounded-full bg-accent-light overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${isHigh ? 'bg-red-500' : 'bg-accent-strong'}`}
+          className={`h-full rounded-full transition-all ${isHigh ? 'bg-danger' : 'bg-accent-strong'}`}
           style={{ width: `${pct}%` }}
         />
       </div>

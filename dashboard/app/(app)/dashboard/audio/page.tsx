@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
 import { ToolLayout } from '@/app/components/tools/ToolLayout'
@@ -10,8 +11,10 @@ import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { submitAudioJob } from '@/app/http/audio'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus } from '@/app/http/jobs'
+import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
 
 export default function AudioPage() {
+  const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [settings, setSettings] = useState<AudioSettings>({ mode: 'custom', operations: [] })
   const [jobId, setJobId] = useState<string | null>(null)
@@ -43,8 +46,15 @@ export default function AudioPage() {
 
       const res = await submitAudioJob(input, crypto.randomUUID())
       setJobId(res.id)
-    } catch {
-      toast.error('Failed to submit job. Check your file and try again.')
+    } catch (err) {
+      const { code } = await parseApiError(err)
+      if (code === 'INSUFFICIENT_CREDITS') {
+        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
+          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
+        })
+      } else {
+        await toastApiError(err, 'Failed to submit job. Check your file and try again.')
+      }
     } finally {
       setSubmitting(false)
     }

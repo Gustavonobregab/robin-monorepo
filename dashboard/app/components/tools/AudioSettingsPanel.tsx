@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import useSWR from 'swr'
 import { cn } from '@/app/lib/utils'
 import { Label } from '@/app/components/ui/label'
+import { Skeleton } from '@/app/components/ui/skeleton'
 import { getAudioPresets, getAudioOperations } from '@/app/http/audio'
 import type { AudioPreset, AudioOperationInput } from '@/types'
 
@@ -93,7 +94,7 @@ export function AudioSettingsPanel({ value, onChange }: AudioSettingsPanelProps)
         <div className="grid gap-2">
           {presets.length === 0
             ? Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-12 rounded-xl bg-background-section animate-pulse" />
+                <Skeleton key={i} className="h-12 rounded-xl" />
               ))
             : presets.map((preset) => (
                 <button
@@ -119,7 +120,7 @@ export function AudioSettingsPanel({ value, onChange }: AudioSettingsPanelProps)
         <div className="space-y-4">
           {operations.length === 0
             ? Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-xl bg-background-section animate-pulse" />
+                <Skeleton key={i} className="h-16 rounded-xl" />
               ))
             : operations.map((op) => {
                 const activeOp = customOps.find((o) => o.type === op.id)

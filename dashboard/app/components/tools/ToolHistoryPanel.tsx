@@ -1,5 +1,6 @@
 'use client'
 import useSWR from 'swr'
+import { Skeleton } from '@/app/components/ui/skeleton'
 import { getUsageAnalytics } from '@/app/http/usage'
 import type { UsageEvent } from '@/types'
 
@@ -35,7 +36,7 @@ export function ToolHistoryPanel({ pipelineType, emptyIcon, emptyLabel }: ToolHi
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 rounded-xl bg-background-section animate-pulse" />
+          <Skeleton key={i} className="h-16 rounded-xl" />
         ))}
       </div>
     )

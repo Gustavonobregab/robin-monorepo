@@ -42,7 +42,7 @@ export function MetricsPanel({ status, metrics, outputUrl, error, timedOut }: Me
 
   if (status === 'failed') {
     return (
-      <div className="text-sm text-red-600">
+      <div className="text-sm text-danger">
         Job failed: {error ?? 'Unknown error'}
       </div>
     )

@@ -16,6 +16,13 @@ const config: Config = {
         foreground: '#111111',
         muted: '#444444',
         border: '#E8E4D8',
+        // Semantic status tones — the single source of truth for success /
+        // warning / danger. Success reuses the accent (olive). Keep these here;
+        // never hardcode red/amber Tailwind palette classes in components.
+        danger: '#B23B2E',
+        'danger-light': '#F6E5E1',
+        warning: '#9A6B15',
+        'warning-light': '#F5EBD5',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

@@ -18,10 +18,11 @@ import {
 } from '@/app/components/ui/alert-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table'
 import { getApiKeys, createApiKey, revokeApiKey } from '@/app/http/keys'
+import { toastApiError } from '@/app/http/errors'
 import type { ApiResponse, ApiKey } from '@/types'
 
 export default function KeysPage() {
-  const { data, isLoading, mutate } = useSWR<ApiResponse<ApiKey[]>>('api-keys', getApiKeys)
+  const { data, isLoading, error, mutate } = useSWR<ApiResponse<ApiKey[]>>('api-keys', getApiKeys)
   const keys = data?.data ?? []
 
   const [newKeyName, setNewKeyName] = useState('')
@@ -37,8 +38,8 @@ export default function KeysPage() {
       setNewKeyValue(res.data.key)
       setNewKeyName('')
       mutate()
-    } catch {
-      toast.error('Failed to create key')
+    } catch (err) {
+      await toastApiError(err, 'Failed to create key')
     } finally {
       setCreating(false)
     }
@@ -49,8 +50,8 @@ export default function KeysPage() {
       await revokeApiKey(id)
       toast.success('Key revoked')
       mutate()
-    } catch {
-      toast.error('Failed to revoke key')
+    } catch (err) {
+      await toastApiError(err, 'Failed to revoke key')
     }
   }
 
@@ -131,7 +132,17 @@ export default function KeysPage() {
         </Dialog>
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
+          <p className="text-muted text-sm">Could not load your API keys.</p>
+          <button
+            className="text-sm underline text-foreground mt-1"
+            onClick={() => mutate()}
+          >
+            Try again
+          </button>
+        </div>
+      ) : isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
         </div>
@@ -185,7 +196,7 @@ export default function KeysPage() {
                     {key.status === 'active' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                          <Button variant="ghost" size="sm" className="text-danger hover:text-danger hover:opacity-80">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -200,7 +211,7 @@ export default function KeysPage() {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleRevoke(key._id)}
-                              className="bg-red-600 hover:bg-red-700"
+                              className="bg-danger hover:bg-danger/90"
                             >
                               Revoke
                             </AlertDialogAction>

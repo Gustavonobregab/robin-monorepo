@@ -9,28 +9,43 @@ import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { signOut } from '@/app/lib/auth-client'
 import { getProfile, updateProfile, updateWebhookConfig } from '@/app/http/users'
+import { toastApiError } from '@/app/http/errors'
 
 export default function AccountPage() {
   const router = useRouter()
-  const { data, mutate } = useSWR('profile', getProfile)
+  const { data, error, mutate } = useSWR('profile', getProfile)
   const profile = data?.data
 
   return (
     <div className="h-full overflow-y-auto p-4 sm:p-6">
       <div className="space-y-8 max-w-xl mx-auto">
-        <ProfileCard
-          name={profile?.name ?? ''}
-          email={profile?.email ?? ''}
-          loading={!profile}
-          onSaved={() => mutate()}
-        />
+        {error ? (
+          <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
+            <p className="text-muted text-sm">Could not load your account.</p>
+            <button
+              className="text-sm underline text-foreground mt-1"
+              onClick={() => mutate()}
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
+          <>
+            <ProfileCard
+              name={profile?.name ?? ''}
+              email={profile?.email ?? ''}
+              loading={!profile}
+              onSaved={() => mutate()}
+            />
 
-        <WebhookCard
-          enabled={profile?.webhooksEnabled ?? false}
-          currentUrl={profile?.webhookUrl ?? null}
-          loading={!profile}
-          onSaved={() => mutate()}
-        />
+            <WebhookCard
+              enabled={profile?.webhooksEnabled ?? false}
+              currentUrl={profile?.webhookUrl ?? null}
+              loading={!profile}
+              onSaved={() => mutate()}
+            />
+          </>
+        )}
 
         <div className="bg-background rounded-xl border border-border shadow-sm p-6">
           <h2 className="font-semibold">Session</h2>
@@ -80,8 +95,8 @@ function ProfileCard({
       await updateProfile(value.trim())
       toast.success('Profile updated')
       onSaved()
-    } catch {
-      toast.error('Could not update profile')
+    } catch (err) {
+      await toastApiError(err, 'Could not update profile')
     } finally {
       setSaving(false)
     }
@@ -146,8 +161,8 @@ function WebhookCard({
       setSecret(data.webhookSecret)
       toast.success('Webhook saved')
       onSaved()
-    } catch {
-      toast.error('Could not save webhook. Check the URL and your plan.')
+    } catch (err) {
+      await toastApiError(err, 'Could not save webhook. Check the URL and try again.')
     } finally {
       setSaving(false)
     }

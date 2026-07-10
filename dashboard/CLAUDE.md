@@ -69,3 +69,45 @@ All shared types live in `types/index.ts`. API responses use the `ApiResponse<T>
 ```ts
 type KeysListResponse = ApiResponse<{ keys: ApiKey[] }>;
 ```
+
+## Error handling
+
+Never show the backend's raw error message to users. The API returns
+`{ success: false, error: { code, message } }`; translate the `code` through
+the single map in `app/http/errors.ts`.
+
+- **Action failed** (submit, create, save, revoke) → `toastApiError(err, fallback)`.
+- **Special-cased codes** (e.g. `INSUFFICIENT_CREDITS` links to billing) → use
+  `parseApiError` + check the code at the call site. Only for codes where the UI
+  actually reacts differently; everything else goes through `toastApiError`.
+- **Load failed** (SWR `error`) → inline card with a "Try again" button that
+  calls `mutate()`. Not a toast.
+- New backend code → add one line to `ERROR_MESSAGES`. Never `switch (code)` in a
+  component; the map is the single source.
+
+## Colors
+
+Use theme tokens only — never hardcode hex or Tailwind palette classes
+(`bg-red-500`, `text-amber-800`) in app UI.
+
+- **Neutrals / brand** → `background`, `background-section`, `accent-light`,
+  `accent-strong`, `foreground`, `muted`, `border`.
+- **Semantic status** → `danger` / `danger-light`, `warning` / `warning-light`;
+  success reuses `accent-light`. Defined once in `tailwind.config.ts`.
+- Hardcoded hex is allowed only when a color is genuinely data-driven, or in
+  marketing/landing illustrations (fake browser chrome, decorative gradients).
+
+## Loading states
+
+One component, one rule — use `Skeleton` from `@/app/components/ui/skeleton`,
+never hand-roll `animate-pulse`.
+
+- **Content loading** (page, panel, table, list) → `Skeleton`, shaped like the
+  real content. Never a full-page/centered spinner.
+- **Spinner** (`Loader2` spinning) → only for inline action states, e.g. a
+  button mid-submit or a row mid-download.
+
+## Empty / missing values
+
+Never render `—`, `N/A`, `Not linked`, or any placeholder string for missing
+data. Render nothing (`null`). Empty beats noisy.

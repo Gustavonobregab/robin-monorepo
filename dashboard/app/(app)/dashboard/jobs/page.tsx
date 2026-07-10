@@ -6,8 +6,10 @@ import { Download, Loader2 } from 'lucide-react'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/app/components/ui/table'
+import { Skeleton } from '@/app/components/ui/skeleton'
 import { cn, formatBytes } from '@/app/lib/utils'
 import { listJobs, getJobStatus } from '@/app/http/jobs'
+import { toastApiError } from '@/app/http/errors'
 import type { JobListItem, JobMetrics, JobPipeline, JobStatus } from '@/types'
 
 const TYPE_FILTERS: { label: string; value?: JobPipeline }[] = [
@@ -25,10 +27,10 @@ const STATUS_FILTERS: { label: string; value?: JobStatus }[] = [
 
 const STATUS_STYLES: Record<JobStatus, string> = {
   completed: 'bg-accent-light text-foreground',
-  processing: 'bg-amber-100 text-amber-800',
-  pending: 'bg-amber-100 text-amber-800',
+  processing: 'bg-warning-light text-warning',
+  pending: 'bg-warning-light text-warning',
   created: 'bg-background-section text-muted',
-  failed: 'bg-red-100 text-red-700',
+  failed: 'bg-danger-light text-danger',
 }
 
 export default function JobsPage() {
@@ -52,8 +54,8 @@ export default function JobsPage() {
         })
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setCursor(res.nextCursor)
-      } catch {
-        toast.error('Could not load jobs')
+      } catch (err) {
+        await toastApiError(err, 'Could not load jobs')
       } finally {
         setLoading(false)
         setLoadingMore(false)
@@ -83,8 +85,10 @@ export default function JobsPage() {
         </div>
 
         {loading ? (
-          <div className="bg-background rounded-xl border border-border shadow-sm p-10 flex justify-center">
-            <Loader2 className="w-5 h-5 animate-spin text-muted" />
+          <div className="bg-background rounded-xl border border-border shadow-sm p-4 space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 rounded-lg" />
+            ))}
           </div>
         ) : items.length === 0 ? (
           <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
@@ -184,8 +188,8 @@ function JobRow({ job }: { job: JobListItem }) {
       } else {
         toast.error('No output available for this job')
       }
-    } catch {
-      toast.error('Could not fetch the result')
+    } catch (err) {
+      await toastApiError(err, 'Could not fetch the result')
     } finally {
       setDownloading(false)
     }
@@ -202,7 +206,7 @@ function JobRow({ job }: { job: JobListItem }) {
       <TableCell className="text-muted text-sm whitespace-nowrap">
         {metrics
           ? `${formatBytes(metrics.inputSize)} → ${formatBytes(metrics.outputSize)} (${metrics.compressionRatio}×)`
-          : '—'}
+          : null}
       </TableCell>
       <TableCell className="text-muted text-sm whitespace-nowrap">
         {new Date(job.createdAt).toLocaleString('en-US', {

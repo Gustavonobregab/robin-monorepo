@@ -99,7 +99,7 @@ export function AudioWorkspace({
       )}
 
       {showError && (
-        <p className="text-sm text-red-600">Job failed: {error ?? 'Unknown error'}</p>
+        <p className="text-sm text-danger">Job failed: {error ?? 'Unknown error'}</p>
       )}
 
       {showOutput && (

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import useSWR from 'swr'
 import { cn } from '@/app/lib/utils'
 import { Label } from '@/app/components/ui/label'
+import { Skeleton } from '@/app/components/ui/skeleton'
 import { getTextPresets, getTextOperations } from '@/app/http/text'
 import type { TextPreset, TextOperationInput } from '@/types'
 
@@ -108,7 +109,7 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
         <div className="grid gap-2">
           {presets.length === 0
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-12 rounded-xl bg-background-section animate-pulse" />
+                <Skeleton key={i} className="h-12 rounded-xl" />
               ))
             : presets.map((preset) => (
                 <button
@@ -134,7 +135,7 @@ export function TextSettingsPanel({ value, onChange }: TextSettingsPanelProps) {
         <div className="space-y-4">
           {operations.length === 0
             ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-xl bg-background-section animate-pulse" />
+                <Skeleton key={i} className="h-16 rounded-xl" />
               ))
             : operations.map((op) => {
                 const activeOp = customOps.find((o) => o.type === op.id)

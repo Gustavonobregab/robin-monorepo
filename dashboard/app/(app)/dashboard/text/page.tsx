@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
 import { ToolLayout } from '@/app/components/tools/ToolLayout'
@@ -11,9 +12,11 @@ import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { submitTextJob } from '@/app/http/text'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus } from '@/app/http/jobs'
+import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
 import type { JobMetrics } from '@/types'
 
 export default function TextPage() {
+  const router = useRouter()
   const [text, setText] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [inputMode, setInputMode] = useState<'text' | 'file'>('text')
@@ -73,8 +76,15 @@ export default function TextPage() {
       } else {
         setJobId(data.job.id)
       }
-    } catch {
-      toast.error('Failed to submit job.')
+    } catch (err) {
+      const { code } = await parseApiError(err)
+      if (code === 'INSUFFICIENT_CREDITS') {
+        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
+          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
+        })
+      } else {
+        await toastApiError(err, 'Failed to submit job. Check your input and try again.')
+      }
     } finally {
       setSubmitting(false)
     }
