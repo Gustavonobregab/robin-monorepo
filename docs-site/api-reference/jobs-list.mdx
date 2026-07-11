@@ -1,0 +1,85 @@
+---
+title: "List jobs"
+description: "GET /v1/jobs"
+---
+
+List your jobs, newest first, with cursor pagination.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+<ParamField query="type" type="string">
+  Filter by pipeline: `audio`, `text`, `image`, `video`. (`image` and `video` are reserved for upcoming pipelines.)
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `created`, `pending`, `processing`, `completed`, `failed`.
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Page size, 1–100. Default 20.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  The `nextCursor` value from the previous page.
+</ParamField>
+
+## Response
+
+<ResponseField name="items" type="array">
+  Job summaries: `id`, `type`, `status`, `name` (original filename, audio jobs), `error` (failed jobs), `metrics` (completed jobs), `createdAt`, `completedAt`.
+</ResponseField>
+
+<ResponseField name="nextCursor" type="string | null">
+  Pass back as `cursor` to fetch the next page. `null` when there are no more results.
+</ResponseField>
+
+## Example
+
+```bash
+curl -s "https://api.robinwood.dev/v1/jobs?type=audio&status=completed&limit=2" \
+  -H "Authorization: Bearer $ROBIN_KEY"
+```
+
+<ResponseExample>
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "665f1d00b8d4e91a2c3d4e60",
+        "type": "audio",
+        "status": "completed",
+        "name": "episode.mp3",
+        "metrics": {
+          "inputSize": 52428800,
+          "outputSize": 6291456,
+          "compressionRatio": 8.33,
+          "operationsApplied": ["trim-silence", "normalize", "compress", "encode"]
+        },
+        "createdAt": "2026-07-11T14:02:11.000Z",
+        "completedAt": "2026-07-11T14:03:40.000Z"
+      },
+      {
+        "id": "665f1b90b8d4e91a2c3d4e51",
+        "type": "audio",
+        "status": "completed",
+        "name": "interview.wav",
+        "metrics": { "compressionRatio": 12.1 },
+        "createdAt": "2026-07-11T13:40:02.000Z",
+        "completedAt": "2026-07-11T13:41:15.000Z"
+      }
+    ],
+    "nextCursor": "665f1b90b8d4e91a2c3d4e51"
+  }
+}
+```
+
+</ResponseExample>
+
+List items don't include download URLs — fetch [`GET /v1/jobs/:id`](/api-reference/jobs-get) for a job's `outputUrl` or `outputText`.

@@ -1,0 +1,105 @@
+---
+title: "Get a job"
+description: "GET /v1/jobs/:id"
+---
+
+Fetch a job's status and result. This is the endpoint to poll after creating a job.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The job id returned by `POST /v1/text` or `POST /v1/audio`.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Job id.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `created`, `pending`, `processing`, `completed`, or `failed`. See [Jobs](/concepts/jobs).
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Failure reason. Only present on `failed` jobs.
+</ResponseField>
+
+<ResponseField name="result" type="object">
+  Present once the job completes.
+
+  <Expandable title="properties">
+    <ResponseField name="outputUrl" type="string">
+      Signed download URL for file outputs. Freshly generated on every read, valid for 1 hour — re-fetch the job for a new one. Audio outputs are `.ogg` (Opus) by default or `.mp3` if requested via `encode`; file-based text outputs are `.txt`.
+    </ResponseField>
+    <ResponseField name="outputText" type="string">
+      Inline output for text jobs created from inline `text`.
+    </ResponseField>
+    <ResponseField name="metrics" type="object">
+      `inputSize`, `outputSize`, `compressionRatio`, `operationsApplied`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+Results remain available for **7 days** after completion.
+
+## Example
+
+```bash
+curl -s https://api.robinwood.dev/v1/jobs/665f1d00b8d4e91a2c3d4e60 \
+  -H "Authorization: Bearer $ROBIN_KEY"
+```
+
+<ResponseExample>
+
+```json Completed
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "completed",
+    "result": {
+      "outputUrl": "https://...signed-get-url...",
+      "metrics": {
+        "inputSize": 52428800,
+        "outputSize": 6291456,
+        "compressionRatio": 8.33,
+        "operationsApplied": ["trim-silence", "normalize", "compress", "encode"]
+      }
+    }
+  }
+}
+```
+
+```json Processing
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "processing"
+  }
+}
+```
+
+```json Failed
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "failed",
+    "error": "Empty response from S3"
+  }
+}
+```
+
+</ResponseExample>
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `JOB_NOT_FOUND` | 404 | Unknown id, malformed id, or job owned by another account |

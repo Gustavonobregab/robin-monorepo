@@ -1,0 +1,44 @@
+---
+title: "Authentication"
+description: "API keys, request headers, and key management"
+---
+
+Every `/v1` request requires an API key in the `Authorization` header:
+
+```bash
+curl https://api.robinwood.dev/v1/jobs \
+  -H "Authorization: Bearer sk_live_..."
+```
+
+## API keys
+
+- Keys are created in the dashboard (**Settings → API Keys**) and always start with `sk_live_`.
+- The full key is shown **once** at creation. Only a SHA-256 hash is stored; if you lose a key, revoke it and create a new one.
+- The dashboard shows the first 12 characters (`sk_live_xxxx`) so you can tell keys apart.
+- The number of active keys is limited by your plan (Free: 2, Pro: 5). Revoked keys don't count against the limit.
+
+## Auth errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `API_KEY_REQUIRED` | 401 | No `Authorization` header |
+| `INVALID_API_KEY_FORMAT` | 401 | Header isn't `Bearer sk_live_*` |
+| `INVALID_API_KEY` | 401 | Key doesn't exist or was revoked |
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_API_KEY",
+    "message": "Invalid or revoked API key"
+  }
+}
+```
+
+## Request IDs
+
+Every authenticated response includes an `X-Request-Id` header (`req_<uuid>`). Include it when reporting issues.
+
+<Warning>
+Treat keys as secrets: use them server-side only, never in client-side code, and rotate them if they leak. Rate limits are enforced per key — see [Rate Limits](/concepts/rate-limits).
+</Warning>

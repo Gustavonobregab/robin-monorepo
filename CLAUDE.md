@@ -1,13 +1,22 @@
 # Robin Wood — Monorepo
 
+Compression-as-a-service: audio and text compression jobs behind a dashboard
+and a public API (`/v1`, API-key auth).
+
 ## Structure
 
 ```
 robin-wood-api/
-├── api/          # Backend — Elysia + Bun
-├── dashboard/    # Frontend (in progress)
+├── api/          # Backend — Elysia + Bun (conventions: api/CLAUDE.md)
+├── dashboard/    # Frontend — Next.js (conventions: dashboard/CLAUDE.md)
+├── docs-site/    # Public API docs (Mintlify)
+├── docs/         # Internal research notes and specs
 └── package.json  # Workspace root
 ```
+
+**Sub-guides — read the one for the workspace you are changing:**
+`api/CLAUDE.md` (modules, ApiError, credits/billing, queues/workers, idempotency) ·
+`dashboard/CLAUDE.md` (http layer, error funnel, color tokens, loading/empty states)
 
 ## Running
 
@@ -34,8 +43,8 @@ cd api && bun run dev
 
 ```
 api/src/
-├── config/       # DB, Redis, Auth setup (database.ts, redis.ts, auth.ts)
-├── middlewares/  # Elysia middleware (api-key.ts, idempotency.ts)
+├── config/       # DB, Redis, Auth, Storage setup (validate env at import)
+├── middlewares/  # Elysia middleware (auth.ts, credits.ts)
 ├── modules/      # Feature modules (see below)
 ├── queues/       # BullMQ queue definitions
 ├── utils/        # Shared helpers

@@ -1,0 +1,71 @@
+---
+title: "Current usage"
+description: "GET /v1/usage/current"
+---
+
+Per-pipeline usage totals for the current billing period. Useful for tracking consumption alongside the credit balance shown in the dashboard.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+No parameters. The period is your subscription's current 30-day cycle (falls back to the calendar month if no cycle is set).
+
+## Response
+
+<ResponseField name="period" type="object">
+  `start` and `end` of the current billing period.
+</ResponseField>
+
+<ResponseField name="audio" type="object">
+  `requests`, `minutes` (total audio duration processed), `inputBytes`.
+</ResponseField>
+
+<ResponseField name="text" type="object">
+  `requests`, `characters`, `inputBytes`.
+</ResponseField>
+
+<ResponseField name="image" type="object">
+  `requests`, `megapixels`, `inputBytes`. Reserved — the image pipeline is not available yet.
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  `requests`, `minutes`, `inputBytes`. Reserved — the video pipeline is not available yet.
+</ResponseField>
+
+## Example
+
+```bash
+curl -s https://api.robinwood.dev/v1/usage/current \
+  -H "Authorization: Bearer $ROBIN_KEY"
+```
+
+<ResponseExample>
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "period": {
+      "start": "2026-06-25T00:00:00.000Z",
+      "end": "2026-07-25T00:00:00.000Z"
+    },
+    "audio": {
+      "requests": 14,
+      "minutes": 512.4,
+      "inputBytes": 734003200
+    },
+    "text": {
+      "requests": 89,
+      "characters": 4210833,
+      "inputBytes": 4358144
+    },
+    "image": { "requests": 0, "megapixels": 0, "inputBytes": 0 },
+    "video": { "requests": 0, "minutes": 0, "inputBytes": 0 }
+  }
+}
+```
+
+</ResponseExample>

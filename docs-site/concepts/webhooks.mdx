@@ -1,0 +1,82 @@
+---
+title: "Webhooks"
+description: "Signed callbacks when jobs complete or fail"
+---
+
+Instead of polling, Robin Wood can `POST` to your server when a job finishes. Webhooks require a plan that includes them (Pro); on Free, passing `webhookUrl` returns `FEATURE_NOT_AVAILABLE` (403).
+
+## Configuring
+
+Two options, in order of precedence:
+
+1. **Per job** — pass `webhookUrl` in the `POST /v1/text` or `POST /v1/audio` body.
+2. **Account default** — set a default webhook URL in dashboard settings. Used for any job without its own `webhookUrl`.
+
+## Payload
+
+Sent for `job.completed` and `job.failed`:
+
+```json
+{
+  "event": "job.completed",
+  "job": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "type": "audio",
+    "status": "completed",
+    "result": {
+      "outputKey": "outputs/665f1d00b8d4e91a2c3d4e60/result.ogg",
+      "metrics": { "inputSize": 52428800, "outputSize": 6291456, "compressionRatio": 8.33 }
+    },
+    "error": null,
+    "createdAt": "2026-07-11T14:02:11.000Z",
+    "completedAt": "2026-07-11T14:03:40.000Z"
+  }
+}
+```
+
+<Note>
+The webhook carries the raw stored result. To get a downloadable signed `outputUrl`, fetch `GET /v1/jobs/:id` after receiving the event.
+</Note>
+
+Request headers:
+
+| Header | Value |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `X-Robin-Event` | `job.completed` or `job.failed` |
+| `X-Robin-Timestamp` | Unix timestamp (seconds) when the delivery was signed |
+| `X-Robin-Signature` | `sha256=<hex HMAC>` |
+
+## Verifying signatures
+
+Each account has a webhook secret (`whsec_...`), shown in dashboard settings. The signature is an HMAC-SHA256 of the string `"{timestamp}.{body}"` — the timestamp header, a dot, and the **raw** request body.
+
+```ts
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifyRobinWebhook(rawBody: string, headers: Record<string, string>, secret: string): boolean {
+  const timestamp = headers["x-robin-timestamp"];
+  const received = headers["x-robin-signature"]; // "sha256=<hex>"
+
+  const expected = "sha256=" + createHmac("sha256", secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest("hex");
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(received ?? "");
+  if (a.length !== b.length) return false;
+  if (!timingSafeEqual(a, b)) return false;
+
+  // Reject stale deliveries (replay protection)
+  return Math.abs(Date.now() / 1000 - Number(timestamp)) < 300;
+}
+```
+
+Verify against the **raw** body bytes — parsing and re-serializing the JSON will break the signature.
+
+## Delivery and retries
+
+- Your endpoint must respond with a 2xx status within **10 seconds**.
+- Failed deliveries (timeout or non-2xx) are retried up to **5 times** with exponential backoff — the first retry after ~15 seconds, then increasing.
+- Deliveries can arrive out of order or more than once; make your handler idempotent on `job.id` + `event`.
+- Webhook delivery never affects the job itself: the result is persisted and remains fetchable via `GET /v1/jobs/:id` even if every delivery fails.

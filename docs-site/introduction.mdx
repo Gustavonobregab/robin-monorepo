@@ -1,0 +1,51 @@
+---
+title: "Introduction"
+description: "Compress text and audio through a simple job-based API"
+---
+
+Robin Wood compresses content for LLM pipelines and storage. Send text or audio, pick a preset (or compose your own operation chain), get back a smaller output.
+
+## What it does
+
+- **Text** — whitespace/punctuation/unicode cleanup, and conversion of large JSON blocks to TOON tabular notation. Small inline inputs are processed synchronously; larger ones run as jobs.
+- **Audio** — silence trimming, loudness normalization, dynamic range compression, speedup, and re-encoding to Opus (default) or MP3. Always asynchronous.
+
+## How it works
+
+1. **Authenticate** every request with an API key: `Authorization: Bearer sk_live_...`
+2. **Upload** files via a presigned URL (`POST /v1/upload`), or send text inline.
+3. **Create a job** with `POST /v1/text` or `POST /v1/audio`, using a preset or custom operations.
+4. **Get the result** by polling `GET /v1/jobs/:id` or receiving a signed webhook.
+
+All endpoints live under `/v1` and return a consistent envelope:
+
+```json
+{ "success": true, "data": { ... } }
+```
+
+```json
+{ "success": false, "error": { "code": "JOB_NOT_FOUND", "message": "Job not found" } }
+```
+
+## Base URL
+
+```
+https://api.robinwood.dev/v1
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Upload and compress an audio file end to end with curl.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Create an API key and authenticate requests.
+  </Card>
+  <Card title="Jobs" icon="list-check" href="/concepts/jobs">
+    Job lifecycle, polling, and results.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/concepts/webhooks">
+    Get notified when jobs complete, with HMAC-signed payloads.
+  </Card>
+</CardGroup>

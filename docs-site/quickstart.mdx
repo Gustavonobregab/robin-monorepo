@@ -1,0 +1,119 @@
+---
+title: "Quickstart"
+description: "Compress a podcast episode from upload to download in five steps"
+---
+
+This walkthrough uploads an MP3, processes it with the `podcast` preset, and downloads the compressed `.ogg` result. All you need is `curl`.
+
+<Steps>
+<Step title="Create an API key">
+
+Create a key in the dashboard under **Settings → API Keys**. The full key (`sk_live_...`) is shown once — copy it immediately; only a hash is stored.
+
+```bash
+export ROBIN_KEY="sk_live_..."
+```
+
+</Step>
+<Step title="Request an upload URL">
+
+Declare the filename and size in bytes. You get back a presigned URL valid for 15 minutes.
+
+```bash
+curl -s https://api.robinwood.dev/v1/upload \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "episode.mp3", "size": 52428800}'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "665f1c2ab8d4e91a2c3d4e5f",
+    "uploadUrl": "https://...signed-put-url...",
+    "contentType": "audio/mpeg",
+    "uploadUrlExpiresIn": 900,
+    "expiresAt": "2026-07-12T14:00:00.000Z"
+  }
+}
+```
+
+</Step>
+<Step title="PUT the file to the upload URL">
+
+Use exactly the `contentType` returned in the previous step — the signature is bound to it.
+
+```bash
+curl -s -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: audio/mpeg" \
+  --data-binary @episode.mp3
+```
+
+</Step>
+<Step title="Create the audio job">
+
+Reference the upload `id` as `audioId` and pick the `podcast` preset.
+
+```bash
+curl -s https://api.robinwood.dev/v1/audio \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: episode-42" \
+  -d '{"audioId": "665f1c2ab8d4e91a2c3d4e5f", "preset": "podcast"}'
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "created",
+    "createdAt": "2026-07-11T14:02:11.000Z"
+  }
+}
+```
+
+Credits are reserved now, based on file size (1 credit per started 5 MB for audio). They are refunded automatically if the job fails.
+
+</Step>
+<Step title="Poll the job and download the result">
+
+```bash
+curl -s https://api.robinwood.dev/v1/jobs/665f1d00b8d4e91a2c3d4e60 \
+  -H "Authorization: Bearer $ROBIN_KEY"
+```
+
+While running, `status` moves through `created → pending → processing`. When it's `completed`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "completed",
+    "result": {
+      "outputUrl": "https://...signed-get-url...",
+      "metrics": {
+        "inputSize": 52428800,
+        "outputSize": 6291456,
+        "compressionRatio": 8.33,
+        "operationsApplied": ["trim-silence", "normalize", "compress", "encode"]
+      }
+    }
+  }
+}
+```
+
+Download the Opus-encoded output:
+
+```bash
+curl -s -o episode.ogg "$OUTPUT_URL"
+```
+
+`outputUrl` is a fresh signed URL on every read, valid for 1 hour. Results stay available for 7 days after completion.
+
+</Step>
+</Steps>
+
+Prefer a push model over polling? Add a `webhookUrl` to the job body — see [Webhooks](/concepts/webhooks).

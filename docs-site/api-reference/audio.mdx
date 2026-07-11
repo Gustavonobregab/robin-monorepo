@@ -1,0 +1,108 @@
+---
+title: "Compress audio"
+description: "POST /v1/audio"
+---
+
+Create an asynchronous audio compression [job](/concepts/jobs) from an uploaded `.mp3` or `.wav` file.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional, 1–255 characters. Returns the existing job if a job with this key was already created.
+</ParamField>
+
+<ParamField body="audioId" type="string" required>
+  Id of an [upload](/concepts/uploads) — must be an audio file (`.mp3` or `.wav`).
+</ParamField>
+
+<ParamField body="preset" type="string">
+  One of `chill`, `medium`, `aggressive`, `podcast`, `lecture`. Either `preset` or `operations` is required.
+</ParamField>
+
+<ParamField body="operations" type="array">
+  1–10 custom operations, applied in order. See below.
+</ParamField>
+
+<ParamField body="webhookUrl" type="string">
+  URL to receive `job.completed` / `job.failed` events for this job. Requires a plan with webhooks.
+</ParamField>
+
+## Presets
+
+| Preset | Pipeline | Output |
+| --- | --- | --- |
+| `chill` | trim-silence (0.2) → normalize (-16) | Opus 32k — near-transparent |
+| `medium` | trim-silence (0.5) → normalize (-14) → compress (3:1) | Opus 24k — balanced |
+| `aggressive` | trim-silence (0.8) → speedup (1.75x) → normalize (-10) → compress (8:1) | Opus 12k — max size reduction |
+| `podcast` | trim-silence (0.6) → normalize (-16) → compress (4:1) | Opus 24k — voice-optimized |
+| `lecture` | trim-silence (0.4) → speedup (1.5x) → normalize (-14) | Opus 16k |
+
+## Operations
+
+| Type | Params (defaults) | Description |
+| --- | --- | --- |
+| `trim-silence` | `aggressiveness` 0–1 (0.5), `minSilenceDuration` 100–5000 ms (500) | Remove silent parts |
+| `normalize` | `targetLevel` -70–0 dB (-14), `peakNormalize` (false) | Normalize volume levels |
+| `compress` | `ratio` 1–20 (4), `threshold` -60–0 (-20), `attack` 0–100 (10), `release` 0–1000 (100) | Dynamic range compression |
+| `speedup` | `rate` 0.5–5.0 (1.25) | Change speed without changing pitch |
+| `encode` | `format` `opus`\|`mp3` (opus), `bitrate` 12–128 kbps (24), `channels` 1–2 (1) | Output encoding |
+
+Encoding rules:
+
+- If your chain has no `encode` operation, one is appended with defaults (Opus, 24 kbps, mono).
+- `encode` always runs last, regardless of where you place it. If several are sent, the last one wins.
+- Output is **`.ogg` (Opus)** by default — best quality per bitrate for voice. Pass `{"type": "encode", "params": {"format": "mp3"}}` for `.mp3` when you need broad compatibility.
+
+`GET /v1/audio/presets` and `GET /v1/audio/operations` return these definitions as JSON.
+
+## Examples
+
+```bash Preset
+curl -s https://api.robinwood.dev/v1/audio \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: episode-42" \
+  -d '{"audioId": "665f1c2ab8d4e91a2c3d4e5f", "preset": "podcast"}'
+```
+
+```bash Custom operations, MP3 output
+curl -s https://api.robinwood.dev/v1/audio \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "audioId": "665f1c2ab8d4e91a2c3d4e5f",
+    "operations": [
+      {"type": "trim-silence", "params": {"aggressiveness": 0.7}},
+      {"type": "normalize"},
+      {"type": "encode", "params": {"format": "mp3", "bitrate": 64, "channels": 2}}
+    ]
+  }'
+```
+
+<ResponseExample>
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "created",
+    "createdAt": "2026-07-11T14:02:11.000Z",
+    "updatedAt": "2026-07-11T14:02:11.000Z"
+  }
+}
+```
+
+</ResponseExample>
+
+## Results
+
+Poll `GET /v1/jobs/:id` until `status` is `completed`, then download `result.outputUrl` (signed, 1-hour validity, regenerated on every read). Results are retained for 7 days.
+
+## Credits
+
+1 credit per started 5 MB of input, reserved when the job is created and refunded if it ultimately fails. See [Credits](/concepts/credits).

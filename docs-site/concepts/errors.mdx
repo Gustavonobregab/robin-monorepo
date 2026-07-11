@@ -1,0 +1,68 @@
+---
+title: "Errors"
+description: "Error envelope and complete code reference"
+---
+
+All errors share one envelope:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FILE_TOO_LARGE",
+    "message": "File exceeds 25MB limit on your plan"
+  }
+}
+```
+
+Branch on `error.code`, not on `message` — messages may change.
+
+## Authentication
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `API_KEY_REQUIRED` | 401 | Missing `Authorization` header |
+| `INVALID_API_KEY_FORMAT` | 401 | Header isn't `Bearer sk_live_*` |
+| `INVALID_API_KEY` | 401 | Key doesn't exist or was revoked |
+
+## Rate limiting and credits
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `RATE_LIMITED` | 429 | Over 60 requests/minute on this key — retry after `Retry-After` seconds |
+| `INSUFFICIENT_CREDITS` | 429 | Monthly credit limit reached |
+| `NO_PLAN` | 403 | Account has no active plan |
+| `SUBSCRIPTION_ENDED` | 403 | Canceled subscription past its period end |
+| `FEATURE_NOT_AVAILABLE` | 403 | Feature (e.g. webhooks) not included in your plan |
+
+## Uploads
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `INVALID_FORMAT` | 422 | Extension not in `.mp3 .wav .pdf .txt`, or file content doesn't match its format |
+| `FILE_TOO_LARGE` | 413 | File exceeds your plan's size limit |
+| `UPLOAD_NOT_FOUND` | 404 | Unknown upload id, or owned by another account |
+| `UPLOAD_EXPIRED` | 410 | Upload older than 24 hours |
+| `UPLOAD_NOT_COMPLETED` | 409 | File was never `PUT` to the presigned URL |
+
+## Text and audio jobs
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `TEXT_INVALID_INPUT` | 400 | Missing/conflicting `text`/`fileId`, or no preset/operations |
+| `TEXT_INVALID_INPUT` | 422 | `fileId` is not a `.pdf` or `.txt` upload |
+| `TEXT_INVALID_PRESET` | 400 | Unknown text preset |
+| `AUDIO_INVALID_INPUT` | 400 | No preset or operations provided |
+| `AUDIO_INVALID_INPUT` | 422 | `audioId` is not an audio upload |
+| `AUDIO_INVALID_PRESET` | 400 | Unknown audio preset |
+| `JOB_NOT_FOUND` | 404 | Unknown job id, or owned by another account |
+
+## General
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `VALIDATION_ERROR` | 400 | Request body/query failed schema validation |
+| `NOT_FOUND` | 404 | Route or resource does not exist |
+| `USER_NOT_FOUND` | 404 | Account not found |
+| `PLAN_NOT_FOUND` | 500 | Plan configuration error — contact support |
+| `INTERNAL_ERROR` | 500 | Unexpected server error — include the `X-Request-Id` header when reporting |

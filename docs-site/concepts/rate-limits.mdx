@@ -1,0 +1,44 @@
+---
+title: "Rate Limits"
+description: "Per-key request limits and how to handle 429s"
+---
+
+Each API key is limited to **60 requests per minute**, counted in fixed one-minute windows.
+
+## Headers
+
+Every authenticated response includes:
+
+| Header | Meaning |
+| --- | --- |
+| `X-RateLimit-Limit` | Requests allowed per minute (60) |
+| `X-RateLimit-Remaining` | Requests left in the current window |
+
+When the limit is exceeded, the API returns HTTP 429 with a `Retry-After` header (seconds until the window resets):
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+Retry-After: 23
+```
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Rate limit exceeded. Try again shortly."
+  }
+}
+```
+
+## Handling 429s
+
+- Respect `Retry-After` before retrying — the window is fixed, so retrying earlier will fail again.
+- Job creation is safe to retry with the same [`Idempotency-Key`](/concepts/jobs#idempotency); you won't create duplicates.
+- When polling jobs, prefer intervals of a few seconds (or [webhooks](/concepts/webhooks)) over tight loops.
+
+<Note>
+`INSUFFICIENT_CREDITS` also returns HTTP 429 but is not a rate limit — it means your monthly credit allowance is exhausted. Always branch on `error.code`.
+</Note>

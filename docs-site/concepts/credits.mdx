@@ -1,0 +1,50 @@
+---
+title: "Credits"
+description: "How usage is metered and billed"
+---
+
+Every processing request consumes credits from your monthly allowance. Credits are **size-based** — cost depends only on input size, not on which operations you run.
+
+## Rates
+
+| Pipeline | Cost |
+| --- | --- |
+| Text | 1 credit per **started 100 KB** of input |
+| Audio | 1 credit per **started 5 MB** of input |
+
+"Started" means the size is rounded up: a 220 KB text input costs 3 credits; a 4 MB audio file costs 1 credit; a 12 MB audio file costs 3. Minimum cost is always 1 credit.
+
+## Plans
+
+| Plan | Credits / cycle | Max file size | Webhooks |
+| --- | --- | --- | --- |
+| Free | 100 | 25 MB | No |
+| Pro | 1,000 | 100 MB | Yes |
+
+Credits reset at the start of each 30-day billing cycle. Unused credits do not roll over.
+
+## Reservation and refunds
+
+- Credits are **reserved when the job is created** (or, for synchronous text, before processing). If your balance can't cover the cost, the request is rejected before any work happens.
+- If a job **ultimately fails** after all retries, the reserved credits are refunded automatically.
+- Retries of the same job do not consume additional credits.
+
+## Running out
+
+When a request would exceed your cycle limit:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INSUFFICIENT_CREDITS",
+    "message": "You have reached your credit limit for this billing cycle. Please upgrade your plan."
+  }
+}
+```
+
+This returns HTTP 429 — distinguish it from rate limiting by the `code` field.
+
+## Tracking usage
+
+`GET /v1/usage/current` returns per-pipeline totals for the current billing period — see [Usage](/api-reference/usage). The dashboard shows remaining credits in real time.

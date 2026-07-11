@@ -1,0 +1,83 @@
+---
+title: "Create upload"
+description: "POST /v1/upload"
+---
+
+Request a presigned URL to upload a file. See [Uploads](/concepts/uploads) for the full flow and validation rules.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+<ParamField body="filename" type="string" required>
+  Original filename, 1–255 characters. The extension determines the content type and must be one of `.mp3`, `.wav`, `.pdf`, `.txt`.
+</ParamField>
+
+<ParamField body="size" type="number" required>
+  File size in bytes (minimum 1). Checked against your plan limit — 25 MB on Free, 100 MB on Pro. The actual size is re-verified when the upload is consumed.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Upload id — pass as `audioId` (audio jobs) or `fileId` (text jobs).
+</ResponseField>
+
+<ResponseField name="uploadUrl" type="string">
+  Presigned `PUT` URL. Valid for 15 minutes.
+</ResponseField>
+
+<ResponseField name="contentType" type="string">
+  Content type derived from the extension. The `PUT` request must use exactly this `Content-Type` header.
+</ResponseField>
+
+<ResponseField name="uploadUrlExpiresIn" type="number">
+  Upload URL lifetime in seconds (900).
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO timestamp after which the upload can no longer be consumed (24 hours from creation).
+</ResponseField>
+
+## Example
+
+```bash
+curl -s https://api.robinwood.dev/v1/upload \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "episode.mp3", "size": 52428800}'
+```
+
+<ResponseExample>
+
+```json Response
+{
+  "success": true,
+  "data": {
+    "id": "665f1c2ab8d4e91a2c3d4e5f",
+    "uploadUrl": "https://...signed-put-url...",
+    "contentType": "audio/mpeg",
+    "uploadUrlExpiresIn": 900,
+    "expiresAt": "2026-07-12T14:00:00.000Z"
+  }
+}
+```
+
+</ResponseExample>
+
+Then upload the file:
+
+```bash
+curl -s -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: audio/mpeg" \
+  --data-binary @episode.mp3
+```
+
+## Errors
+
+| Code | HTTP | When |
+| --- | --- | --- |
+| `INVALID_FORMAT` | 422 | Extension not allowed |
+| `FILE_TOO_LARGE` | 413 | `size` exceeds your plan limit |

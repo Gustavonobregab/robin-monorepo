@@ -1,0 +1,99 @@
+---
+title: "Jobs"
+description: "Lifecycle, polling, results, and idempotency"
+---
+
+Audio jobs — and text jobs above the sync threshold — run asynchronously. Creating one returns immediately with a job `id`; you then poll `GET /v1/jobs/:id` or receive a [webhook](/concepts/webhooks).
+
+## Lifecycle
+
+```
+created → pending → processing → completed
+                                → failed
+```
+
+| Status | Meaning |
+| --- | --- |
+| `created` | Job accepted and enqueued |
+| `processing` | A worker is running the operation pipeline |
+| `pending` | A processing attempt failed; the job is waiting to be retried |
+| `completed` | Done — `result` is populated |
+| `failed` | All attempts exhausted — `error` is populated, credits refunded |
+
+Processing is retried up to 3 times with exponential backoff before a job is marked `failed`.
+
+## Results
+
+`GET /v1/jobs/:id` returns:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "completed",
+    "result": {
+      "outputUrl": "https://...signed-url...",
+      "metrics": {
+        "inputSize": 52428800,
+        "outputSize": 6291456,
+        "compressionRatio": 8.33,
+        "operationsApplied": ["trim-silence", "normalize", "compress", "encode"]
+      }
+    }
+  }
+}
+```
+
+- **`outputUrl`** — file outputs. A fresh signed URL is generated on every read and is valid for 1 hour; just re-fetch the job to get a new one. Audio outputs are `.ogg` (Opus) by default, or `.mp3` if you opted in via the `encode` operation. Text jobs created from a `fileId` output a `.txt` file.
+- **`outputText`** — inline output, returned for text jobs whose input was inline `text`.
+- **Retention** — results are available for **7 days** after completion.
+
+## Listing jobs
+
+`GET /v1/jobs` returns newest-first, cursor-paginated:
+
+```bash
+curl -s "https://api.robinwood.dev/v1/jobs?type=audio&status=completed&limit=20" \
+  -H "Authorization: Bearer $ROBIN_KEY"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "665f1d00b8d4e91a2c3d4e60",
+        "type": "audio",
+        "status": "completed",
+        "name": "episode.mp3",
+        "metrics": { "compressionRatio": 8.33 },
+        "createdAt": "2026-07-11T14:02:11.000Z",
+        "completedAt": "2026-07-11T14:03:40.000Z"
+      }
+    ],
+    "nextCursor": null
+  }
+}
+```
+
+Pass `nextCursor` back as `cursor` to fetch the next page. `limit` defaults to 20, max 100. See [List jobs](/api-reference/jobs-list) for all filters.
+
+## Idempotency
+
+`POST /v1/text` and `POST /v1/audio` accept an optional `Idempotency-Key` header (1–255 characters, scoped to your account):
+
+```bash
+curl -s https://api.robinwood.dev/v1/audio \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Idempotency-Key: episode-42" \
+  -H "Content-Type: application/json" \
+  -d '{"audioId": "...", "preset": "podcast"}'
+```
+
+If a job with that key already exists, the existing job is returned instead of creating (and charging) a new one. Safe to use on retries after network failures.
+
+<Note>
+Idempotency applies to job creation. Small inline text requests that are processed synchronously return their result directly and are not deduplicated.
+</Note>
