@@ -9,7 +9,6 @@ import { JobListQuerySchema } from '../modules/jobs/job.types';
 import { AudioOperationSchema, AudioPresetSchema } from '../modules/audio/audio.types';
 import { TextOperationSchema, TextPresetSchema } from '../modules/text/text.types';
 import { ApiError } from '../utils/api-error';
-import { UserModel } from '../modules/users/users.model';
 
 export const apiRoutes = new Elysia()
   .use(apiKeyAuth)
@@ -36,12 +35,22 @@ export const apiRoutes = new Elysia()
       headers: t.Object({
         'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
       }),
+      detail: {
+        summary: 'Create audio compression job',
+        description:
+          'Queues compression of a previously uploaded audio file, using either a preset or a custom list of operations. Supports Idempotency-Key.',
+        tags: ['Audio'],
+      },
     }
   )
 
-  .get('/audio/presets', () => audioService.listPresets())
+  .get('/audio/presets', () => audioService.listPresets(), {
+    detail: { summary: 'List audio presets', tags: ['Audio'] },
+  })
 
-  .get('/audio/operations', () => audioService.listOperations())
+  .get('/audio/operations', () => audioService.listOperations(), {
+    detail: { summary: 'List audio operations', tags: ['Audio'] },
+  })
 
   // ─── Text ──────────────────────────────────────────
   .post(
@@ -61,25 +70,44 @@ export const apiRoutes = new Elysia()
       headers: t.Object({
         'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
       }),
+      detail: {
+        summary: 'Create text compression job',
+        description:
+          'Queues compression of inline text or a previously uploaded file, using either a preset or a custom list of operations. Supports Idempotency-Key.',
+        tags: ['Text'],
+      },
     }
   )
 
-  .get('/text/presets', () => textService.listPresets())
+  .get('/text/presets', () => textService.listPresets(), {
+    detail: { summary: 'List text presets', tags: ['Text'] },
+  })
 
-  .get('/text/operations', () => textService.listOperations())
+  .get('/text/operations', () => textService.listOperations(), {
+    detail: { summary: 'List text operations', tags: ['Text'] },
+  })
 
   // ─── Jobs ──────────────────────────────────────────
   .get(
     '/jobs',
     async ({ query, userId }) => jobService.list(userId, query),
-    { query: JobListQuerySchema }
+    {
+      query: JobListQuerySchema,
+      detail: { summary: 'List jobs', tags: ['Jobs'] },
+    }
   )
 
-  .get('/jobs/:id', async ({ params: { id }, userId }) => {
-    const job = await jobService.getStatus(userId, id);
-    if (!job) throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
-    return job;
-  })
+  .get(
+    '/jobs/:id',
+    async ({ params: { id }, userId }) => {
+      const job = await jobService.getStatus(userId, id);
+      if (!job) throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
+      return job;
+    },
+    {
+      detail: { summary: 'Get job status', tags: ['Jobs'] },
+    }
+  )
 
   // ─── Upload ────────────────────────────────────────
   .post(
@@ -90,17 +118,19 @@ export const apiRoutes = new Elysia()
         filename: t.String({ minLength: 1, maxLength: 255 }),
         size: t.Number({ minimum: 1 }),
       }),
+      detail: {
+        summary: 'Create presigned upload',
+        description: 'Returns a presigned URL to upload a file, plus the file id to reference in audio/text jobs.',
+        tags: ['Upload'],
+      },
     }
   )
 
   // ─── Usage ─────────────────────────────────────────
-  .get('/usage/current', async ({ userId }) => {
-    const user = await UserModel.findOne({
-      $or: [{ oderId: userId }, { _id: userId }],
-    }).lean();
-
-    const periodStart = user?.subscription?.currentPeriodStart;
-    const periodEnd = user?.subscription?.currentPeriodEnd;
-
-    return usageService.getCurrentUsage(userId, periodStart, periodEnd);
-  });
+  .get(
+    '/usage/current',
+    async ({ userId }) => usageService.getCurrentUsage(userId),
+    {
+      detail: { summary: 'Get current billing period usage', tags: ['Usage'] },
+    }
+  );

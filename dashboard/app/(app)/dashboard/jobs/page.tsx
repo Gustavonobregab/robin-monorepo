@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Download, Loader2 } from 'lucide-react'
@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/app/components/ui/table'
 import { Skeleton } from '@/app/components/ui/skeleton'
-import { cn, formatBytes } from '@/app/lib/utils'
+import { cn, formatBytes, triggerDownload } from '@/app/lib/utils'
 import { listJobs, getJobStatus } from '@/app/http/jobs'
 import { toastApiError } from '@/app/http/errors'
 import type { JobListItem, JobMetrics, JobPipeline, JobStatus } from '@/types'
@@ -40,9 +40,11 @@ export default function JobsPage() {
   const [cursor, setCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const requestIdRef = useRef(0)
 
   const load = useCallback(
     async (reset: boolean) => {
+      const requestId = ++requestIdRef.current
       if (reset) setLoading(true)
       else setLoadingMore(true)
       try {
@@ -52,13 +54,16 @@ export default function JobsPage() {
           limit: 20,
           cursor: reset ? undefined : cursor ?? undefined,
         })
+        if (requestId !== requestIdRef.current) return
         setItems((prev) => (reset ? res.items : [...prev, ...res.items]))
         setCursor(res.nextCursor)
       } catch (err) {
         await toastApiError(err, 'Could not load jobs')
       } finally {
-        setLoading(false)
-        setLoadingMore(false)
+        if (requestId === requestIdRef.current) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
       }
     },
     [type, status, cursor],
@@ -179,11 +184,11 @@ function JobRow({ job }: { job: JobListItem }) {
     try {
       const detail = await getJobStatus(job.id)
       if (detail.result?.outputUrl) {
-        window.open(detail.result.outputUrl, '_blank')
+        triggerDownload(detail.result.outputUrl)
       } else if (detail.result?.outputText) {
         const blob = new Blob([detail.result.outputText], { type: 'text/plain' })
         const url = URL.createObjectURL(blob)
-        window.open(url, '_blank')
+        triggerDownload(url, 'output.txt')
         setTimeout(() => URL.revokeObjectURL(url), 10_000)
       } else {
         toast.error('No output available for this job')

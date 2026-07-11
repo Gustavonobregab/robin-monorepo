@@ -16,8 +16,7 @@ import { webhooksService } from '../modules/webhooks/webhooks.service';
 const log = (jobId: string, msg: string) => console.log(`[AUDIO:${jobId}] ${msg}`);
 
 export default async function (job: Job<AudioQueueJob>) {
-  const { data } = job.data;
-  const id = data.jobId;
+  const id = job.data.jobId;
 
   log(id, 'Starting');
 
@@ -127,7 +126,7 @@ export default async function (job: Job<AudioQueueJob>) {
 
     log(id, 'Usage recorded');
 
-    await webhooksService.sendJobWebhook(id, 'job.completed');
+    await webhooksService.enqueueJobWebhook(id, 'job.completed');
   } catch (err) {
     log(id, `Failed: ${err instanceof Error ? err.message : err}`);
 
@@ -150,7 +149,7 @@ export default async function (job: Job<AudioQueueJob>) {
       log(id, `Rolled back ${creditCost} credits`);
     }
 
-    await webhooksService.sendJobWebhook(id, 'job.failed');
+    await webhooksService.enqueueJobWebhook(id, 'job.failed');
     throw err;
   } finally {
     await rm(workDir, { recursive: true, force: true }).catch(() => {});

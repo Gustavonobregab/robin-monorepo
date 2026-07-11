@@ -88,14 +88,7 @@ export class JobService {
     const { queues } = await import('../../queues/queue');
     const queue = type === 'text' ? queues.text : queues.audio;
 
-    await queue.add(
-      type,
-      {
-        data: { jobId },
-        metadata: { step: 'CREATED' },
-      },
-      { jobId },
-    );
+    await queue.add(type, { jobId }, { jobId });
   }
 
   private toJob(doc: any): Job {

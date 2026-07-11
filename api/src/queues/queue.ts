@@ -2,6 +2,7 @@ import { Queue } from 'bullmq';
 import { redisConnection } from '../config/redis';
 import { TEXT_QUEUE, type TextQueueJob } from './text.queue';
 import { AUDIO_QUEUE, type AudioQueueJob } from './audio.queue';
+import { WEBHOOK_QUEUE, type WebhookQueueJob } from './webhook.queue';
 
 const defaultJobOptions = {
   attempts: 3,
@@ -23,7 +24,20 @@ const audioQueue = new Queue<AudioQueueJob>(AUDIO_QUEUE, {
   defaultJobOptions,
 });
 
+const webhookQueue = new Queue<WebhookQueueJob>(WEBHOOK_QUEUE, {
+  connection: redisConnection,
+  defaultJobOptions: {
+    ...defaultJobOptions,
+    attempts: 5,
+    backoff: {
+      type: 'exponential' as const,
+      delay: 15_000,
+    },
+  },
+});
+
 export const queues = {
   text: textQueue,
   audio: audioQueue,
+  webhook: webhookQueue,
 };

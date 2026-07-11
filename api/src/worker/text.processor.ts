@@ -73,7 +73,7 @@ const kb = (text: string) => (new TextEncoder().encode(text).byteLength / 1024).
 
 
 export default async function (job: Job<TextQueueJob>) {
-  const id = job.data.data.jobId;
+  const id = job.data.jobId;
   log(id, 'Starting');
 
   const jobDoc = await JobModel.findById(id);
@@ -136,7 +136,7 @@ export default async function (job: Job<TextQueueJob>) {
     });
     log(id, `Usage recorded: ${input.length} chars`);
 
-    await webhooksService.sendJobWebhook(id, 'job.completed');
+    await webhooksService.enqueueJobWebhook(id, 'job.completed');
   } catch (err) {
     log(id, `Failed: ${err instanceof Error ? err.message : err}`);
 
@@ -159,7 +159,7 @@ export default async function (job: Job<TextQueueJob>) {
       log(id, `Rolled back ${creditCost} credits`);
     }
 
-    await webhooksService.sendJobWebhook(id, 'job.failed');
+    await webhooksService.enqueueJobWebhook(id, 'job.failed');
     throw err;
   }
 }

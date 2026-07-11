@@ -8,8 +8,10 @@ import { redisConnection } from '../config/redis';
 import { connectDatabase } from '../config/database';
 import { TEXT_QUEUE, type TextQueueJob } from '../queues/text.queue';
 import { AUDIO_QUEUE, type AudioQueueJob } from '../queues/audio.queue';
+import { WEBHOOK_QUEUE, type WebhookQueueJob } from '../queues/webhook.queue';
 import textProcessor from './text.processor';
 import audioProcessor from './audio.processor';
+import webhookProcessor from './webhook.processor';
 
 await connectDatabase();
 
@@ -32,15 +34,26 @@ const audioWorker = new Worker<AudioQueueJob>(
   },
 );
 
-const workers = [textWorker, audioWorker];
+const webhookWorker = new Worker<WebhookQueueJob>(
+  WEBHOOK_QUEUE,
+  webhookProcessor,
+  {
+    connection: redisConnection,
+    concurrency: 5,
+  },
+);
+
+const workers = [textWorker, audioWorker, webhookWorker];
 
 for (const worker of workers) {
   worker.on('failed', (job, err) => {
-    console.error(`[Worker] Job ${job?.data.data.jobId} failed: ${err.message}`);
+    console.error(
+      `[Worker] Job ${job?.data?.jobId ?? 'unknown'} failed (attempt ${job?.attemptsMade ?? '?'}): ${err.message}`,
+    );
   });
 
   worker.on('completed', (job) => {
-    console.log(`[Worker] Job ${job.data.data.jobId} completed`);
+    console.log(`[Worker] Job ${job.data.jobId} completed`);
   });
 }
 

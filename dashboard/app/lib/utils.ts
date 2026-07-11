@@ -6,6 +6,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// randomUUID only exists in secure contexts; getRandomValues exists everywhere
+export function randomKey(): string {
+  if (crypto.randomUUID) return crypto.randomUUID()
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+export function triggerDownload(href: string, filename = '') {
+  const a = document.createElement('a')
+  a.href = href
+  a.download = filename
+  a.click()
+}
+
 export function formatBytes(bytes: number, decimals = 1): string {
   if (bytes <= 0) return '0 B'
   const k = 1024

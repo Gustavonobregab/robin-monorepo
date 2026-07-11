@@ -13,6 +13,7 @@ import { submitTextJob } from '@/app/http/text'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus } from '@/app/http/jobs'
 import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
+import { randomKey, triggerDownload } from '@/app/lib/utils'
 import type { JobMetrics } from '@/types'
 
 export default function TextPage() {
@@ -67,7 +68,7 @@ export default function TextPage() {
         ? { ...base, preset: settings.preset }
         : { ...base, operations: settings.operations }
 
-      const res = await submitTextJob(input as Parameters<typeof submitTextJob>[0], crypto.randomUUID())
+      const res = await submitTextJob(input as Parameters<typeof submitTextJob>[0], randomKey())
 
       const data = res.data as any
 
@@ -105,17 +106,14 @@ export default function TextPage() {
 
   function downloadOutput() {
     if (output?.downloadUrl) {
-      window.open(output.downloadUrl, '_blank')
+      triggerDownload(output.downloadUrl)
       return
     }
     if (!output?.text) return
     const blob = new Blob([output.text], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'output.txt'
-    a.click()
-    URL.revokeObjectURL(url)
+    triggerDownload(url, 'output.txt')
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
   }
 
   return (

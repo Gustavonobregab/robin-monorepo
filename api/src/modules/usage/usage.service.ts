@@ -1,4 +1,5 @@
 import { UsageEventModel } from './usage.model';
+import { UserModel } from '../users/users.model';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { isDuplicateKeyError } from '../../utils/mongo';
 import type {
@@ -135,6 +136,18 @@ export class UsageService {
   }
 
   async getCurrentUsage(userId: string, periodStart?: Date, periodEnd?: Date): Promise<CurrentUsage> {
+    // Callers that already loaded the user pass the cycle in; otherwise resolve
+    // it here so every surface reports the rolling billing cycle, not the
+    // calendar month
+    if (!periodStart || !periodEnd) {
+      const user = await UserModel.findOne({
+        $or: [{ oderId: userId }, { _id: userId }],
+      }).lean();
+
+      periodStart = periodStart ?? user?.subscription?.currentPeriodStart;
+      periodEnd = periodEnd ?? user?.subscription?.currentPeriodEnd;
+    }
+
     const now = new Date();
     const start = periodStart || startOfMonth(now);
     const end = periodEnd || endOfMonth(now);

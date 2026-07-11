@@ -12,6 +12,7 @@ import { submitAudioJob } from '@/app/http/audio'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus } from '@/app/http/jobs'
 import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
+import { randomKey } from '@/app/lib/utils'
 
 export default function AudioPage() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function AudioPage() {
           ? { audioId, preset: settings.preset }
           : { audioId, operations: settings.operations }
 
-      const res = await submitAudioJob(input, crypto.randomUUID())
+      const res = await submitAudioJob(input, randomKey())
       setJobId(res.id)
     } catch (err) {
       const { code } = await parseApiError(err)

@@ -18,12 +18,22 @@ export const s3 = new S3Client({
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
+
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
 });
 
 const DOWNLOAD_URL_TTL = 60 * 60; // 1h; URLs are regenerated on every status read
 
 export function getSignedDownloadUrl(key: string): Promise<string> {
-  return getSignedUrl(s3, new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }), {
-    expiresIn: DOWNLOAD_URL_TTL,
-  });
+  return getSignedUrl(
+    s3,
+    new GetObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      // Forces browsers to download instead of navigating to an inline player
+      ResponseContentDisposition: `attachment; filename="${key.split('/').pop()}"`,
+    }),
+    { expiresIn: DOWNLOAD_URL_TTL },
+  );
 }
