@@ -124,6 +124,32 @@ export interface CurrentUsage {
   video: { requests: number; minutes: number; inputBytes: number }
 }
 
+// ─── Plans ───────────────────────────────────────────────────
+export interface CreditWeight {
+  credits: number
+  perUnitBytes: number
+}
+
+export interface PublicPlan {
+  _id: string
+  name: string
+  slug: string
+  description?: string
+  credits: number
+  creditWeights: {
+    text: CreditWeight
+    audio: CreditWeight
+    image: CreditWeight
+    video: CreditWeight
+  }
+  prices: { brl?: number; usd?: number }
+  features: {
+    maxFileSize: number
+    maxApiKeys: number
+    webhooks: boolean
+  }
+}
+
 // ─── API Keys ────────────────────────────────────────────────
 export type KeyStatus = 'active' | 'revoked'
 

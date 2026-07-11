@@ -39,7 +39,11 @@ async function renewCycleIfExpired(userId: string) {
   }
 }
 
-export async function reserveCredits(userId: string, pipelineType: PipelineType): Promise<number> {
+export async function reserveCredits(
+  userId: string,
+  pipelineType: PipelineType,
+  inputBytes: number,
+): Promise<number> {
   await renewCycleIfExpired(userId);
 
   // Get the user's plan to look up credit weight
@@ -61,7 +65,9 @@ export async function reserveCredits(userId: string, pipelineType: PipelineType)
     throw new ApiError('PLAN_NOT_FOUND', 'Plan not found', 500);
   }
 
-  const cost = plan.creditWeights[pipelineType];
+  // Size-based cost: credits per started perUnitBytes of input
+  const weight = plan.creditWeights[pipelineType];
+  const cost = weight.credits * Math.max(1, Math.ceil(inputBytes / weight.perUnitBytes));
 
   // Atomic reservation: only succeeds if user has enough credits
   const result = await UserModel.findOneAndUpdate(

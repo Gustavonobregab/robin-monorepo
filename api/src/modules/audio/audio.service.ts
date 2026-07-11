@@ -44,8 +44,8 @@ export class AudioService {
       await usersService.assertWebhookAccess(userId);
     }
 
-    // Reserve credits before enqueueing
-    const creditCost = await reserveCredits(userId, 'audio');
+    // Reserve credits before enqueueing; cost scales with file size
+    const creditCost = await reserveCredits(userId, 'audio', upload.size);
 
     try {
       const job = await jobService.create({ userId,

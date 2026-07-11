@@ -68,12 +68,13 @@ export class TextService {
 
     const operations = this.resolveOperations(preset, customOps);
 
+    const inputText = text!;
+    const inputSize = Buffer.byteLength(inputText, 'utf8');
+
     // Reserve credits before processing
-    const creditCost = await reserveCredits(userId, 'text');
+    const creditCost = await reserveCredits(userId, 'text', inputSize);
 
     try {
-      const inputText = text!;
-      const inputSize = Buffer.byteLength(inputText, 'utf8');
       const start = performance.now();
       const output = await processText(inputText, operations);
       const processingMs = Math.round(performance.now() - start);
@@ -164,24 +165,27 @@ export class TextService {
       await usersService.assertWebhookAccess(userId);
     }
 
-    // Reserve credits before enqueueing
-    const creditCost = await reserveCredits(userId, 'text');
+    let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
+    let inputBytes: number;
 
-    try {
-      let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
+    if (fileId) {
+      const upload = await uploadService.getUpload(fileId, userId);
 
-      if (fileId) {
-        const upload = await uploadService.getUpload(fileId, userId);
-
-        if (upload.mimeType !== 'application/pdf' && upload.mimeType !== 'text/plain') {
-          throw new ApiError('TEXT_INVALID_INPUT', 'Uploaded file is not a text document', 422);
-        }
-
-        source = { kind: 'storage', ref: upload.s3Key };
-      } else {
-        source = { kind: 'inline', text: text! };
+      if (upload.mimeType !== 'application/pdf' && upload.mimeType !== 'text/plain') {
+        throw new ApiError('TEXT_INVALID_INPUT', 'Uploaded file is not a text document', 422);
       }
 
+      source = { kind: 'storage', ref: upload.s3Key };
+      inputBytes = upload.size;
+    } else {
+      source = { kind: 'inline', text: text! };
+      inputBytes = Buffer.byteLength(text!, 'utf8');
+    }
+
+    // Reserve credits before enqueueing
+    const creditCost = await reserveCredits(userId, 'text', inputBytes);
+
+    try {
       const job = await jobService.create({
         userId,
         payload: {

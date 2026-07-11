@@ -1,10 +1,23 @@
 import type { ObjectId } from 'mongoose';
 
+// "credits" charged per started "perUnitBytes" of input.
+// Example: { credits: 1, perUnitBytes: 5MB } → a 12MB file costs 3 credits.
+export interface CreditWeight {
+  credits: number;
+  perUnitBytes: number;
+}
+
 export interface CreditWeights {
-  text: number;    // credits consumed per text processing request
-  image: number;   // credits consumed per image processing request
-  audio: number;   // credits consumed per audio processing request
-  video: number;   // credits consumed per video processing request
+  text: CreditWeight;
+  image: CreditWeight;
+  audio: CreditWeight;
+  video: CreditWeight;
+}
+
+// Monthly price per currency; absent value = not sellable in that currency yet
+export interface PlanPrices {
+  brl?: number;
+  usd?: number;
 }
 
 export interface PlanFeatures {
@@ -20,6 +33,7 @@ export interface Plan {
   description?: string;    // optional plan description for UI display
   credits: number;         // total credits granted per billing cycle
   creditWeights: CreditWeights;
+  prices: PlanPrices;
   features: PlanFeatures;
   isPublic: boolean;       // true = visible on pricing page
   isDefault: boolean;      // true = assigned to new users on signup

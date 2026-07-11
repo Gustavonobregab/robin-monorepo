@@ -4,7 +4,8 @@ import { Button } from '@/app/components/ui/button'
 import { Badge } from '@/app/components/ui/badge'
 import { Skeleton } from '@/app/components/ui/skeleton'
 import { getProfile } from '@/app/http/users'
-import type { ApiResponse, UserProfile } from '@/types'
+import { getPublicPlans } from '@/app/http/plans'
+import type { ApiResponse, PublicPlan, UserProfile } from '@/types'
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B'
@@ -184,16 +185,54 @@ export default function BillingPage() {
           </div>
         )}
 
-        {!isLoading && plan?.slug === 'free' && (
-          <div className="bg-background rounded-xl border border-border shadow-sm p-6">
-            <h3 className="font-medium mb-1">Upgrade to Pro</h3>
-            <p className="text-sm text-muted mb-4">Priority processing and higher limits.</p>
-            <Button disabled className="rounded-full bg-accent-strong text-foreground opacity-50 cursor-not-allowed">
-              Upgrade: coming soon
-            </Button>
-          </div>
-        )}
+        {!isLoading && <PlansBlock currentSlug={plan?.slug} />}
       </div>
+    </div>
+  )
+}
+
+function PlansBlock({ currentSlug }: { currentSlug?: string }) {
+  const { data } = useSWR('public-plans', getPublicPlans)
+  const plans = data?.data ?? []
+
+  if (plans.length === 0) return null
+
+  return (
+    <div className="bg-background rounded-xl border border-border shadow-sm p-6">
+      <h3 className="font-medium mb-4">Plans</h3>
+      <div className="space-y-3">
+        {plans.map((p) => (
+          <PlanRow key={p.slug} plan={p} isCurrent={p.slug === currentSlug} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PlanRow({ plan, isCurrent }: { plan: PublicPlan; isCurrent: boolean }) {
+  const sellable = plan.prices?.usd !== undefined || plan.prices?.brl !== undefined
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3">
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm">{plan.name}</span>
+          {isCurrent && (
+            <Badge className="bg-accent-light text-foreground border-0 rounded-full text-xs">
+              Current plan
+            </Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted mt-0.5">
+          {plan.credits.toLocaleString()} credits/month · files up to {formatBytes(plan.features.maxFileSize)} ·{' '}
+          {plan.features.maxApiKeys} keys{plan.features.webhooks ? ' · webhooks' : ''}
+        </p>
+      </div>
+      {!isCurrent && (
+        <Button disabled={!sellable} size="sm" className="rounded-full bg-accent-strong text-foreground shrink-0 disabled:opacity-50">
+          {sellable ? 'Upgrade' : 'Coming soon'}
+        </Button>
+      )}
     </div>
   )
 }
