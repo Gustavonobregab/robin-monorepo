@@ -56,6 +56,11 @@ export class JobService {
     return { id: doc._id.toString(), status: 'completed', result: input.result };
   }
 
+  // Sync images upload the result after the doc exists; the key lands in a second write
+  async attachOutputKey(jobId: string, outputKey: string): Promise<void> {
+    await JobModel.updateOne({ _id: jobId }, { $set: { 'result.outputKey': outputKey } });
+  }
+
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Job | null> {
     const doc = await JobModel.findOne({ userId, idempotencyKey });
     return doc ? this.toJob(doc) : null;
