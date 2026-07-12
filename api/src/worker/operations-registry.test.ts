@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test';
 import { TEXT_PRESETS, TEXT_OPERATIONS } from '../modules/text/text.types';
 import { AUDIO_PRESETS, AUDIO_OPERATIONS } from '../modules/audio/audio.types';
+import { IMAGE_PRESETS, IMAGE_OPERATIONS } from '../modules/image/image.types';
 import { getHandler as getTextHandler } from './text/operations';
 import { getHandler as getAudioHandler } from './audio/operations';
 
@@ -39,6 +40,25 @@ describe('audio operations registry', () => {
 
   test('every preset ends with an encode step or relies on the service default', () => {
     for (const [name, preset] of Object.entries(AUDIO_PRESETS)) {
+      const encodeIndex = preset.operations.findIndex((op) => op.type === 'encode');
+      if (encodeIndex !== -1) {
+        expect(encodeIndex, `${name}: encode must be last`).toBe(preset.operations.length - 1);
+      }
+    }
+  });
+});
+
+describe('image operations registry', () => {
+  test('every preset operation is an exposed operation', () => {
+    for (const [name, preset] of Object.entries(IMAGE_PRESETS)) {
+      for (const op of preset.operations) {
+        expect(IMAGE_OPERATIONS[op.type as keyof typeof IMAGE_OPERATIONS], `${name} → ${op.type}`).toBeDefined();
+      }
+    }
+  });
+
+  test('when a preset has an encode step it is the last one', () => {
+    for (const [name, preset] of Object.entries(IMAGE_PRESETS)) {
       const encodeIndex = preset.operations.findIndex((op) => op.type === 'encode');
       if (encodeIndex !== -1) {
         expect(encodeIndex, `${name}: encode must be last`).toBe(preset.operations.length - 1);
