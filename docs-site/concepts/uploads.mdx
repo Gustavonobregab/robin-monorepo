@@ -1,6 +1,6 @@
 ---
 title: "Uploads"
-description: "Presigned uploads for audio and document files"
+description: "Presigned uploads for audio, image, and document files"
 ---
 
 Files are never sent through the API directly. You request a presigned URL, then `PUT` the file straight to storage. This keeps large uploads fast and off the API's request path.
@@ -10,7 +10,7 @@ Files are never sent through the API directly. You request a presigned URL, then
 1. `POST /v1/upload` with `{ filename, size }` (size in bytes).
 2. Receive `{ id, uploadUrl, contentType, uploadUrlExpiresIn, expiresAt }`.
 3. `PUT` the raw file bytes to `uploadUrl` with **exactly** the returned `Content-Type` — the presigned signature is bound to it.
-4. Use `id` as `audioId` (audio jobs) or `fileId` (text jobs).
+4. Use `id` as `audioId` (audio jobs), `imageId` (image jobs), or `fileId` (text jobs).
 
 ```bash
 # 1. Request URL
@@ -29,12 +29,12 @@ curl -s -X PUT "$UPLOAD_URL" \
 
 | Constraint | Value |
 | --- | --- |
-| Allowed formats | `.mp3`, `.wav`, `.pdf`, `.txt` |
+| Allowed formats | `.mp3`, `.wav`, `.pdf`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.webp` |
 | Max file size | Plan-dependent: 25 MB (Free), 100 MB (Pro) |
 | Upload URL validity | 15 minutes (`uploadUrlExpiresIn: 900`) |
 | Upload lifetime | Must be consumed by a job within **24 hours** |
 
-Content types are assigned by extension: `audio/mpeg`, `audio/wav`, `application/pdf`, `text/plain`.
+Content types are assigned by extension: `audio/mpeg`, `audio/wav`, `application/pdf`, `text/plain`, `image/jpeg`, `image/png`, `image/webp`.
 
 ## Validation
 
@@ -42,11 +42,12 @@ The declared `size` is checked against your plan limit when the URL is created. 
 
 - the object actually landed in storage (`UPLOAD_NOT_COMPLETED`, 409, if the `PUT` never happened),
 - the real size is within your plan limit (`FILE_TOO_LARGE`, 413),
-- the file's magic bytes match a valid MP3/WAV/PDF signature (`INVALID_FORMAT`, 422). Plain-text files skip this check.
+- the file's magic bytes match a valid MP3/WAV/PDF/JPEG/PNG/WebP signature (`INVALID_FORMAT`, 422). Plain-text files skip this check.
 
 Which uploads a job accepts:
 
 - `POST /v1/audio` — `.mp3` and `.wav` only.
+- `POST /v1/image` — `.jpg`, `.jpeg`, `.png`, `.webp` only.
 - `POST /v1/text` (`fileId`) — `.pdf` and `.txt` only.
 
 ## Errors

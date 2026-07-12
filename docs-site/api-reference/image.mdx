@@ -1,0 +1,140 @@
+---
+title: "Compress images"
+description: "POST /v1/image"
+---
+
+Compress an uploaded image (`.jpg`, `.jpeg`, `.png`, `.webp`) with a preset or a custom operation chain. Every request returns a [job](/concepts/jobs) — always the same shape. Small images are processed inline and the job comes back already `completed` (HTTP **200**, result included); everything else is queued (HTTP **202**) and finishes asynchronously.
+
+**Sync eligibility:** input of at most **5 MB**, output format not AVIF, and no `webhookUrl`. Everything else is queued — AVIF always queues.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_live_...`
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional, 1–255 characters. Returns the existing job if a job with this key was already created. Applies to queued jobs only — sync jobs complete inline and are not deduplicated.
+</ParamField>
+
+<ParamField body="imageId" type="string" required>
+  Id of an [upload](/concepts/uploads) — must be an image file (`.jpg`, `.jpeg`, `.png`, `.webp`).
+</ParamField>
+
+<ParamField body="preset" type="string">
+  One of `chill`, `medium`, `aggressive`, `thumbnail`. Either `preset` or `operations` is required.
+</ParamField>
+
+<ParamField body="operations" type="array">
+  1–10 custom operations, applied in order. See below.
+</ParamField>
+
+<ParamField body="webhookUrl" type="string">
+  URL to receive `job.completed` / `job.failed` events for this job. Forces the queued path. Requires a plan with webhooks.
+</ParamField>
+
+## Presets
+
+| Preset | Pipeline | Output |
+| --- | --- | --- |
+| `chill` | encode (quality 85) | WebP — original dimensions, near-lossless |
+| `medium` | resize (2560px, inside) → encode (quality 80) | WebP — balanced |
+| `aggressive` | resize (2048px, inside) → encode (quality 50, effort 2) | AVIF — maximum savings, always queued |
+| `thumbnail` | resize (512×512, cover, attention) → encode (quality 75) | WebP — smart-cropped thumbnail |
+
+## Operations
+
+| Type | Params (defaults) | Description |
+| --- | --- | --- |
+| `resize` | `width` 16–8192, `height` 16–8192, `fit` `inside`\|`cover`\|`contain` (inside), `position` `centre`\|`attention`\|`entropy` (centre) | Fit within width/height, or crop with `fit: cover` — `position: attention` smart-crops toward the most interesting region |
+| `encode` | `format` `webp`\|`avif`\|`jpeg`\|`png` (webp), `quality` 1–100 (80), `effort` 0–9 (4) | Output encoding — WebP by default (universal support), AVIF for maximum compression (queued) |
+
+Encoding rules:
+
+- If your chain has no `encode` operation, one is appended with defaults (WebP, quality 80).
+- `encode` always runs last, regardless of where you place it. If several are sent, the last one wins.
+- The output file is `result.webp`, `.avif`, `.jpg`, or `.png` depending on `format`. AVIF encoding is memory-heavy, so AVIF jobs always take the queued path.
+
+`GET /v1/image/presets` and `GET /v1/image/operations` return these definitions as JSON.
+
+## Examples
+
+End-to-end — upload a photo, then thumbnail it synchronously:
+
+```bash End-to-end (sync)
+# 1. Create the upload
+curl -s https://api.robinwood.dev/v1/upload \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"filename": "photo.jpg", "size": 2097152}'
+# → { "id": "665f1c2ab8d4e91a2c3d4e5f", "uploadUrl": "https://...", "contentType": "image/jpeg", ... }
+
+# 2. PUT the file
+curl -s -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @photo.jpg
+
+# 3. Process — small non-AVIF input, so the job returns completed (200)
+curl -s https://api.robinwood.dev/v1/image \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"imageId": "665f1c2ab8d4e91a2c3d4e5f", "preset": "thumbnail"}'
+```
+
+```bash Custom operations, AVIF output (queued)
+curl -s https://api.robinwood.dev/v1/image \
+  -H "Authorization: Bearer $ROBIN_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: hero-banner-v2" \
+  -d '{
+    "imageId": "665f1c2ab8d4e91a2c3d4e5f",
+    "operations": [
+      {"type": "resize", "params": {"width": 1920, "height": 1080, "fit": "cover", "position": "attention"}},
+      {"type": "encode", "params": {"format": "avif", "quality": 55, "effort": 2}}
+    ]
+  }'
+```
+
+<ResponseExample>
+
+```json 200 — completed (sync)
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "completed",
+    "result": {
+      "outputUrl": "https://...signed-get-url...",
+      "metrics": {
+        "inputSize": 2097152,
+        "outputSize": 24576,
+        "compressionRatio": 85.33,
+        "processingMs": 48,
+        "operationsApplied": ["resize", "encode"]
+      }
+    }
+  }
+}
+```
+
+```json 202 — queued
+{
+  "success": true,
+  "data": {
+    "id": "665f1d00b8d4e91a2c3d4e60",
+    "status": "created"
+  }
+}
+```
+
+</ResponseExample>
+
+## Results
+
+One code path handles both: check `status`. If it's `completed`, the result is already in the response. Otherwise poll `GET /v1/jobs/:id` — ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll — or wait for the webhook.
+
+`result.outputUrl` is a signed download URL, freshly generated on every read and valid for 1 hour — re-fetch the job for a new one. Results are retained for 7 days.
+
+## Credits
+
+1 credit per started 2 MB of input, reserved up front and refunded if the job ultimately fails. See [Credits](/concepts/credits).

@@ -12,7 +12,7 @@ Request a presigned URL to upload a file. See [Uploads](/concepts/uploads) for t
 </ParamField>
 
 <ParamField body="filename" type="string" required>
-  Original filename, 1–255 characters. The extension determines the content type and must be one of `.mp3`, `.wav`, `.pdf`, `.txt`.
+  Original filename, 1–255 characters. The extension determines the content type and must be one of `.mp3`, `.wav`, `.pdf`, `.txt`, `.jpg`, `.jpeg`, `.png`, `.webp`.
 </ParamField>
 
 <ParamField body="size" type="number" required>
@@ -22,7 +22,7 @@ Request a presigned URL to upload a file. See [Uploads](/concepts/uploads) for t
 ## Response
 
 <ResponseField name="id" type="string">
-  Upload id — pass as `audioId` (audio jobs) or `fileId` (text jobs).
+  Upload id — pass as `audioId` (audio jobs), `imageId` (image jobs), or `fileId` (text jobs).
 </ResponseField>
 
 <ResponseField name="uploadUrl" type="string">

@@ -12,7 +12,7 @@ List your jobs, newest first, with cursor pagination.
 </ParamField>
 
 <ParamField query="type" type="string">
-  Filter by pipeline: `audio`, `text`, `image`, `video`. (`image` and `video` are reserved for upcoming pipelines.)
+  Filter by pipeline: `audio`, `text`, `image`, `video`. (`video` is reserved for an upcoming pipeline.)
 </ParamField>
 
 <ParamField query="status" type="string">
@@ -30,7 +30,7 @@ List your jobs, newest first, with cursor pagination.
 ## Response
 
 <ResponseField name="items" type="array">
-  Job summaries: `id`, `type`, `status`, `name` (original filename, audio jobs), `error` (failed jobs), `metrics` (completed jobs), `createdAt`, `completedAt`.
+  Job summaries: `id`, `type`, `status`, `name` (original filename, audio and image jobs), `error` (failed jobs), `metrics` (completed jobs), `createdAt`, `completedAt`.
 </ResponseField>
 
 <ResponseField name="nextCursor" type="string | null">

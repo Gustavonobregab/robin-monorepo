@@ -12,7 +12,7 @@ Fetch a job's status and result. Supports long-polling via `?wait` — the endpo
 </ParamField>
 
 <ParamField path="id" type="string" required>
-  The job id returned by `POST /v1/text` or `POST /v1/audio`.
+  The job id returned by `POST /v1/text`, `POST /v1/audio`, or `POST /v1/image`.
 </ParamField>
 
 <ParamField query="wait" type="number">
@@ -38,7 +38,7 @@ Fetch a job's status and result. Supports long-polling via `?wait` — the endpo
 
   <Expandable title="properties">
     <ResponseField name="outputUrl" type="string">
-      Signed download URL for file outputs. Freshly generated on every read, valid for 1 hour — re-fetch the job for a new one. Audio outputs are `.ogg` (Opus) by default or `.mp3` if requested via `encode`; file-based text outputs are `.txt`.
+      Signed download URL for file outputs. Freshly generated on every read, valid for 1 hour — re-fetch the job for a new one. Audio outputs are `.ogg` (Opus) by default or `.mp3` if requested via `encode`; image outputs are `.webp`, `.avif`, `.jpg`, or `.png`; file-based text outputs are `.txt`.
     </ResponseField>
     <ResponseField name="outputText" type="string">
       Inline output for text jobs created from inline `text`.

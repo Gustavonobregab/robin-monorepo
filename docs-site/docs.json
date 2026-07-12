@@ -30,6 +30,7 @@
         "pages": [
           "api-reference/text",
           "api-reference/audio",
+          "api-reference/image",
           "api-reference/upload",
           "api-reference/jobs-list",
           "api-reference/jobs-get",
