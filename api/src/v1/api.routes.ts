@@ -6,6 +6,7 @@ import { uploadService } from '../modules/upload/upload.service';
 import { usageService } from '../modules/usage/usage.service';
 import { jobService } from '../modules/jobs/job.service';
 import { JobListQuerySchema } from '../modules/jobs/job.types';
+import { jobResponse } from '../modules/jobs/job.http';
 import { AudioOperationSchema, AudioPresetSchema } from '../modules/audio/audio.types';
 import { TextOperationSchema, TextPresetSchema } from '../modules/text/text.types';
 import { ApiError } from '../utils/api-error';
@@ -16,13 +17,11 @@ export const apiRoutes = new Elysia()
   // ─── Audio ─────────────────────────────────────────
   .post(
     '/audio',
-    async ({ body, userId, headers }) => {
-      const { job } = await audioService.processAudio(userId, {
+    async ({ body, userId, headers, set }) =>
+      jobResponse(set, await audioService.processAudio(userId, {
         ...body,
         idempotencyKey: headers['idempotency-key'],
-      });
-      return job;
-    },
+      })),
     {
       body: t.Object({
         audioId: t.String(),
@@ -55,8 +54,8 @@ export const apiRoutes = new Elysia()
   // ─── Text ──────────────────────────────────────────
   .post(
     '/text',
-    async ({ body, userId, headers }) =>
-      textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] }),
+    async ({ body, userId, headers, set }) =>
+      jobResponse(set, await textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] })),
     {
       body: t.Object({
         text: t.Optional(t.String({ maxLength: 5_000_000 })),
@@ -99,13 +98,20 @@ export const apiRoutes = new Elysia()
 
   .get(
     '/jobs/:id',
-    async ({ params: { id }, userId }) => {
-      const job = await jobService.getStatus(userId, id);
+    async ({ params: { id }, query, userId }) => {
+      const job = await jobService.getStatus(userId, id, query.wait ?? 0);
       if (!job) throw new ApiError('JOB_NOT_FOUND', 'Job not found', 404);
       return job;
     },
     {
-      detail: { summary: 'Get job status', tags: ['Jobs'] },
+      query: t.Object({
+        wait: t.Optional(t.Numeric({ minimum: 0, maximum: 30 })),
+      }),
+      detail: {
+        summary: 'Get job status',
+        description: 'Pass ?wait=N (max 30s) to long-poll: the response is held until the job finishes or the timeout passes.',
+        tags: ['Jobs'],
+      },
     }
   )
 

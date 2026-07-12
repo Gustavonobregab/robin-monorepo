@@ -7,7 +7,7 @@ import {
 } from './audio.types';
 import { ApiError } from '../../utils/api-error';
 import { jobService } from '../jobs/job.service';
-import type { Job } from '../jobs/job.types';
+import type { JobStatusView } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 import { usersService } from '../users/users.service';
@@ -15,7 +15,7 @@ import { isDuplicateKeyError } from '../../utils/mongo';
 
 export class AudioService {
 
-  async processAudio( userId: string, input: ProcessAudioInput): Promise<{ job: Job }> {
+  async processAudio(userId: string, input: ProcessAudioInput): Promise<JobStatusView> {
     const { preset, operations: customOps, audioId } = input;
 
     if (!preset && (!customOps || customOps.length === 0)) {
@@ -28,7 +28,7 @@ export class AudioService {
 
     if (input.idempotencyKey) {
       const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
-      if (existing) return { job: existing };
+      if (existing) return (await jobService.getStatus(userId, existing.id))!;
     }
 
     // Resolve audioId to upload document; validates ownership and expiry
@@ -62,14 +62,14 @@ export class AudioService {
         idempotencyKey: input.idempotencyKey,
       });
 
-      return { job };
+      return job;
     } catch (err) {
       await rollbackCredits(userId, creditCost);
 
       // Concurrent request with the same idempotency key won the race
       if (input.idempotencyKey && isDuplicateKeyError(err)) {
         const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
-        if (existing) return { job: existing };
+        if (existing) return (await jobService.getStatus(userId, existing.id))!;
       }
 
       throw err;

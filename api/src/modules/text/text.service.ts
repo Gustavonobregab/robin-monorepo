@@ -9,7 +9,7 @@ import { ApiError } from '../../utils/api-error';
 import { jobService } from '../jobs/job.service';
 import { uploadService } from '../upload/upload.service';
 import { processText } from '../../worker/text/pipeline';
-import type { Job } from '../jobs/job.types';
+import type { JobStatusView } from '../jobs/job.types';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
 import { usersService } from '../users/users.service';
 import { usageService } from '../usage/usage.service';
@@ -20,11 +20,8 @@ const SYNC_SIZE_LIMIT = 50 * 1024; // 50 KB
 
 export class TextService {
 
-  async processText(
-    userId: string,
-    input: ProcessTextInput
-  ): Promise<{ sync: true; output: string; metrics: Record<string, unknown> } | { sync: false; job: Job }> {
-
+  // Everything returns a job view; small inputs come back already completed
+  async processText(userId: string, input: ProcessTextInput): Promise<JobStatusView> {
     if (!input.text && !input.fileId) {
       throw new ApiError('TEXT_INVALID_INPUT', 'Either text or fileId must be provided', 400);
     }
@@ -34,12 +31,10 @@ export class TextService {
     }
 
     if (this.isSyncEligible(input)) {
-      const result = await this.processTextSync(userId, input);
-      return { sync: true, ...result };
+      return this.processTextSync(userId, input);
     }
 
-    const { job } = await this.processTextAsync(userId, input);
-    return { sync: false, job };
+    return this.processTextAsync(userId, input);
   }
 
   private isSyncEligible(input: ProcessTextInput): boolean {
@@ -52,10 +47,7 @@ export class TextService {
     );
   }
 
-  async processTextSync(
-    userId: string,
-    input: ProcessTextInput
-  ): Promise<{ output: string; metrics: Record<string, unknown> }> {
+  async processTextSync(userId: string, input: ProcessTextInput): Promise<JobStatusView> {
     const { preset, operations: customOps, text } = input;
 
     if (!preset && (!customOps || customOps.length === 0)) {
@@ -79,7 +71,22 @@ export class TextService {
       const processingMs = Math.round(performance.now() - start);
       const outputSize = Buffer.byteLength(output, 'utf8');
 
+      const metrics = {
+        inputSize,
+        outputSize,
+        compressionRatio: inputSize > 0 ? +(outputSize / inputSize).toFixed(4) : 0,
+        processingMs,
+        operationsApplied: operations.map((op) => op.type),
+      };
+
+      const job = await jobService.createCompleted({
+        userId,
+        payload: { type: 'text', preset, operations, source: { kind: 'inline', text: '' }, creditCost },
+        result: { outputText: output, metrics },
+      });
+
       await this.recordSyncUsage(userId, {
+        jobId: job.id,
         inputText,
         inputSize,
         outputSize,
@@ -88,16 +95,7 @@ export class TextService {
         creditCost,
       });
 
-      return {
-        output,
-        metrics: {
-          inputSize,
-          outputSize,
-          compressionRatio: inputSize > 0 ? +(outputSize / inputSize).toFixed(4) : 0,
-          processingMs,
-          operationsApplied: operations.map((op) => op.type),
-        },
-      };
+      return job;
     } catch (err) {
       await rollbackCredits(userId, creditCost);
       throw err;
@@ -107,6 +105,7 @@ export class TextService {
   private async recordSyncUsage(
     userId: string,
     data: {
+      jobId: string;
       inputText: string;
       inputSize: number;
       outputSize: number;
@@ -116,8 +115,9 @@ export class TextService {
     },
   ) {
     await usageService.recordSafe({
-      idempotencyKey: `sync:${ulid()}`,
+      idempotencyKey: `job:${data.jobId}`,
       userId,
+      jobId: data.jobId,
       sync: true,
       pipelineType: 'text',
       operations: data.operations.map((op) => op.type),
@@ -133,10 +133,7 @@ export class TextService {
     });
   }
 
-  async processTextAsync(
-    userId: string,
-    input: ProcessTextInput
-  ): Promise<{ job: Job }> {
+  async processTextAsync(userId: string, input: ProcessTextInput): Promise<JobStatusView> {
     const { preset, operations: customOps, text, fileId } = input;
 
     if (!preset && (!customOps || customOps.length === 0)) {
@@ -151,7 +148,7 @@ export class TextService {
 
     if (input.idempotencyKey) {
       const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
-      if (existing) return { job: existing };
+      if (existing) return (await jobService.getStatus(userId, existing.id))!;
     }
 
     if (input.webhookUrl) {
@@ -191,14 +188,14 @@ export class TextService {
         idempotencyKey: input.idempotencyKey,
       });
 
-      return { job };
+      return job;
     } catch (err) {
       await rollbackCredits(userId, creditCost);
 
       // Concurrent request with the same idempotency key won the race
       if (input.idempotencyKey && isDuplicateKeyError(err)) {
         const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
-        if (existing) return { job: existing };
+        if (existing) return (await jobService.getStatus(userId, existing.id))!;
       }
 
       throw err;

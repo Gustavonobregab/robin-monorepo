@@ -1,6 +1,6 @@
 // dashboard/app/http/text.ts
 import { clientApi } from './api'
-import type { ApiResponse, SubmitTextJobInput, TextPresetDef, TextOperationDef, TextProcessResult } from '@/types'
+import type { ApiResponse, SubmitTextJobInput, TextPresetDef, TextOperationDef, JobView } from '@/types'
 
 export const submitTextJob = (input: SubmitTextJobInput, idempotencyKey?: string) =>
   clientApi
@@ -8,7 +8,8 @@ export const submitTextJob = (input: SubmitTextJobInput, idempotencyKey?: string
       json: input,
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     })
-    .json<ApiResponse<TextProcessResult>>()
+    .json<ApiResponse<JobView>>()
+    .then((res) => res.data)
 
 export const getTextPresets = () =>
   clientApi.get('text/presets').json<ApiResponse<TextPresetDef[]>>()

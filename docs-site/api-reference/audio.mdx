@@ -3,7 +3,7 @@ title: "Compress audio"
 description: "POST /v1/audio"
 ---
 
-Create an asynchronous audio compression [job](/concepts/jobs) from an uploaded `.mp3` or `.wav` file.
+Create an asynchronous audio compression [job](/concepts/jobs) from an uploaded `.mp3` or `.wav` file. Audio always runs queued: the endpoint responds with HTTP **202 Accepted** and a job object `{ id, status }`.
 
 ## Request
 
@@ -85,14 +85,12 @@ curl -s https://api.robinwood.dev/v1/audio \
 
 <ResponseExample>
 
-```json Response
+```json 202 Accepted
 {
   "success": true,
   "data": {
     "id": "665f1d00b8d4e91a2c3d4e60",
-    "status": "created",
-    "createdAt": "2026-07-11T14:02:11.000Z",
-    "updatedAt": "2026-07-11T14:02:11.000Z"
+    "status": "created"
   }
 }
 ```
@@ -101,7 +99,7 @@ curl -s https://api.robinwood.dev/v1/audio \
 
 ## Results
 
-Poll `GET /v1/jobs/:id` until `status` is `completed`, then download `result.outputUrl` (signed, 1-hour validity, regenerated on every read). Results are retained for 7 days.
+Poll `GET /v1/jobs/:id` — ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll — until `status` is `completed`, then download `result.outputUrl` (signed, 1-hour validity, regenerated on every read). Results are retained for 7 days.
 
 ## Credits
 

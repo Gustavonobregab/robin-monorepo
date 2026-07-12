@@ -68,14 +68,16 @@ export default function TextPage() {
         ? { ...base, preset: settings.preset }
         : { ...base, operations: settings.operations }
 
-      const res = await submitTextJob(input as Parameters<typeof submitTextJob>[0], randomKey())
+      const job = await submitTextJob(input as Parameters<typeof submitTextJob>[0], randomKey())
 
-      const data = res.data as any
-
-      if (data.sync) {
-        setOutput({ text: data.output, metrics: data.metrics as JobMetrics })
+      if (job.status === 'completed' && job.result) {
+        setOutput({
+          text: job.result.outputText,
+          downloadUrl: job.result.outputUrl,
+          metrics: job.result.metrics as JobMetrics,
+        })
       } else {
-        setJobId(data.job.id)
+        setJobId(job.id)
       }
     } catch (err) {
       const { code } = await parseApiError(err)

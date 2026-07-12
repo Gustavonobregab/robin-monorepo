@@ -2,19 +2,18 @@ import { Elysia, t } from 'elysia';
 import { validateAuth } from '../../middlewares/auth';
 import { audioService } from './audio.service';
 import { AudioOperationSchema, AudioPresetSchema } from './audio.types';
+import { jobResponse } from '../jobs/job.http';
 
 export const audioRoutes = new Elysia({ prefix: '/audio' })
   .use(validateAuth)
 
   .post(
     '/',
-    async ({ body, userId, headers }) => {
-        const { job } = await audioService.processAudio(userId, {
-          ...body,
-          idempotencyKey: headers['idempotency-key'],
-        });
-        return job;
-      },
+    async ({ body, userId, headers, set }) =>
+      jobResponse(set, await audioService.processAudio(userId, {
+        ...body,
+        idempotencyKey: headers['idempotency-key'],
+      })),
     {
       body: t.Object({
         audioId: t.String(),

@@ -2,14 +2,15 @@ import { Elysia, t } from 'elysia';
 import { validateAuth } from '../../middlewares/auth';
 import { textService } from './text.service';
 import { TextOperationSchema, TextPresetSchema } from './text.types';
+import { jobResponse } from '../jobs/job.http';
 
 export const textRoutes = new Elysia({ prefix: '/text' })
   .use(validateAuth)
 
   .post(
     '/',
-    async ({ body, userId, headers }) =>
-      textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] }),
+    async ({ body, userId, headers, set }) =>
+      jobResponse(set, await textService.processText(userId, { ...body, idempotencyKey: headers['idempotency-key'] })),
     {
       body: t.Object({
         text: t.Optional(t.String({ maxLength: 5_000_000 })),

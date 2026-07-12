@@ -25,7 +25,7 @@ Credits reset at the start of each 30-day billing cycle. Unused credits do not r
 
 ## Reservation and refunds
 
-- Credits are **reserved when the job is created** (or, for synchronous text, before processing). If your balance can't cover the cost, the request is rejected before any work happens.
+- Credits are **reserved when the job is created** (or, for fast-path text, before processing). If your balance can't cover the cost, the request is rejected before any work happens.
 - If a job **ultimately fails** after all retries, the reserved credits are refunded automatically.
 - Retries of the same job do not consume additional credits.
 

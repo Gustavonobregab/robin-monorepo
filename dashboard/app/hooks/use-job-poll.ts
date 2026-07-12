@@ -2,7 +2,7 @@
 'use client'
 import useSWR from 'swr'
 import { useRef } from 'react'
-import type { Job } from '@/types'
+import type { JobView } from '@/types'
 
 const POLL_INTERVAL_MS = 2000
 const MAX_POLLS = 150 // 5 minutes
@@ -12,7 +12,7 @@ const isTerminal = (status?: string) =>
 
 interface UseJobPollOptions {
   jobId: string | null
-  fetcher: (id: string) => Promise<Job>
+  fetcher: (id: string) => Promise<JobView>
 }
 
 export function useJobPoll({ jobId, fetcher }: UseJobPollOptions) {
@@ -24,7 +24,7 @@ export function useJobPoll({ jobId, fetcher }: UseJobPollOptions) {
     prevJobId.current = jobId
   }
 
-  const { data: job, error } = useSWR<Job>(
+  const { data: job, error } = useSWR<JobView>(
     jobId ? `job-poll-${jobId}` : null,
     () => fetcher(jobId!),
     {

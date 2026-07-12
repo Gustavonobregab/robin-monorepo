@@ -17,6 +17,9 @@ export type JobType =
   | "image"
   | "video";
 
+export const isTerminalStatus = (status: JobStatus): boolean =>
+  status === "completed" || status === "failed";
+
 export type JobSource =
   | { kind: "url"; url: string }
   | { kind: "storage"; ref: string }

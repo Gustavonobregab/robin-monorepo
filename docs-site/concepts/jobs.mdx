@@ -3,7 +3,12 @@ title: "Jobs"
 description: "Lifecycle, polling, results, and idempotency"
 ---
 
-Audio jobs — and text jobs above the sync threshold — run asynchronously. Creating one returns immediately with a job `id`; you then poll `GET /v1/jobs/:id` or receive a [webhook](/concepts/webhooks).
+Everything returns a job. `POST /v1/text` and `POST /v1/audio` always respond with the same object — `{ id, status, error?, result? }` — regardless of input size:
+
+- **Small inline text (≤ 50 KB, no `webhookUrl`)** is processed inline: HTTP **200**, the job arrives already `completed` with `result` populated, and it appears in your job history like any other.
+- **Everything else** is queued: HTTP **202 Accepted** with `{ id, status: "created" }`, and the job finishes asynchronously.
+
+Client code needs one path: check `status`. If it isn't `completed` or `failed`, fetch `GET /v1/jobs/:id` or wait for a [webhook](/concepts/webhooks).
 
 ## Lifecycle
 
@@ -20,7 +25,17 @@ created → pending → processing → completed
 | `completed` | Done — `result` is populated |
 | `failed` | All attempts exhausted — `error` is populated, credits refunded |
 
-Processing is retried up to 3 times with exponential backoff before a job is marked `failed`.
+Processing is retried up to 3 times with exponential backoff before a job is marked `failed`. Fast-path text jobs skip the queue entirely and are born `completed`.
+
+## Consuming results
+
+Three ways to get a result, in order of preference:
+
+| Mode | How | Use when |
+| --- | --- | --- |
+| Immediate | Read `result` straight off the `POST` response | Inline text ≤ 50 KB — nothing else to do |
+| Long-poll | `GET /v1/jobs/:id?wait=25` | Everything else — the server holds the response until the job finishes or the timeout passes, so a typical job takes 1–2 calls instead of a polling loop. Each request counts against your rate limit, so `wait` saves quota too. See [Get a job](/api-reference/jobs-get). |
+| Webhooks | Pass `webhookUrl` at creation | High volume or long-running jobs where you don't want an open connection — see [Webhooks](/concepts/webhooks) |
 
 ## Results
 
@@ -95,5 +110,5 @@ curl -s https://api.robinwood.dev/v1/audio \
 If a job with that key already exists, the existing job is returned instead of creating (and charging) a new one. Safe to use on retries after network failures.
 
 <Note>
-Idempotency applies to job creation. Small inline text requests that are processed synchronously return their result directly and are not deduplicated.
+Idempotency applies to queued jobs. Fast-path text jobs come back already completed and are not deduplicated.
 </Note>

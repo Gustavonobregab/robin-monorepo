@@ -1,6 +1,6 @@
 // dashboard/app/http/audio.ts
 import { clientApi } from './api'
-import type { ApiResponse, Job, SubmitAudioJobInput, AudioPresetDef, AudioOperationDef } from '@/types'
+import type { ApiResponse, JobView, SubmitAudioJobInput, AudioPresetDef, AudioOperationDef } from '@/types'
 
 export const submitAudioJob = (input: SubmitAudioJobInput, idempotencyKey?: string) =>
   clientApi
@@ -8,7 +8,7 @@ export const submitAudioJob = (input: SubmitAudioJobInput, idempotencyKey?: stri
       json: input,
       headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     })
-    .json<ApiResponse<Job>>()
+    .json<ApiResponse<JobView>>()
     .then((res) => res.data)
 
 export const getAudioPresets = () =>

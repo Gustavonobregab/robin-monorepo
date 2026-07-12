@@ -7,7 +7,7 @@ Robin Wood compresses content for LLM pipelines and storage. Send text or audio,
 
 ## What it does
 
-- **Text** — whitespace/punctuation/unicode cleanup, and conversion of large JSON blocks to TOON tabular notation. Small inline inputs are processed synchronously; larger ones run as jobs.
+- **Text** — whitespace/punctuation/unicode cleanup, and conversion of large JSON blocks to TOON tabular notation. Everything returns a job; small inline inputs come back already completed.
 - **Audio** — silence trimming, loudness normalization, dynamic range compression, speedup, and re-encoding to Opus (default) or MP3. Always asynchronous.
 
 ## How it works
@@ -15,7 +15,7 @@ Robin Wood compresses content for LLM pipelines and storage. Send text or audio,
 1. **Authenticate** every request with an API key: `Authorization: Bearer sk_live_...`
 2. **Upload** files via a presigned URL (`POST /v1/upload`), or send text inline.
 3. **Create a job** with `POST /v1/text` or `POST /v1/audio`, using a preset or custom operations.
-4. **Get the result** by polling `GET /v1/jobs/:id` or receiving a signed webhook.
+4. **Get the result** from the response itself, via `GET /v1/jobs/:id?wait=25` (long-poll), or through a signed webhook.
 
 All endpoints live under `/v1` and return a consistent envelope:
 

@@ -63,6 +63,14 @@ Cross-cutting helpers go in `src/utils/`, middleware-ish plugins in
   retuned by editing `scripts/seed-plans.ts` and re-running it (seeds are
   upserts — they must stay idempotent and update existing docs).
 
+## Processing contract
+
+Every processing endpoint returns the same job view `{ id, status, error?,
+result? }` — synchronous results are jobs born `completed` (HTTP 200 with the
+result inline); queued work returns HTTP 202. Clients consume one shape via
+polling, `GET /jobs/:id?wait=N` (long-poll, max 30s), or webhooks. New
+pipelines must follow this contract.
+
 ## Jobs, queues, workers
 
 - Mongo is the source of truth for job state; the BullMQ payload carries only

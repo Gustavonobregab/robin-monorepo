@@ -1,9 +1,9 @@
 // dashboard/app/http/jobs.ts
 import { clientApi } from './api'
-import type { ApiResponse, Job, JobListResponse, JobPipeline, JobStatus } from '@/types'
+import type { ApiResponse, JobView, JobListResponse, JobPipeline, JobStatus } from '@/types'
 
 export const getJobStatus = (id: string) =>
-  clientApi.get(`jobs/${id}`).json<ApiResponse<Job>>().then((res) => res.data)
+  clientApi.get(`jobs/${id}`).json<ApiResponse<JobView>>().then((res) => res.data)
 
 export const listJobs = (params: {
   type?: JobPipeline

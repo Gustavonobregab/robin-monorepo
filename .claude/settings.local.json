@@ -40,7 +40,26 @@
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''''text'''']\\)\")",
       "Bash(grep -r \"stripe\\\\|payment\\\\|subscription\\\\|billing\" /Users/gustavonobregab/Programming/robin-monorepo --include=*.ts --include=*.tsx --include=*.json)",
       "Bash(wc -l /Users/gustavonobregab/Programming/robin-monorepo/api/src/modules/*/*.ts)",
-      "Bash(find /Users/gustavonobregab/Programming/robin-monorepo/api/src -name *.ts -path *seed* -o -name *.ts -path *script*)"
+      "Bash(find /Users/gustavonobregab/Programming/robin-monorepo/api/src -name *.ts -path *seed* -o -name *.ts -path *script*)",
+      "Workflow(deep-research)",
+      "WebFetch(domain:cleanvoice.ai)",
+      "WebFetch(domain:auphonic.com)",
+      "WebFetch(domain:wiki.xiph.org)",
+      "WebFetch(domain:wiki.hydrogenaudio.org)",
+      "WebFetch(domain:listening-tests.hydrogenaudio.org)",
+      "WebFetch(domain:www.ietf.org)",
+      "WebFetch(domain:opus-codec.org)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:www.llmlingua.com)",
+      "WebFetch(domain:developer.konghq.com)",
+      "WebFetch(domain:www.capterra.com)",
+      "WebFetch(domain:www.ffmpeg.media)",
+      "WebFetch(domain:ayosec.github.io)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:adam.holter.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:news.ycombinator.com)",
+      "Bash(mdls -name kMDItemNumberOfPages \"/Users/gustavonobregab/.claude/projects/-Users-gustavonobregab-Programming-robin-monorepo/027a06db-4db1-4b48-b719-34bce23adeaa/tool-results/webfetch-1781222987331-ojurb4.pdf\")"
     ]
   },
   "enabledPlugins": {

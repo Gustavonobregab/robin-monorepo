@@ -13,25 +13,6 @@ export interface JobMetrics {
   operationsApplied: string[]
 }
 
-export interface Job {
-  id: string
-  userId: string
-  status: JobStatus
-  payload: {
-    type: 'audio' | 'text'
-    operations: object[]
-    preset?: string
-  }
-  result?: {
-    outputUrl?: string
-    outputText?: string
-    metrics?: JobMetrics
-  }
-  error?: string
-  completedAt?: string
-  createdAt: string
-}
-
 export type JobPipeline = 'audio' | 'text' | 'image' | 'video'
 
 export interface JobListItem {
@@ -198,18 +179,18 @@ export interface SubmitTextJobInput {
   operations?: TextOperationInput[]
 }
 
-export interface TextSyncResult {
-  sync: true
-  output: string
-  metrics: JobMetrics
+// Unified processing contract: every compression request returns a job view;
+// small inputs come back already completed (HTTP 200), queued ones as 202
+export interface JobView {
+  id: string
+  status: JobStatus
+  error?: string
+  result?: {
+    outputUrl?: string
+    outputText?: string
+    metrics?: JobMetrics
+  }
 }
-
-export interface TextAsyncResult {
-  sync: false
-  job: Job
-}
-
-export type TextProcessResult = TextSyncResult | TextAsyncResult
 
 export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture'
 

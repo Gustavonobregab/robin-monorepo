@@ -63,13 +63,12 @@ curl -s https://api.robinwood.dev/v1/audio \
   -d '{"audioId": "665f1c2ab8d4e91a2c3d4e5f", "preset": "podcast"}'
 ```
 
-```json
+```json 202 Accepted
 {
   "success": true,
   "data": {
     "id": "665f1d00b8d4e91a2c3d4e60",
-    "status": "created",
-    "createdAt": "2026-07-11T14:02:11.000Z"
+    "status": "created"
   }
 }
 ```
@@ -77,14 +76,16 @@ curl -s https://api.robinwood.dev/v1/audio \
 Credits are reserved now, based on file size (1 credit per started 5 MB for audio). They are refunded automatically if the job fails.
 
 </Step>
-<Step title="Poll the job and download the result">
+<Step title="Wait for the job and download the result">
+
+Pass `?wait=25` to long-poll: the server holds the response until the job finishes (or 25 seconds pass), so you usually need a single call instead of a polling loop.
 
 ```bash
-curl -s https://api.robinwood.dev/v1/jobs/665f1d00b8d4e91a2c3d4e60 \
+curl -s "https://api.robinwood.dev/v1/jobs/665f1d00b8d4e91a2c3d4e60?wait=25" \
   -H "Authorization: Bearer $ROBIN_KEY"
 ```
 
-While running, `status` moves through `created → pending → processing`. When it's `completed`:
+If the job is still running when the wait expires, just repeat the call. When it's `completed`:
 
 ```json
 {
