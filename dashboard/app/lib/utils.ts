@@ -20,6 +20,14 @@ export function triggerDownload(href: string, filename = '') {
   a.click()
 }
 
+export function formatDate(date: string | Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 export function formatBytes(bytes: number, decimals = 1): string {
   if (bytes <= 0) return '0 B'
   const k = 1024

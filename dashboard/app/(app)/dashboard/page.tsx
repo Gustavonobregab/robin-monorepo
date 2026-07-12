@@ -6,15 +6,8 @@ import { RecentJobsTable } from '@/app/components/dashboard/RecentJobsTable'
 import { QuickActions } from '@/app/components/dashboard/QuickActions'
 import { Skeleton } from '@/app/components/ui/skeleton'
 import { getUsageAnalytics } from '@/app/http/usage'
+import { formatBytes } from '@/app/lib/utils'
 import type { ApiResponse, UsageAnalytics } from '@/types'
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-}
 
 export default function DashboardPage() {
   const { data, isLoading } = useSWR<ApiResponse<UsageAnalytics>>(

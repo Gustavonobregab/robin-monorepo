@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import {
   Home, LayoutDashboard, FileText, Music, Image as ImageIcon,
-  Key, CreditCard, User, ChevronLeft, ChevronRight, History,
+  Key, CreditCard, User, ChevronLeft, ChevronRight, History, Gauge,
 } from 'lucide-react'
 import { NavItem } from './NavItem'
 import { Separator } from '@/app/components/ui/separator'
@@ -20,7 +20,8 @@ const toolNav = [
 ]
 
 const settingsNav = [
-  { href: '/dashboard/jobs', icon: History, label: 'Jobs' },
+  { href: '/dashboard/history', icon: History, label: 'History' },
+  { href: '/dashboard/usage', icon: Gauge, label: 'Usage' },
   { href: '/dashboard/keys', icon: Key, label: 'API Keys' },
   { href: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
 ]

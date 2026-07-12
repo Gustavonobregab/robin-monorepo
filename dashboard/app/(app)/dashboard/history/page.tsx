@@ -34,7 +34,7 @@ const STATUS_STYLES: Record<JobStatus, string> = {
   failed: 'bg-danger-light text-danger',
 }
 
-export default function JobsPage() {
+export default function HistoryPage() {
   const [type, setType] = useState<JobPipeline | undefined>()
   const [status, setStatus] = useState<JobStatus | undefined>()
   const [items, setItems] = useState<JobListItem[]>([])
@@ -80,7 +80,7 @@ export default function JobsPage() {
     <div className="h-full overflow-y-auto p-4 sm:p-6">
       <div className="space-y-5 max-w-4xl mx-auto">
         <div>
-          <h2 className="text-lg font-semibold">Jobs</h2>
+          <h2 className="text-lg font-semibold">History</h2>
           <p className="text-sm text-muted mt-0.5">Every compression job on your account.</p>
         </div>
 
