@@ -2,6 +2,8 @@ import type { JobPayload, Job, JobStatusView, JobListItem, JobListQuery } from '
 import { JobModel } from './job.model';
 import { getSignedDownloadUrl } from '../../config/storage';
 
+type QueueType = 'text' | 'audio' | 'image';
+
 const OBJECT_ID = /^[a-f0-9]{24}$/;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -29,7 +31,7 @@ export class JobService {
     const job = await this.create(input);
 
     try {
-      await this.enqueue(job.id, input.payload.type as 'text' | 'audio');
+      await this.enqueue(job.id, input.payload.type as QueueType);
       return { id: job.id, status: job.status };
     } catch (err) {
       await JobModel.deleteOne({ _id: job.id });
@@ -139,11 +141,10 @@ export class JobService {
     };
   }
 
-  async enqueue(jobId: string, type: 'text' | 'audio'): Promise<void> {
+  async enqueue(jobId: string, type: QueueType): Promise<void> {
     const { queues } = await import('../../queues/queue');
-    const queue = type === 'text' ? queues.text : queues.audio;
 
-    await queue.add(type, { jobId }, { jobId });
+    await queues[type].add(type, { jobId }, { jobId });
   }
 
   private toJob(doc: any): Job {

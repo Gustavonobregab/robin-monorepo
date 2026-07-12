@@ -8,9 +8,11 @@ import { redisConnection } from '../config/redis';
 import { connectDatabase } from '../config/database';
 import { TEXT_QUEUE, type TextQueueJob } from '../queues/text.queue';
 import { AUDIO_QUEUE, type AudioQueueJob } from '../queues/audio.queue';
+import { IMAGE_QUEUE, type ImageQueueJob } from '../queues/image.queue';
 import { WEBHOOK_QUEUE, type WebhookQueueJob } from '../queues/webhook.queue';
 import textProcessor from './text.processor';
 import audioProcessor from './audio.processor';
+import imageProcessor from './image.processor';
 import webhookProcessor from './webhook.processor';
 
 await connectDatabase();
@@ -34,6 +36,15 @@ const audioWorker = new Worker<AudioQueueJob>(
   },
 );
 
+const imageWorker = new Worker<ImageQueueJob>(
+  IMAGE_QUEUE,
+  imageProcessor,
+  {
+    connection: redisConnection,
+    concurrency: Number(process.env.IMAGE_WORKER_CONCURRENCY ?? 4),
+  },
+);
+
 const webhookWorker = new Worker<WebhookQueueJob>(
   WEBHOOK_QUEUE,
   webhookProcessor,
@@ -43,7 +54,7 @@ const webhookWorker = new Worker<WebhookQueueJob>(
   },
 );
 
-const workers = [textWorker, audioWorker, webhookWorker];
+const workers = [textWorker, audioWorker, imageWorker, webhookWorker];
 
 for (const worker of workers) {
   worker.on('failed', (job, err) => {

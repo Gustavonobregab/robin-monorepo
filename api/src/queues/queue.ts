@@ -2,6 +2,7 @@ import { Queue } from 'bullmq';
 import { redisConnection } from '../config/redis';
 import { TEXT_QUEUE, type TextQueueJob } from './text.queue';
 import { AUDIO_QUEUE, type AudioQueueJob } from './audio.queue';
+import { IMAGE_QUEUE, type ImageQueueJob } from './image.queue';
 import { WEBHOOK_QUEUE, type WebhookQueueJob } from './webhook.queue';
 
 const defaultJobOptions = {
@@ -24,6 +25,11 @@ const audioQueue = new Queue<AudioQueueJob>(AUDIO_QUEUE, {
   defaultJobOptions,
 });
 
+const imageQueue = new Queue<ImageQueueJob>(IMAGE_QUEUE, {
+  connection: redisConnection,
+  defaultJobOptions,
+});
+
 const webhookQueue = new Queue<WebhookQueueJob>(WEBHOOK_QUEUE, {
   connection: redisConnection,
   defaultJobOptions: {
@@ -39,5 +45,6 @@ const webhookQueue = new Queue<WebhookQueueJob>(WEBHOOK_QUEUE, {
 export const queues = {
   text: textQueue,
   audio: audioQueue,
+  image: imageQueue,
   webhook: webhookQueue,
 };

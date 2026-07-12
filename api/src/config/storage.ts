@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -22,6 +22,16 @@ export const s3 = new S3Client({
   requestChecksumCalculation: 'WHEN_REQUIRED',
   responseChecksumValidation: 'WHEN_REQUIRED',
 });
+
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const response = await s3.send(new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+  if (!response.Body) throw new Error(`Empty response from S3 for ${key}`);
+  return Buffer.from(await response.Body.transformToByteArray());
+}
+
+export async function putObject(key: string, body: Uint8Array, contentType: string): Promise<void> {
+  await s3.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: body, ContentType: contentType }));
+}
 
 const DOWNLOAD_URL_TTL = 60 * 60; // 1h; URLs are regenerated on every status read
 
