@@ -25,6 +25,7 @@
     "ioredis": "^5.9.3",
     "mongoose": "^8.0.0",
     "pdf-parse": "^2.4.5",
+    "sharp": "^0.35.3",
     "ulidx": "^2.4.1"
   },
   "devDependencies": {
