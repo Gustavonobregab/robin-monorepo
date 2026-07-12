@@ -92,11 +92,11 @@ const TOOLS = [
   },
   {
     label: 'Image',
-    subtitle: 'Coming soon',
+    subtitle: 'Compress to WebP & AVIF',
     href: '/dashboard/image',
     bg: 'bg-background-section',
     Visual: ImageVisual,
-    disabled: true,
+    disabled: false,
   },
 ]
 

@@ -16,6 +16,7 @@ const TYPE_FILTERS: { label: string; value?: JobPipeline }[] = [
   { label: 'All' },
   { label: 'Text', value: 'text' },
   { label: 'Audio', value: 'audio' },
+  { label: 'Image', value: 'image' },
 ]
 
 const STATUS_FILTERS: { label: string; value?: JobStatus }[] = [

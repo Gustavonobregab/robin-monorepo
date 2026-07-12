@@ -1,70 +1,158 @@
-// dashboard/app/(app)/dashboard/image/page.tsx
-import { Badge } from '@/app/components/ui/badge'
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
+import { toast } from 'sonner'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { Image as ImageIcon } from 'lucide-react'
-
-const IMAGE_PRESETS = [
-  { value: 'light', label: 'Light', description: 'Minimal compression, best quality' },
-  { value: 'balanced', label: 'Balanced', description: 'Good compression, good quality' },
-  { value: 'aggressive', label: 'Aggressive', description: 'Maximum compression' },
-]
+import { Skeleton } from '@/app/components/ui/skeleton'
+import { ToolLayout } from '@/app/components/tools/ToolLayout'
+import { ToolHistoryPanel } from '@/app/components/tools/ToolHistoryPanel'
+import { useJobPoll } from '@/app/hooks/use-job-poll'
+import { uploadFile } from '@/app/http/upload'
+import { submitImageJob, getImagePresets } from '@/app/http/image'
+import { getJobStatus } from '@/app/http/jobs'
+import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
+import { cn, formatBytes, randomKey, triggerDownload } from '@/app/lib/utils'
+import type { JobMetrics, JobView } from '@/types'
 
 export default function ImagePage() {
+  const router = useRouter()
+  const [file, setFile] = useState<File | null>(null)
+  const [preset, setPreset] = useState('medium')
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [result, setResult] = useState<JobView | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const { data: presetsData } = useSWR('image-presets', getImagePresets)
+  const presets = presetsData?.data ?? []
+
+  const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
+
+  useEffect(() => {
+    if (job?.status === 'completed') setResult(job)
+  }, [job])
+
+  useEffect(() => {
+    if (isFailed) toast.error(job?.error ?? 'Job failed')
+  }, [isFailed]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSubmit() {
+    if (!file) return toast.error('Please select an image')
+
+    setJobId(null)
+    setResult(null)
+    setSubmitting(true)
+    try {
+      const { id: imageId } = await uploadFile(file)
+      const submitted = await submitImageJob({ imageId, preset }, randomKey())
+
+      if (submitted.status === 'completed') setResult(submitted)
+      else setJobId(submitted.id)
+    } catch (err) {
+      const { code } = await parseApiError(err)
+      if (code === 'INSUFFICIENT_CREDITS') {
+        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
+          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
+        })
+      } else {
+        await toastApiError(err, 'Failed to compress the image. Check the file and try again.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const metrics = result?.result?.metrics as JobMetrics | undefined
+
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
-    <div className="space-y-5 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Image compression</h2>
-          <p className="text-sm text-muted mt-0.5">
-            Smart image compression that keeps quality high.
-          </p>
-        </div>
-        <Badge className="bg-accent-light text-foreground border-0 rounded-full">Coming soon</Badge>
-      </div>
+    <ToolLayout
+      title="Image compression"
+      mainPanel={
+        <div className="space-y-4">
+          <label className="block cursor-pointer rounded-xl border border-dashed border-border bg-background p-10 text-center hover:border-accent-strong transition-colors">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
+              <span className="text-sm">{file.name} · {formatBytes(file.size)}</span>
+            ) : (
+              <span className="text-sm text-muted">Drop or select a JPEG, PNG or WebP</span>
+            )}
+          </label>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-60 pointer-events-none select-none">
-        <div className="bg-background rounded-xl border border-border shadow-sm p-5">
-          <div className="space-y-1.5">
-            <Label>Image file URL</Label>
-            <Input type="url" placeholder="https://example.com/photo.jpg" disabled />
-            <p className="text-xs text-muted">Paste a public URL to your image file.</p>
-          </div>
-          <div className="space-y-1.5 mt-4">
-            <Label>Preset</Label>
-            <div className="grid gap-2">
-              {IMAGE_PRESETS.map((preset) => (
-                <div
-                  key={preset.value}
-                  className="text-left px-3 py-2 rounded-xl border border-border text-sm"
+          {(isPolling || submitting) && <Skeleton className="h-40 rounded-xl" />}
+
+          {result?.result && (
+            <div className="rounded-xl border border-border bg-background p-4 space-y-3">
+              {result.result.outputUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={result.result.outputUrl} alt="Compressed result" className="max-h-72 rounded-lg mx-auto" />
+              )}
+              {metrics && (
+                <p className="text-sm text-muted text-center">
+                  {formatBytes(metrics.inputSize)} → {formatBytes(metrics.outputSize)} ({metrics.compressionRatio}×)
+                </p>
+              )}
+              {result.result.outputUrl && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full"
+                  onClick={() => triggerDownload(result.result!.outputUrl!)}
                 >
-                  <span className="font-medium">{preset.label}</span>
-                  <span className="text-muted ml-2">{preset.description}</span>
-                </div>
-              ))}
+                  Download
+                </Button>
+              )}
             </div>
-          </div>
-        </div>
+          )}
 
-        <div className="bg-background rounded-xl border border-border shadow-sm p-5 flex flex-col items-center justify-center gap-3">
-          <div className="w-16 h-16 rounded-xl bg-background-section flex items-center justify-center">
-            <ImageIcon className="w-7 h-7 text-muted" />
-          </div>
-          <p className="text-sm text-muted">Image preview will appear here</p>
+          {timedOut && <p className="text-sm text-danger">Timed out waiting for the job. Check the jobs page.</p>}
         </div>
-      </div>
-
-      <div className="flex justify-end">
+      }
+      settingsPanel={
+        <div className="grid gap-2">
+          {presets.length === 0
+            ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)
+            : presets.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPreset(p.id)}
+                  className={cn(
+                    'text-left px-3 py-2 rounded-xl border text-sm transition-colors',
+                    preset === p.id ? 'border-accent-strong bg-accent-light' : 'border-border hover:border-accent-light',
+                  )}
+                >
+                  <span className="font-medium">{p.name}</span>
+                  <span className="text-muted ml-2">{p.description}</span>
+                </button>
+              ))}
+        </div>
+      }
+      historyPanel={
+        <ToolHistoryPanel
+          pipelineType="image"
+          emptyIcon={
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted mb-4">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+              <circle cx="9" cy="9" r="2" />
+              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+            </svg>
+          }
+          emptyLabel="Your compressed images will appear here"
+        />
+      }
+      action={
         <Button
-          disabled
-          className="rounded-full bg-accent-strong text-foreground opacity-50 cursor-not-allowed"
+          onClick={handleSubmit}
+          disabled={submitting || isPolling || !file}
+          className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
         >
-          Compress image
+          {submitting ? 'Uploading…' : isPolling ? 'Processing…' : 'Compress image'}
         </Button>
-      </div>
-    </div>
-    </div>
+      }
+    />
   )
 }

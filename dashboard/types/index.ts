@@ -192,6 +192,18 @@ export interface JobView {
   }
 }
 
+export interface ImagePresetDef {
+  id: string
+  name: string
+  description: string
+  operations: string[]
+}
+
+export interface SubmitImageJobInput {
+  imageId: string
+  preset?: string
+}
+
 export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture'
 
 export interface AudioPresetDef {
