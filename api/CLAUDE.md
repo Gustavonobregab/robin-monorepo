@@ -86,6 +86,12 @@ pipelines must follow this contract.
 - Audio pipeline: intermediate steps are lossless WAV; only the final `encode`
   op is lossy (Opus mono VBR default, mp3 opt-in). The service guarantees an
   encode op runs last.
+- Image pipeline: sharp (libvips) runs in-process — deploy with `bun run`
+  (never `bun build --compile`), glibc base images, and resolvable
+  optionalDependencies so `@img/sharp-linux-*` installs in CI. WebP is the
+  default encode; AVIF (effort 2, benchmarked) is opt-in and always queued.
+  Small non-AVIF images (≤5MB) run synchronously and return jobs born
+  completed.
 - Webhooks are never sent inline from processors — enqueue via
   `webhooksService.enqueueJobWebhook` (dedicated queue, 5 attempts,
   exponential backoff, HMAC-signed delivery).

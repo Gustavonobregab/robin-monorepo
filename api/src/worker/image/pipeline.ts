@@ -3,8 +3,8 @@ import type { ImageOperation } from '../../modules/image/image.types';
 
 export type ProcessedImage = { data: Buffer; format: string; width: number; height: number };
 
-type ResizeParams = { width: number; height: number; fit: 'inside' | 'cover' | 'contain'; position: 'centre' | 'attention' | 'entropy' };
-type EncodeParams = { format: 'webp' | 'avif' | 'jpeg' | 'png'; quality: number; effort: number };
+type ResizeParams = { width?: number; height?: number; fit?: 'inside' | 'cover' | 'contain'; position?: 'centre' | 'attention' | 'entropy' };
+type EncodeParams = { format?: 'webp' | 'avif' | 'jpeg' | 'png'; quality?: number; effort?: number };
 
 export async function processImage(input: Buffer, operations: ImageOperation[]): Promise<ProcessedImage> {
   // rotate() bakes in EXIF orientation, which is lost when metadata is stripped
@@ -33,34 +33,32 @@ export async function probeImage(input: Buffer) {
   };
 }
 
-function applyResize(chain: Sharp, params: ResizeParams): Sharp {
-  if (!params.width && !params.height) return chain;
+function applyResize(chain: Sharp, { width = 0, height = 0, fit = 'inside', position = 'centre' }: ResizeParams): Sharp {
+  if (!width && !height) return chain;
 
   // Crop strategies (attention/entropy) only apply to cover fits
-  const position =
-    params.fit === 'cover' && params.position !== 'centre'
-      ? sharp.strategy[params.position]
-      : 'centre';
+  const resolvedPosition =
+    fit === 'cover' && position !== 'centre' ? sharp.strategy[position] : 'centre';
 
   return chain.resize({
-    width: params.width || undefined,
-    height: params.height || undefined,
-    fit: params.fit,
-    position,
+    width: width || undefined,
+    height: height || undefined,
+    fit,
+    position: resolvedPosition,
     withoutEnlargement: true,
   });
 }
 
-function applyEncode(chain: Sharp, params: EncodeParams): Sharp {
-  switch (params.format) {
+function applyEncode(chain: Sharp, { format = 'webp', quality = 80, effort = 4 }: EncodeParams): Sharp {
+  switch (format) {
     case 'avif':
-      return chain.avif({ quality: params.quality, effort: Math.min(params.effort, 9) });
+      return chain.avif({ quality, effort: Math.min(effort, 9) });
     case 'jpeg':
-      return chain.jpeg({ quality: params.quality, mozjpeg: true });
+      return chain.jpeg({ quality, mozjpeg: true });
     case 'png':
-      return chain.png({ quality: params.quality, effort: Math.max(1, Math.min(params.effort, 10)), palette: true });
+      return chain.png({ quality, effort: Math.max(1, Math.min(effort, 10)), palette: true });
     case 'webp':
     default:
-      return chain.webp({ quality: params.quality, effort: Math.min(params.effort, 6) });
+      return chain.webp({ quality, effort: Math.min(effort, 6) });
   }
 }
