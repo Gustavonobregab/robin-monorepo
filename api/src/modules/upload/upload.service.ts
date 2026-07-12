@@ -21,6 +21,10 @@ const MIME_MAP: Record<string, string> = {
   '.wav': 'audio/wav',
   '.pdf': 'application/pdf',
   '.txt': 'text/plain',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
 };
 
 const UPLOAD_URL_TTL = 15 * 60; // seconds

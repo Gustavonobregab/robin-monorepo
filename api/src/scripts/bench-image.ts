@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 
 const SAMPLES = [
   { name: 'photo-12MP', width: 4000, height: 3000 },
@@ -7,11 +7,11 @@ const SAMPLES = [
 ];
 
 const CONFIGS = [
-  { label: 'webp q80 e4', encode: (c: sharp.Sharp) => c.webp({ quality: 80, effort: 4 }) },
-  { label: 'avif q50 e2', encode: (c: sharp.Sharp) => c.avif({ quality: 50, effort: 2 }) },
-  { label: 'avif q50 e4', encode: (c: sharp.Sharp) => c.avif({ quality: 50, effort: 4 }) },
-  { label: 'avif q50 e6', encode: (c: sharp.Sharp) => c.avif({ quality: 50, effort: 6 }) },
-  { label: 'jpeg q80 moz', encode: (c: sharp.Sharp) => c.jpeg({ quality: 80, mozjpeg: true }) },
+  { label: 'webp q80 e4', encode: (c: Sharp) => c.webp({ quality: 80, effort: 4 }) },
+  { label: 'avif q50 e2', encode: (c: Sharp) => c.avif({ quality: 50, effort: 2 }) },
+  { label: 'avif q50 e4', encode: (c: Sharp) => c.avif({ quality: 50, effort: 4 }) },
+  { label: 'avif q50 e6', encode: (c: Sharp) => c.avif({ quality: 50, effort: 6 }) },
+  { label: 'jpeg q80 moz', encode: (c: Sharp) => c.jpeg({ quality: 80, mozjpeg: true }) },
 ];
 
 // Deterministic noisy gradient: rough stand-in for photographic entropy
