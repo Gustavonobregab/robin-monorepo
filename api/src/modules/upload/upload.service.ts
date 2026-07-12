@@ -9,23 +9,13 @@ import { ApiError } from '../../utils/api-error';
 import {
   validateMagicBytes,
   ALLOWED_EXTENSIONS,
+  MIME_MAP,
   MAX_FILE_SIZE,
   type CreateUploadResponse,
   type UploadDocument,
 } from './upload.types';
 import { UserModel } from '../users/users.model';
 import { PlanModel } from '../plans/plans.model';
-
-const MIME_MAP: Record<string, string> = {
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-  '.pdf': 'application/pdf',
-  '.txt': 'text/plain',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-};
 
 const UPLOAD_URL_TTL = 15 * 60; // seconds
 const UPLOAD_RETENTION_HOURS = 24;
@@ -48,7 +38,7 @@ export class UploadService {
     }
 
     const s3Key = `uploads/${userId}/${ulid()}${ext}`;
-    const mimeType = MIME_MAP[ext];
+    const mimeType = MIME_MAP[ext as (typeof ALLOWED_EXTENSIONS)[number]];
 
     const uploadUrl = await getSignedUrl(
       s3,

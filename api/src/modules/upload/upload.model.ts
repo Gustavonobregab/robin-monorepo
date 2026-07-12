@@ -1,11 +1,11 @@
 import { Schema, model, type Model } from 'mongoose';
-import type { UploadDocument } from './upload.types';
+import { ALLOWED_MIME_TYPES, type UploadDocument } from './upload.types';
 
 const uploadSchema = new Schema(
   {
     userId: { type: String, required: true },
     originalName: { type: String, required: true },
-    mimeType: { type: String, required: true, enum: ['audio/mpeg', 'audio/wav', 'application/pdf', 'text/plain'] },
+    mimeType: { type: String, required: true, enum: ALLOWED_MIME_TYPES },
     size: { type: Number, required: true },
     s3Key: { type: String, required: true },
     status: { type: String, enum: ['pending', 'ready'], default: 'pending' },

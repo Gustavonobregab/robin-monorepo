@@ -38,6 +38,20 @@ const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 export const ALLOWED_EXTENSIONS = ['.mp3', '.wav', '.pdf', '.txt', '.jpg', '.jpeg', '.png', '.webp'] as const;
 export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
+// Single source for extension→mime: the service resolves uploads and the model derives its enum from it
+export const MIME_MAP: Record<(typeof ALLOWED_EXTENSIONS)[number], string> = {
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+};
+
+export const ALLOWED_MIME_TYPES = [...new Set(Object.values(MIME_MAP))];
+
 export type DetectedFormat = 'mp3' | 'wav' | 'pdf' | 'jpeg' | 'png' | 'webp';
 
 export function validateMagicBytes(buffer: Uint8Array): DetectedFormat | null {
