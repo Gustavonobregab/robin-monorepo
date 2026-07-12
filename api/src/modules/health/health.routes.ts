@@ -5,8 +5,7 @@ import { redisConnection } from '../../config/redis';
 const REDIS_PING_TIMEOUT_MS = 2_000;
 
 async function checkRedis(): Promise<boolean> {
-  // With maxRetriesPerRequest: null, a ping against a down Redis queues forever
-  // instead of rejecting — only ping when the connection is actually ready
+  // maxRetriesPerRequest: null means a ping to a down Redis queues forever instead of rejecting
   if (redisConnection.status !== 'ready') return false;
 
   let timer: ReturnType<typeof setTimeout> | undefined;

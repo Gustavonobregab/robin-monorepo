@@ -106,7 +106,7 @@ export default async function (job: Job<AudioQueueJob>) {
     // Record usage event
     const processingMs = Date.now() - start;
 
-    await usageService.record({
+    await usageService.recordSafe({
       idempotencyKey: `job:${id}`,
       userId: jobDoc.userId,
       jobId: id,

@@ -6,6 +6,10 @@ import type { RecordUsageInput } from './usage.types';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Real userIds are ObjectId strings; getCurrentUsage casts them to _id
+const USER_A = new mongoose.Types.ObjectId().toString();
+const USER_B = new mongoose.Types.ObjectId().toString();
+
 const baseEvent = (userId: string, idempotencyKey: string): RecordUsageInput => ({
   idempotencyKey,
   userId,
@@ -31,7 +35,7 @@ describe.skipIf(!MONGODB_URI)('usageService', () => {
   });
 
   test('duplicate idempotency key returns the existing event', async () => {
-    const input = baseEvent('user-1', 'dup-key');
+    const input = baseEvent(USER_A, 'dup-key');
 
     const first = await usageService.record(input);
     const second = await usageService.record(input);
@@ -41,7 +45,7 @@ describe.skipIf(!MONGODB_URI)('usageService', () => {
   });
 
   test('concurrent records with the same key produce exactly one event', async () => {
-    const input = baseEvent('user-1', 'race-key');
+    const input = baseEvent(USER_A, 'race-key');
 
     const results = await Promise.all(
       Array.from({ length: 5 }, () => usageService.record(input)),
@@ -53,26 +57,26 @@ describe.skipIf(!MONGODB_URI)('usageService', () => {
 
   test('getCurrentUsage aggregates totals per pipeline', async () => {
     await usageService.record({
-      ...baseEvent('user-2', 'agg-audio'),
+      ...baseEvent(USER_B, 'agg-audio'),
       pipelineType: 'audio',
       inputBytes: 1000,
       text: undefined,
       audio: { durationMs: 120_000, format: 'mp3', sampleRate: 44_100, channels: 2 },
     });
     await usageService.record({
-      ...baseEvent('user-2', 'agg-text-1'),
+      ...baseEvent(USER_B, 'agg-text-1'),
       inputBytes: 200,
       text: { characterCount: 500, wordCount: 80, encoding: 'utf-8' },
     });
     await usageService.record({
-      ...baseEvent('user-2', 'agg-text-2'),
+      ...baseEvent(USER_B, 'agg-text-2'),
       inputBytes: 100,
       sync: true,
       jobId: undefined,
       text: { characterCount: 300, wordCount: 50, encoding: 'utf-8' },
     });
 
-    const usage = await usageService.getCurrentUsage('user-2');
+    const usage = await usageService.getCurrentUsage(USER_B);
 
     expect(usage.audio.requests).toBe(1);
     expect(usage.audio.minutes).toBe(2);
@@ -85,7 +89,7 @@ describe.skipIf(!MONGODB_URI)('usageService', () => {
   });
 
   test('getAnalytics aggregates summary and chart', async () => {
-    const analytics = await usageService.getAnalytics('user-2', '7d');
+    const analytics = await usageService.getAnalytics(USER_B, '7d');
 
     expect(analytics.summary.totalRequests).toBe(3);
     expect(analytics.summary.totalInputBytes).toBe(1300);

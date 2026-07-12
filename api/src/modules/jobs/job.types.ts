@@ -47,8 +47,7 @@ export type TextJobPayload = {
   webhookUrl?: string;   // per-job override; falls back to user.webhookUrl
 };
 
-// Image and video pipelines are not implemented yet; payloads are typed
-// ahead so the job surface (model, list, webhooks) is ready for them.
+// Not implemented yet; typed ahead so the job surface is ready for them
 export type ImageJobPayload = {
   type: "image";
   preset?: string;

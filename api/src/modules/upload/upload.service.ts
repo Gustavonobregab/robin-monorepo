@@ -88,15 +88,12 @@ export class UploadService {
       throw new ApiError('UPLOAD_EXPIRED', 'Upload has expired', 410);
     }
 
-    if (doc.status === 'pending') {
-      await this.finalizeUpload(doc);
-    }
+    await this.finalizeUpload(doc);
 
     return doc;
   }
 
-  // First consumption of an upload: confirm the object landed in storage and
-  // matches the declared size/format before any job processes it.
+  // Every consumption, not just the first: the presigned PUT stays valid and the object can be swapped
   private async finalizeUpload(doc: HydratedDocument<UploadDocument>) {
     let contentLength: number;
 
@@ -118,9 +115,11 @@ export class UploadService {
         new GetObjectCommand({ Bucket: S3_BUCKET, Key: doc.s3Key, Range: 'bytes=0-11' }),
       );
       const headerBytes = await range.Body!.transformToByteArray();
+      const detected = validateMagicBytes(headerBytes);
 
-      if (!validateMagicBytes(headerBytes)) {
-        throw new ApiError('INVALID_FORMAT', 'File content does not match a valid format', 422);
+      // Must match the declared type, or a PDF named .mp3 reaches the audio pipeline
+      if (!detected || MIME_MAP[`.${detected}`] !== doc.mimeType) {
+        throw new ApiError('INVALID_FORMAT', 'File content does not match the declared format', 422);
       }
     }
 

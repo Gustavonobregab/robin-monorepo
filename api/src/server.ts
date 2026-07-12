@@ -57,8 +57,6 @@ const app = new Elysia()
           { name: 'Health', description: 'Service health' },
         ],
       },
-      // Allowlist: only /v1/* and /health are public API surface; everything
-      // else (dashboard session routes) must never leak into the docs
       exclude: [/^\/(?!v1(\/|$)|health$)/],
     })
   )

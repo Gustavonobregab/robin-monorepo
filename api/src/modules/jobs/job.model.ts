@@ -34,6 +34,7 @@ const jobSchema = new Schema(
 
 jobSchema.index({ userId: 1, createdAt: -1 });
 jobSchema.index({ status: 1, createdAt: 1 });
+jobSchema.index({ userId: 1, _id: -1 });
 jobSchema.index(
   { userId: 1, idempotencyKey: 1 },
   { unique: true, partialFilterExpression: { idempotencyKey: { $exists: true } } },

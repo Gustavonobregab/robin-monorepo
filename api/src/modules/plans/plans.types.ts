@@ -1,7 +1,6 @@
 import type { ObjectId } from 'mongoose';
 
-// "credits" charged per started "perUnitBytes" of input.
-// Example: { credits: 1, perUnitBytes: 5MB } → a 12MB file costs 3 credits.
+// Credits per started perUnitBytes: { credits: 1, perUnitBytes: 5MB } → a 12MB file costs 3
 export interface CreditWeight {
   credits: number;
   perUnitBytes: number;

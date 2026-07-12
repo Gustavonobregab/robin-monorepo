@@ -43,6 +43,20 @@ describe('encodeToon', () => {
   });
 });
 
+describe('findJsonBlocks scan budget', () => {
+  // Unmatched openers used to rescan to EOF from every position, pinning a CPU for hours
+  test('bails out fast on a pathological unbalanced input', () => {
+    const bomb = '{'.repeat(200_000);
+
+    const start = performance.now();
+    const blocks = findJsonBlocks(bomb);
+    const elapsed = performance.now() - start;
+
+    expect(blocks).toEqual([]);
+    expect(elapsed).toBeLessThan(2_000);
+  });
+});
+
 describe('findJsonBlocks', () => {
   test('matches nested objects fully (regex could not)', () => {
     const input = 'before {"a":{"b":{"c":1}},"d":[1,2]} after';

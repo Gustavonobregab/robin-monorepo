@@ -46,8 +46,18 @@ const EMPTY_TOTALS: PipelineTotals = {
 };
 
 export class UsageService {
-  // The unique index on idempotencyKey is the concurrency guarantee:
-  // a duplicate insert means the event was already recorded.
+  // Telemetry: a failed write must never fail work that already succeeded
+  async recordSafe(input: RecordUsageInput): Promise<void> {
+    try {
+      await this.record(input);
+    } catch (err) {
+      console.error(
+        `[USAGE] Failed to record ${input.idempotencyKey}: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+  }
+
+  // The unique index is the concurrency guarantee: a duplicate insert means already recorded
   async record(input: RecordUsageInput): Promise<RecordUsageResult> {
     try {
       const event = await UsageEventModel.create({
@@ -136,9 +146,7 @@ export class UsageService {
   }
 
   async getCurrentUsage(userId: string, periodStart?: Date, periodEnd?: Date): Promise<CurrentUsage> {
-    // Callers that already loaded the user pass the cycle in; otherwise resolve
-    // it here so every surface reports the rolling billing cycle, not the
-    // calendar month
+    // Resolved here so every surface reports the billing cycle, not the calendar month
     if (!periodStart || !periodEnd) {
       const user = await UserModel.findOne({
         $or: [{ oderId: userId }, { _id: userId }],

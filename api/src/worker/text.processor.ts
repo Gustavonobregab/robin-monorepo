@@ -118,7 +118,7 @@ export default async function (job: Job<TextQueueJob>) {
     });
 
     const processingMs = Date.now() - start;
-    await usageService.record({
+    await usageService.recordSafe({
       idempotencyKey: `job:${id}`,
       userId: jobDoc.userId,
       jobId: id,

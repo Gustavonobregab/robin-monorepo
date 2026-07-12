@@ -48,19 +48,19 @@ export class AudioService {
     const creditCost = await reserveCredits(userId, 'audio', upload.size);
 
     try {
-      const job = await jobService.create({ userId,
-       payload:
-       { type: 'audio',
-         preset,
-         operations,
-         source: { kind: 'storage', ref: upload.s3Key },
-         name: upload.originalName,
-         creditCost,
-         webhookUrl: input.webhookUrl,
-       },
-       idempotencyKey: input.idempotencyKey });
-
-      await jobService.enqueue(job.id, 'audio');
+      const job = await jobService.createAndEnqueue({
+        userId,
+        payload: {
+          type: 'audio',
+          preset,
+          operations,
+          source: { kind: 'storage', ref: upload.s3Key },
+          name: upload.originalName,
+          creditCost,
+          webhookUrl: input.webhookUrl,
+        },
+        idempotencyKey: input.idempotencyKey,
+      });
 
       return { job };
     } catch (err) {

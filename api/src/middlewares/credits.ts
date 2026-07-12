@@ -1,42 +1,58 @@
+import { addDays } from 'date-fns';
 import { UserModel } from '../modules/users/users.model';
 import { PlanModel } from '../modules/plans/plans.model';
 import { ApiError } from '../utils/api-error';
 import type { PipelineType } from '../modules/usage/usage.types';
+import type { CreditWeight } from '../modules/plans/plans.types';
+
+// credits charged per started perUnitBytes of input, minimum one unit
+export function calculateCreditCost(weight: CreditWeight, inputBytes: number): number {
+  return weight.credits * Math.max(1, Math.ceil(inputBytes / weight.perUnitBytes));
+}
+
+export const CYCLE_DAYS = 30;
+
+// Must land on a period covering now, or each request renews again and re-zeroes used
+export function advanceCycle(periodEnd: Date, now: Date): { start: Date; end: Date } {
+  let start = periodEnd;
+  let end = addDays(periodEnd, CYCLE_DAYS);
+
+  while (end <= now) {
+    start = end;
+    end = addDays(end, CYCLE_DAYS);
+  }
+
+  return { start, end };
+}
 
 async function renewCycleIfExpired(userId: string) {
   const now = new Date();
 
-  // Atomically try to renew the cycle. The condition on currentPeriodEnd prevents double renewal.
-  const renewed = await UserModel.findOneAndUpdate(
-    {
-      $or: [{ oderId: userId }, { _id: userId }],
-      'subscription.currentPeriodEnd': { $lt: now },
-      'subscription.status': 'active',
-    },
-    [
-      {
-        $set: {
-          'subscription.currentPeriodStart': '$subscription.currentPeriodEnd',
-          'subscription.currentPeriodEnd': {
-            $dateAdd: { startDate: '$subscription.currentPeriodEnd', unit: 'day', amount: 30 },
-          },
-          'subscription.credits.used': 0,
-        },
-      },
-    ],
-    { new: true }
-  );
+  const user = await UserModel.findOne({
+    $or: [{ oderId: userId }, { _id: userId }],
+  }).lean();
 
-  if (renewed) {
-    // Re-snapshot credits.limit from the plan
-    const plan = await PlanModel.findById(renewed.plan).lean();
-    if (plan) {
-      await UserModel.updateOne(
-        { _id: renewed._id },
-        { $set: { 'subscription.credits.limit': plan.credits } }
-      );
-    }
-  }
+  const subscription = user?.subscription;
+  if (!user || !subscription || subscription.status !== 'active') return;
+  if (!subscription.currentPeriodEnd || subscription.currentPeriodEnd > now) return;
+
+  const plan = await PlanModel.findById(user.plan).lean();
+  if (!plan) return;
+
+  const { start, end } = advanceCycle(subscription.currentPeriodEnd, now);
+
+  // CAS on the old period end: only one concurrent renewal lands, and the quota rides the same write
+  await UserModel.updateOne(
+    { _id: user._id, 'subscription.currentPeriodEnd': subscription.currentPeriodEnd },
+    {
+      $set: {
+        'subscription.currentPeriodStart': start,
+        'subscription.currentPeriodEnd': end,
+        'subscription.credits.used': 0,
+        'subscription.credits.limit': plan.credits,
+      },
+    },
+  );
 }
 
 export async function reserveCredits(
@@ -46,7 +62,6 @@ export async function reserveCredits(
 ): Promise<number> {
   await renewCycleIfExpired(userId);
 
-  // Get the user's plan to look up credit weight
   const user = await UserModel.findOne({
     $or: [{ oderId: userId }, { _id: userId }],
   }).lean();
@@ -55,7 +70,6 @@ export async function reserveCredits(
     throw new ApiError('NO_PLAN', 'No active plan found. Please contact support.', 403);
   }
 
-  // Check if subscription is canceled and period has ended
   if (user.subscription?.status === 'canceled' && user.subscription.currentPeriodEnd < new Date()) {
     throw new ApiError('SUBSCRIPTION_ENDED', 'Your subscription has ended. Please reactivate your plan.', 403);
   }
@@ -65,11 +79,8 @@ export async function reserveCredits(
     throw new ApiError('PLAN_NOT_FOUND', 'Plan not found', 500);
   }
 
-  // Size-based cost: credits per started perUnitBytes of input
-  const weight = plan.creditWeights[pipelineType];
-  const cost = weight.credits * Math.max(1, Math.ceil(inputBytes / weight.perUnitBytes));
+  const cost = calculateCreditCost(plan.creditWeights[pipelineType], inputBytes);
 
-  // Atomic reservation: only succeeds if user has enough credits
   const result = await UserModel.findOneAndUpdate(
     {
       $or: [{ oderId: userId }, { _id: userId }],

@@ -1,8 +1,7 @@
 import type { TextOperationHandler } from '../types';
 import { encodeToon, findJsonBlocks } from '../../../utils/toon';
 
-// Below this size the TOON header/structure overhead ("prompt tax") tends to
-// cancel out the savings, so small blocks are left untouched.
+// Below this size the TOON structure overhead ("prompt tax") cancels out the savings
 const MIN_BLOCK_SIZE = 120;
 
 export const jsonToToon: TextOperationHandler<'json-to-toon'> = {

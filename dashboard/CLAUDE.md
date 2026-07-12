@@ -70,6 +70,14 @@ All shared types live in `types/index.ts`. API responses use the `ApiResponse<T>
 type KeysListResponse = ApiResponse<{ keys: ApiKey[] }>;
 ```
 
+## Tests
+
+`bun run test` (vitest run; `test:watch` for watch mode). Files colocated in
+`__tests__/` next to the module. Test pure logic only: `lib/` utilities and the
+`http/` layer's pure parts (the error funnel in `http/__tests__/errors.test.ts`
+is the reference — construct real ky `HTTPError`s from `Response` objects, no
+mocks). No component snapshot tests, no browser E2E here.
+
 ## Error handling
 
 Never show the backend's raw error message to users. The API returns

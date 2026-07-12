@@ -71,7 +71,6 @@ export class TextService {
     const inputText = text!;
     const inputSize = Buffer.byteLength(inputText, 'utf8');
 
-    // Reserve credits before processing
     const creditCost = await reserveCredits(userId, 'text', inputSize);
 
     try {
@@ -100,13 +99,11 @@ export class TextService {
         },
       };
     } catch (err) {
-      // Rollback credits on sync processing failure
       await rollbackCredits(userId, creditCost);
       throw err;
     }
   }
 
-  // Usage is telemetry: a failed write must never fail a request that processed
   private async recordSyncUsage(
     userId: string,
     data: {
@@ -118,26 +115,22 @@ export class TextService {
       creditCost: number;
     },
   ) {
-    try {
-      await usageService.record({
-        idempotencyKey: `sync:${ulid()}`,
-        userId,
-        sync: true,
-        pipelineType: 'text',
-        operations: data.operations.map((op) => op.type),
-        inputBytes: data.inputSize,
-        outputBytes: data.outputSize,
-        processingMs: data.processingMs,
-        text: {
-          characterCount: data.inputText.length,
-          wordCount: data.inputText.split(/\s+/).filter(Boolean).length,
-          encoding: 'utf-8',
-        },
-        creditsConsumed: data.creditCost,
-      });
-    } catch (err) {
-      console.error(`[TEXT:sync] Failed to record usage: ${err instanceof Error ? err.message : err}`);
-    }
+    await usageService.recordSafe({
+      idempotencyKey: `sync:${ulid()}`,
+      userId,
+      sync: true,
+      pipelineType: 'text',
+      operations: data.operations.map((op) => op.type),
+      inputBytes: data.inputSize,
+      outputBytes: data.outputSize,
+      processingMs: data.processingMs,
+      text: {
+        characterCount: data.inputText.length,
+        wordCount: data.inputText.split(/\s+/).filter(Boolean).length,
+        encoding: 'utf-8',
+      },
+      creditsConsumed: data.creditCost,
+    });
   }
 
   async processTextAsync(
@@ -182,11 +175,10 @@ export class TextService {
       inputBytes = Buffer.byteLength(text!, 'utf8');
     }
 
-    // Reserve credits before enqueueing
     const creditCost = await reserveCredits(userId, 'text', inputBytes);
 
     try {
-      const job = await jobService.create({
+      const job = await jobService.createAndEnqueue({
         userId,
         payload: {
           type: 'text',
@@ -198,8 +190,6 @@ export class TextService {
         },
         idempotencyKey: input.idempotencyKey,
       });
-
-      await jobService.enqueue(job.id, 'text');
 
       return { job };
     } catch (err) {
@@ -219,16 +209,30 @@ export class TextService {
     preset?: TextPreset,
     customOps?: TextOperation[]
   ): TextOperation[] {
+    let ops: TextOperation[];
+
     if (preset) {
       const presetConfig = TEXT_PRESETS[preset];
 
       if (!presetConfig) {
         throw new ApiError('TEXT_INVALID_PRESET', `Unknown preset: ${preset}`, 400);
       }
-      return presetConfig.operations as unknown as TextOperation[];
+      ops = presetConfig.operations as unknown as TextOperation[];
+    } else {
+      ops = customOps!;
     }
 
-    return customOps!;
+    // params is optional in the schema; handlers would otherwise read undefined
+    return ops.map((op) => {
+      const definition = TEXT_OPERATIONS[op.type as keyof typeof TEXT_OPERATIONS];
+      if (!definition) return op;
+
+      const defaults = Object.fromEntries(
+        Object.entries(definition.params).map(([key, param]) => [key, param.default]),
+      );
+
+      return { ...op, params: { ...defaults, ...('params' in op ? op.params : {}) } };
+    });
   }
 
   listPresets() {

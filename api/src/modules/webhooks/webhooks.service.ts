@@ -8,6 +8,11 @@ const DELIVERY_TIMEOUT_MS = 10_000;
 
 const log = (jobId: string, msg: string) => console.log(`[WEBHOOK:${jobId}] ${msg}`);
 
+// Documented contract: receivers verify HMAC-SHA256 over "{timestamp}.{body}"
+export function signWebhookPayload(secret: string, timestamp: string, body: string): string {
+  return `sha256=${createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex')}`;
+}
+
 type WebhookTarget = {
   job: NonNullable<Awaited<ReturnType<typeof resolveJob>>>;
   user: NonNullable<Awaited<ReturnType<typeof resolveUser>>>;
@@ -32,8 +37,7 @@ async function resolveWebhookTarget(jobId: string): Promise<WebhookTarget | null
 }
 
 export class WebhooksService {
-  // Webhooks are telemetry from the processors' point of view: a failure to
-  // enqueue must never fail a job that already succeeded, so this swallows.
+  // Telemetry to the processors: failing to enqueue must never fail a job that succeeded
   async enqueueJobWebhook(jobId: string, event: WebhookEvent): Promise<void> {
     try {
       const target = await resolveWebhookTarget(jobId);
@@ -69,9 +73,7 @@ export class WebhooksService {
     });
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const signature = createHmac('sha256', secret)
-      .update(`${timestamp}.${body}`)
-      .digest('hex');
+    const signature = signWebhookPayload(secret, timestamp, body);
 
     let response: Response;
     try {
@@ -81,7 +83,7 @@ export class WebhooksService {
           'Content-Type': 'application/json',
           'X-Robin-Event': event,
           'X-Robin-Timestamp': timestamp,
-          'X-Robin-Signature': `sha256=${signature}`,
+          'X-Robin-Signature': signature,
         },
         body,
         signal: AbortSignal.timeout(DELIVERY_TIMEOUT_MS),

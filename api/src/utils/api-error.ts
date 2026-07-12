@@ -11,9 +11,8 @@ export class ApiError extends Error {
 }
 
 export const apiErrorPlugin = new Elysia({ name: 'api-error' })
-  .error({ API_ERROR: ApiError })
   .onError({ as: 'global' }, ({ error, code, set }) => {
-    if (code === 'API_ERROR') {
+    if (error instanceof ApiError) {
       set.status = error.status;
       return {
         success: false,
@@ -61,8 +60,8 @@ export const apiErrorPlugin = new Elysia({ name: 'api-error' })
       }
     };
   })
-  .mapResponse({ as: 'global' }, ({ response, set }) => {
-    if (response && typeof response === 'object' && 'error' in (response as object)) {
+  .mapResponse({ as: 'global' }, ({ response }) => {
+    if (isErrorEnvelope(response)) {
       return Response.json(response);
     }
 
@@ -71,3 +70,11 @@ export const apiErrorPlugin = new Elysia({ name: 'api-error' })
       data: response
     });
   });
+
+function isErrorEnvelope(response: unknown): boolean {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    (response as { success?: unknown }).success === false
+  );
+}

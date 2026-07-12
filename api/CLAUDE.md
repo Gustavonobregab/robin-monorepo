@@ -110,6 +110,24 @@ Cross-cutting helpers go in `src/utils/`, middleware-ish plugins in
 
 ## Tests
 
-- `bun test`, files colocated as `*.test.ts`. Pure logic tests run anywhere;
-  DB tests connect via `MONGODB_URI` to the `robin-wood-test` database and
-  `describe.skipIf(!MONGODB_URI)`.
+`bun test` (or `bun run test`), files colocated next to what they test. Two
+tiers, nothing else:
+
+- **Unit** (`*.unit.test.ts` or plain `*.test.ts`) — pure logic, no I/O, always
+  run. Test computations that carry risk: credit cost math, TOON encoding,
+  webhook signature contract, preset↔operation↔handler wiring
+  (`worker/operations-registry.test.ts` catches a preset referencing a removed
+  op at test time instead of failing jobs at runtime).
+- **Integration** (`*.integration.test.ts` or DB-touching tests) — gated with
+  `describe.skipIf(!MONGODB_URI)`, connect to the `robin-wood-test` database,
+  clean up in `beforeEach`/`afterAll` (drop the test db). Reserve these for
+  invariants that only Mongo can prove: atomic credit reservation under
+  concurrency, unique-index idempotency, aggregation results.
+- Test userIds must be ObjectId strings (`new mongoose.Types.ObjectId().toString()`)
+  — services cast them to `_id`.
+
+Deliberately NOT here: mocked Mongoose/BullMQ (brittle, tests the mock),
+route-layer tests (covered by typed schemas + E2E), and browser E2E frameworks
+(manual E2E until the product stabilizes). When a bug slips through, add the
+cheapest test that would have caught it — usually a unit test on an extracted
+pure function, not a mock.

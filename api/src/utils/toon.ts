@@ -1,7 +1,4 @@
-// Token-Oriented Object Notation encoder. Compact, indentation-based JSON
-// alternative for LLM input. Uniform object arrays collapse into a tabular
-// form (one header row + CSV-like rows), which is where the token savings
-// actually come from.
+// TOON encoder: uniform object arrays collapse into tabular rows, where the token savings come from
 
 export function encodeToon(value: unknown): string {
   return encodeValue(value, 0).trimEnd();
@@ -59,8 +56,7 @@ function encodeArray(key: string, arr: unknown[], depth: number): string {
   return `${indent}${label}[${arr.length}]:\n${items.join('\n')}`;
 }
 
-// Tabular form only applies when every element is a flat object with the
-// exact same keys — otherwise rows would be ambiguous.
+// Tabular form needs identical flat keys, or rows would be ambiguous
 function uniformFields(arr: unknown[]): string[] | null {
   if (!isPlainObject(arr[0])) return null;
 
@@ -104,14 +100,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-// Finds complete JSON objects/arrays in free text by scanning balanced
-// brackets (string- and escape-aware). A regex cannot do this for nested
-// structures.
+// Budget caps total scan work: unbalanced openers would otherwise rescan to EOF each time (quadratic)
+const MAX_SCAN_CHARS = 5_000_000;
+
 export function findJsonBlocks(input: string): { start: number; end: number }[] {
   const blocks: { start: number; end: number }[] = [];
+  const budget = { remaining: MAX_SCAN_CHARS };
   let i = 0;
 
-  while (i < input.length) {
+  while (i < input.length && budget.remaining > 0) {
     const char = input[i];
 
     if (char !== '{' && char !== '[') {
@@ -119,7 +116,7 @@ export function findJsonBlocks(input: string): { start: number; end: number }[] 
       continue;
     }
 
-    const end = matchBalanced(input, i);
+    const end = matchBalanced(input, i, budget);
     if (end === -1) {
       i++;
       continue;
@@ -132,13 +129,15 @@ export function findJsonBlocks(input: string): { start: number; end: number }[] 
   return blocks;
 }
 
-function matchBalanced(input: string, start: number): number {
+function matchBalanced(input: string, start: number, budget: { remaining: number }): number {
   const open = input[start];
   const close = open === '{' ? '}' : ']';
   let depth = 0;
   let inString = false;
 
   for (let i = start; i < input.length; i++) {
+    if (budget.remaining-- <= 0) return -1;
+
     const char = input[i];
 
     if (inString) {

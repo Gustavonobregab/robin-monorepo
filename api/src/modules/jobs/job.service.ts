@@ -18,6 +18,23 @@ export class JobService {
     return this.toJob(doc);
   }
 
+  // One unit: a job left behind by a failed enqueue never runs, yet its key answers every retry
+  async createAndEnqueue(input: {
+    userId: string;
+    payload: JobPayload;
+    idempotencyKey?: string;
+  }): Promise<Job> {
+    const job = await this.create(input);
+
+    try {
+      await this.enqueue(job.id, input.payload.type as 'text' | 'audio');
+      return job;
+    } catch (err) {
+      await JobModel.deleteOne({ _id: job.id });
+      throw err;
+    }
+  }
+
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Job | null> {
     const doc = await JobModel.findOne({ userId, idempotencyKey });
     return doc ? this.toJob(doc) : null;
@@ -51,6 +68,8 @@ export class JobService {
       ...(query.status && { status: query.status }),
       ...(query.cursor && OBJECT_ID.test(query.cursor) && { _id: { $lt: query.cursor } }),
     })
+      // Skips the heavy fields: inline input runs to 5MB per job
+      .select('status error createdAt completedAt payload.type payload.name result.metrics')
       .sort({ _id: -1 })
       .limit(limit + 1)
       .lean();
