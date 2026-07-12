@@ -2,6 +2,8 @@ import { Elysia, t } from 'elysia';
 import { apiKeyAuth } from './api.middleware';
 import { audioService } from '../modules/audio/audio.service';
 import { textService } from '../modules/text/text.service';
+import { imageService } from '../modules/image/image.service';
+import { ImageOperationSchema, ImagePresetSchema } from '../modules/image/image.types';
 import { uploadService } from '../modules/upload/upload.service';
 import { usageService } from '../modules/usage/usage.service';
 import { jobService } from '../modules/jobs/job.service';
@@ -84,6 +86,40 @@ export const apiRoutes = new Elysia()
 
   .get('/text/operations', () => textService.listOperations(), {
     detail: { summary: 'List text operations', tags: ['Text'] },
+  })
+
+  // ─── Image ─────────────────────────────────────────
+  .post(
+    '/image',
+    async ({ body, userId, headers, set }) =>
+      jobResponse(set, await imageService.processImage(userId, {
+        ...body,
+        idempotencyKey: headers['idempotency-key'],
+      })),
+    {
+      body: t.Object({
+        imageId: t.String(),
+        preset: t.Optional(ImagePresetSchema),
+        operations: t.Optional(t.Array(ImageOperationSchema, { minItems: 1, maxItems: 10 })),
+        webhookUrl: t.Optional(t.String({ format: 'uri' })),
+      }),
+      headers: t.Object({
+        'idempotency-key': t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+      }),
+      detail: {
+        summary: 'Create image compression job',
+        description: 'Small non-AVIF images return completed immediately (200); larger or AVIF jobs are queued (202). Supports Idempotency-Key.',
+        tags: ['Image'],
+      },
+    },
+  )
+
+  .get('/image/presets', () => imageService.listPresets(), {
+    detail: { summary: 'List image presets', tags: ['Image'] },
+  })
+
+  .get('/image/operations', () => imageService.listOperations(), {
+    detail: { summary: 'List image operations', tags: ['Image'] },
   })
 
   // ─── Jobs ──────────────────────────────────────────

@@ -13,6 +13,7 @@ const { usageRoutes } = await import('./modules/usage/usage.routes');
 const { usersRoutes } = await import('./modules/users/users.routes');
 const { audioRoutes } = await import('./modules/audio/audio.routes');
 const { textRoutes } = await import('./modules/text/text.routes');
+const { imageRoutes } = await import('./modules/image/image.routes');
 const { jobRoutes } = await import('./modules/jobs/job.routes');
 const { uploadRoutes } = await import('./modules/upload/upload.routes');
 const { plansRoutes } = await import('./modules/plans/plans.routes');
@@ -51,6 +52,7 @@ const app = new Elysia()
         tags: [
           { name: 'Audio', description: 'Audio compression jobs' },
           { name: 'Text', description: 'Text compression jobs' },
+          { name: 'Image', description: 'Image compression jobs' },
           { name: 'Jobs', description: 'Job status and listing' },
           { name: 'Upload', description: 'Presigned file uploads' },
           { name: 'Usage', description: 'Usage and quota' },
@@ -67,6 +69,7 @@ const app = new Elysia()
   .use(usersRoutes)
   .use(audioRoutes)
   .use(textRoutes)
+  .use(imageRoutes)
   .use(jobRoutes)
   .use(uploadRoutes)
   .use(plansRoutes)
