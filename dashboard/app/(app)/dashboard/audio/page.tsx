@@ -2,7 +2,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Music } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
+import { PageHeader } from '@/app/components/ui/page-header'
 import { ToolLayout } from '@/app/components/tools/ToolLayout'
 import { AudioWorkspace } from '@/app/components/tools/AudioWorkspace'
 import { AudioSettingsPanel, type AudioSettings } from '@/app/components/tools/AudioSettingsPanel'
@@ -66,43 +68,41 @@ export default function AudioPage() {
   }, [isFailed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <ToolLayout
-      title="Audio compression"
-      mainPanel={
-        <AudioWorkspace
-          file={file}
-          onFileChange={setFile}
-          status={job?.status}
-          metrics={job?.result?.metrics}
-          outputUrl={job?.result?.outputUrl}
-          error={job?.error}
-          isProcessing={isProcessing}
-          timedOut={timedOut}
-        />
-      }
-      settingsPanel={<AudioSettingsPanel value={settings} onChange={setSettings} />}
-      historyPanel={
-        <ToolHistoryPanel
-          pipelineType="audio"
-          emptyIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted mb-4">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-          }
-          emptyLabel="Your processed audio will appear here"
-        />
-      }
-      action={
-        <Button
-          onClick={handleSubmit}
-          disabled={submitting || isPolling || !canSubmit}
-          className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
-        >
-          {submitting ? 'Uploading...' : isPolling ? 'Processing...' : 'Process audio'}
-        </Button>
-      }
-    />
+    <>
+      <PageHeader
+        title="Audio compression"
+        className="mb-0 pt-8"
+        actions={
+          <Button onClick={handleSubmit} disabled={submitting || isPolling || !canSubmit}>
+            {submitting ? 'Uploading...' : isPolling ? 'Processing...' : 'Process audio'}
+          </Button>
+        }
+      />
+
+      <ToolLayout
+        title="Audio compression"
+        mainPanel={
+          <AudioWorkspace
+            file={file}
+            onFileChange={setFile}
+            status={job?.status}
+            metrics={job?.result?.metrics}
+            outputUrl={job?.result?.outputUrl}
+            error={job?.error}
+            isProcessing={isProcessing}
+            timedOut={timedOut}
+          />
+        }
+        settingsPanel={<AudioSettingsPanel value={settings} onChange={setSettings} />}
+        historyPanel={
+          <ToolHistoryPanel
+            pipelineType="audio"
+            emptyIcon={<Music className="mb-4 size-10 text-muted-foreground" strokeWidth={1.5} />}
+            emptyLabel="Your processed audio will appear here"
+          />
+        }
+        action={null}
+      />
+    </>
   )
 }

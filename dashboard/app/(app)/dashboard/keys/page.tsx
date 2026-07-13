@@ -3,12 +3,16 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, Trash2, Copy } from 'lucide-react'
+import { Plus, Trash2, Copy, KeyRound } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Skeleton } from '@/app/components/ui/skeleton'
-import { Badge } from '@/app/components/ui/badge'
+import { Chip } from '@/app/components/ui/chip'
+import { Surface } from '@/app/components/ui/surface'
+import { PageHeader } from '@/app/components/ui/page-header'
+import { EmptyState } from '@/app/components/ui/empty-state'
+import { DataTable, type Column } from '@/app/components/ui/data-table'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/app/components/ui/dialog'
@@ -16,7 +20,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/app/components/ui/alert-dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table'
 import { getApiKeys, createApiKey, revokeApiKey } from '@/app/http/keys'
 import { toastApiError } from '@/app/http/errors'
 import type { ApiResponse, ApiKey } from '@/types'
@@ -55,179 +58,212 @@ export default function KeysPage() {
     }
   }
 
+  const columns: Column<ApiKey>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      cell: (key) => <span className="font-medium text-foreground">{key.name}</span>,
+    },
+    {
+      key: 'key',
+      header: 'Key',
+      cell: (key) => (
+        <code className="font-mono text-sm text-muted-foreground">{key.keyPrefix}…</code>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (key) => (
+        <Chip size="sm" variant={key.status === 'active' ? 'success' : 'default'}>
+          {key.status}
+        </Chip>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Created',
+      cell: (key) => (
+        <span className="text-sm text-muted-foreground">
+          {new Date(key.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'lastUsedAt',
+      header: 'Last used',
+      /* "Never" is real information, not a placeholder — it says the key has
+         never been used, which is not the same as unknown. */
+      cell: (key) => (
+        <span className="text-sm text-muted-foreground">
+          {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      cell: (key) =>
+        key.status === 'active' ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Revoke ${key.name}`}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+              >
+                <Trash2 />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revoke key?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Any apps using &quot;{key.name}&quot; will stop working immediately.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleRevoke(key._id)}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Revoke
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null,
+    },
+  ]
+
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
-    <div className="space-y-5 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">API Keys</h2>
-          <p className="text-sm text-muted mt-0.5">Manage your API keys. Maximum 5 active keys.</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setNewKeyValue(null) }}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light">
-              <Plus className="w-4 h-4 mr-1" /> New key
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            {newKeyValue ? (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Key created</DialogTitle>
-                </DialogHeader>
-                <p className="text-sm text-muted mb-3">
-                  Copy this key now. It won&apos;t be shown again.
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-background-section rounded-xl px-3 py-2 text-sm font-mono break-all">
-                    {newKeyValue}
-                  </code>
+    <div className="mx-auto max-w-5xl pt-8">
+      <PageHeader
+        title="API Keys"
+        description="Manage your API keys. Maximum 5 active keys."
+        actions={
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open)
+              if (!open) setNewKeyValue(null)
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus /> New key
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              {newKeyValue ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Key created</DialogTitle>
+                  </DialogHeader>
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    Copy this key now. It won&apos;t be shown again.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 break-all rounded-md bg-muted px-3 py-2 font-mono text-sm text-foreground">
+                      {newKeyValue}
+                    </code>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      aria-label="Copy key"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(newKeyValue)
+                          toast.success('Copied!')
+                        } catch {
+                          toast.error('Failed to copy')
+                        }
+                      }}
+                    >
+                      <Copy />
+                    </Button>
+                  </div>
                   <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(newKeyValue)
-                        toast.success('Copied!')
-                      } catch {
-                        toast.error('Failed to copy')
-                      }
+                    className="mt-4 w-full"
+                    onClick={() => {
+                      setDialogOpen(false)
+                      setNewKeyValue(null)
                     }}
                   >
-                    <Copy className="w-4 h-4" />
+                    Done
                   </Button>
-                </div>
-                <Button
-                  className="mt-4 w-full rounded-full bg-accent-strong text-foreground"
-                  onClick={() => { setDialogOpen(false); setNewKeyValue(null) }}
-                >
-                  Done
-                </Button>
-              </>
-            ) : (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Create API key</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-1.5 mt-2">
-                  <Label htmlFor="key-name">Name</Label>
-                  <Input
-                    id="key-name"
-                    placeholder="e.g. Production"
-                    value={newKeyName}
-                    onChange={(e) => setNewKeyName(e.target.value)}
-                    maxLength={50}
-                  />
-                </div>
-                <Button
-                  className="mt-4 w-full rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
-                  onClick={handleCreate}
-                  disabled={creating || !newKeyName.trim()}
-                >
-                  {creating ? 'Creating...' : 'Create key'}
-                </Button>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Create API key</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-2 space-y-1.5">
+                    <Label htmlFor="key-name">Name</Label>
+                    <Input
+                      id="key-name"
+                      placeholder="e.g. Production"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      maxLength={50}
+                    />
+                  </div>
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={handleCreate}
+                    disabled={creating || !newKeyName.trim()}
+                  >
+                    {creating ? 'Creating...' : 'Create key'}
+                  </Button>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {error ? (
-        <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
-          <p className="text-muted text-sm">Could not load your API keys.</p>
-          <button
-            className="text-sm underline text-foreground mt-1"
-            onClick={() => mutate()}
-          >
-            Try again
-          </button>
-        </div>
+        <Surface>
+          <EmptyState
+            icon={KeyRound}
+            title="Could not load your API keys."
+            action={
+              <Button variant="outline" size="sm" onClick={() => mutate()}>
+                Try again
+              </Button>
+            }
+          />
+        </Surface>
       ) : isLoading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
-        </div>
-      ) : keys.length === 0 ? (
-        <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
-          <p className="text-muted text-sm">No API keys yet.</p>
-          <button
-            className="text-sm underline text-foreground mt-1"
-            onClick={() => setDialogOpen(true)}
-          >
-            Create your first key
-          </button>
-        </div>
-      ) : (
-        <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Key</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last used</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {keys.map((key) => (
-                <TableRow key={key._id}>
-                  <TableCell className="font-medium">{key.name}</TableCell>
-                  <TableCell>
-                    <code className="text-sm font-mono text-muted">{key.keyPrefix}…</code>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`text-xs border-0 rounded-full ${
-                      key.status === 'active'
-                        ? 'bg-accent-light text-foreground'
-                        : 'bg-background-section text-muted'
-                    }`}>
-                      {key.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted text-sm">
-                    {new Date(key.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-muted text-sm">
-                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
-                  </TableCell>
-                  <TableCell>
-                    {key.status === 'active' && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-danger hover:text-danger hover:opacity-80">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Revoke key?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Any apps using "{key.name}" will stop working immediately.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleRevoke(key._id)}
-                              className="bg-danger hover:bg-danger/90"
-                            >
-                              Revoke
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <Surface padding="none" className="overflow-hidden">
+          <div className="space-y-3 p-4">
+            <Skeleton className="h-8 w-full" />
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
           </div>
-        </div>
+        </Surface>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={keys}
+          rowKey={(key) => key._id}
+          empty={
+            <EmptyState
+              icon={KeyRound}
+              title="No API keys yet."
+              action={
+                <Button size="sm" onClick={() => setDialogOpen(true)}>
+                  Create your first key
+                </Button>
+              }
+            />
+          }
+        />
       )}
-    </div>
     </div>
   )
 }

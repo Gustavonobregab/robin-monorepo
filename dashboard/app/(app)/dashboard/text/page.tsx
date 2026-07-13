@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Copy, Download, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
-import { ToolLayout } from '@/app/components/tools/ToolLayout'
+import { PageHeader } from '@/app/components/ui/page-header'
+import { Surface } from '@/app/components/ui/surface'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { TextInput } from '@/app/components/tools/TextInput'
 import { MetricsPanel } from '@/app/components/tools/MetricsPanel'
 import { TextSettingsPanel, type TextSettings } from '@/app/components/tools/TextSettingsPanel'
@@ -46,6 +49,7 @@ export default function TextPage() {
     (settings.mode === 'custom' && settings.operations.length > 0)
 
   const hasInput = inputMode === 'text' ? text.trim().length > 0 : file !== null
+  const busy = submitting || isPolling
 
   async function handleSubmit() {
     if (!hasInput) return toast.error(inputMode === 'text' ? 'Please enter some text' : 'Please select a file')
@@ -119,34 +123,57 @@ export default function TextPage() {
   }
 
   return (
-    <ToolLayout
-      title="Text compression"
-      description="Compress text using a preset or custom operations."
-      inputPanel={
-        <TextInput
-          text={text}
-          onTextChange={setText}
-          file={file}
-          onFileChange={setFile}
-          mode={inputMode}
-          onModeChange={setInputMode}
-        />
-      }
-      settingsPanel={<TextSettingsPanel value={settings} onChange={setSettings} />}
-      historyPanel={
-        <ToolHistoryPanel
-          pipelineType="text"
-          emptyIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted mb-4">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-          }
-          emptyLabel="Your compressed text will appear here"
-        />
-      }
-      outputPanel={
-        <>
+    <div className="mx-auto max-w-6xl pt-8">
+      <PageHeader
+        title="Text"
+        description="Compress text using a preset or custom operations."
+        actions={
+          <Button size="lg" onClick={handleSubmit} disabled={busy || !canSubmit || !hasInput}>
+            {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            {busy ? 'Processing' : 'Compress'}
+          </Button>
+        }
+      />
+
+      {/* Parameters left, result right. No fixed 480px rail — the result is the
+          point of the page, so it gets the room. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[22rem_1fr]">
+        <Tabs defaultValue="settings" className="lg:sticky lg:top-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settings">
+            <Surface padding="none" className="divide-y divide-border overflow-hidden">
+              <div className="p-5">
+                <TextInput
+                  text={text}
+                  onTextChange={setText}
+                  file={file}
+                  onFileChange={setFile}
+                  mode={inputMode}
+                  onModeChange={setInputMode}
+                />
+              </div>
+              <div className="p-5">
+                <TextSettingsPanel value={settings} onChange={setSettings} />
+              </div>
+            </Surface>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <Surface>
+              <ToolHistoryPanel
+                pipelineType="text"
+                emptyIcon={null}
+                emptyLabel="Your compressed text will appear here"
+              />
+            </Surface>
+          </TabsContent>
+        </Tabs>
+
+        <div className="space-y-4">
           <MetricsPanel
             status={displayStatus}
             metrics={displayMetrics}
@@ -154,60 +181,38 @@ export default function TextPage() {
             error={job?.error}
             timedOut={timedOut}
           />
+
           {output && (
-            <div className="mt-4 rounded-lg border border-border overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 bg-background-section border-b border-border">
-                <span className="text-xs font-medium text-muted">Output</span>
+            <Surface padding="none" className="overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+                <span className="text-sm font-medium text-foreground">Output</span>
                 <div className="flex items-center gap-1">
                   {output.text && (
-                    <button
-                      type="button"
-                      onClick={copyOutput}
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-muted hover:text-foreground rounded transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                      </svg>
+                    <Button variant="ghost" size="sm" onClick={copyOutput}>
+                      <Copy />
                       Copy
-                    </button>
+                    </Button>
                   )}
-                  <button
-                    type="button"
-                    onClick={downloadOutput}
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-muted hover:text-foreground rounded transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" x2="12" y1="15" y2="3" />
-                    </svg>
+                  <Button variant="ghost" size="sm" onClick={downloadOutput}>
+                    <Download />
                     Download
-                  </button>
+                  </Button>
                 </div>
               </div>
+
               {output.text ? (
-                <pre className="text-sm whitespace-pre-wrap break-words max-h-72 overflow-y-auto p-3">
+                <pre className="max-h-[32rem] overflow-y-auto whitespace-pre-wrap break-words p-4 font-mono text-[0.8125rem] leading-relaxed text-foreground">
                   {output.text}
                 </pre>
               ) : (
-                <div className="flex items-center justify-center py-6 text-sm text-muted">
+                <p className="p-8 text-center text-sm text-muted-foreground">
                   File processed successfully. Click Download to get the result.
-                </div>
+                </p>
               )}
-            </div>
+            </Surface>
           )}
-        </>
-      }
-      action={
-        <Button
-          onClick={handleSubmit}
-          disabled={submitting || isPolling || !canSubmit || !hasInput}
-          className="rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
-        >
-          {submitting ? 'Processing...' : isPolling ? 'Processing...' : 'Compress'}
-        </Button>
-      }
-    />
+        </div>
+      </div>
+    </div>
   )
 }

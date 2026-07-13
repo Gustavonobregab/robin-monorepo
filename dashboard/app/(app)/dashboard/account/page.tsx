@@ -3,10 +3,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, UserRound } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { Chip } from '@/app/components/ui/chip'
+import { Surface } from '@/app/components/ui/surface'
+import { Skeleton } from '@/app/components/ui/skeleton'
+import { PageHeader } from '@/app/components/ui/page-header'
+import { EmptyState } from '@/app/components/ui/empty-state'
 import { signOut } from '@/app/lib/auth-client'
 import { getProfile, updateProfile, updateWebhookConfig } from '@/app/http/users'
 import { toastApiError } from '@/app/http/errors'
@@ -17,18 +22,22 @@ export default function AccountPage() {
   const profile = data?.data
 
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
-      <div className="space-y-8 max-w-xl mx-auto">
+    <div className="mx-auto max-w-2xl pt-8">
+      <PageHeader title="Account" description="Your profile, webhooks and session." />
+
+      <div className="space-y-6">
         {error ? (
-          <div className="bg-background rounded-xl border border-border shadow-sm p-8 text-center">
-            <p className="text-muted text-sm">Could not load your account.</p>
-            <button
-              className="text-sm underline text-foreground mt-1"
-              onClick={() => mutate()}
-            >
-              Try again
-            </button>
-          </div>
+          <Surface>
+            <EmptyState
+              icon={UserRound}
+              title="Could not load your account."
+              action={
+                <Button variant="outline" size="sm" onClick={() => mutate()}>
+                  Try again
+                </Button>
+              }
+            />
+          </Surface>
         ) : (
           <>
             <ProfileCard
@@ -47,13 +56,15 @@ export default function AccountPage() {
           </>
         )}
 
-        <div className="bg-background rounded-xl border border-border shadow-sm p-6">
-          <h2 className="font-semibold">Session</h2>
-          <p className="text-sm text-muted mt-0.5 mb-4">Sign out of the dashboard on this device.</p>
+        <Surface>
+          <h2 className="text-base font-medium text-foreground">Session</h2>
+          <p className="mb-5 mt-1 text-sm text-muted-foreground">
+            Sign out of the dashboard on this device.
+          </p>
           <Button
             type="button"
             variant="outline"
-            className="rounded-full"
+            size="sm"
             onClick={async () => {
               try {
                 await signOut()
@@ -63,8 +74,17 @@ export default function AccountPage() {
           >
             Sign out
           </Button>
-        </div>
+        </Surface>
       </div>
+    </div>
+  )
+}
+
+function FieldSkeleton() {
+  return (
+    <div className="space-y-1.5">
+      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-10 w-full" />
     </div>
   )
 }
@@ -103,32 +123,39 @@ function ProfileCard({
   }
 
   return (
-    <div className="bg-background rounded-xl border border-border shadow-sm p-6">
-      <h2 className="font-semibold mb-4">Profile</h2>
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Name</Label>
-          <Input
-            value={value}
-            disabled={loading}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Your name"
-          />
+    <Surface>
+      <h2 className="mb-5 text-base font-medium text-foreground">Profile</h2>
+
+      {loading ? (
+        <div className="space-y-4">
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <Skeleton className="h-10 w-32" />
         </div>
-        <div className="space-y-1.5">
-          <Label>Email</Label>
-          <Input value={email} disabled className="bg-background-section" />
-        </div>
-      </div>
-      <Button
-        type="button"
-        className="mt-4 rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
-        disabled={!dirty || saving}
-        onClick={save}
-      >
-        {saving ? 'Saving…' : 'Save changes'}
-      </Button>
-    </div>
+      ) : (
+        <>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="account-name">Name</Label>
+              <Input
+                id="account-name"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="Your name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="account-email">Email</Label>
+              <Input id="account-email" value={email} disabled className="bg-muted" />
+            </div>
+          </div>
+
+          <Button type="button" className="mt-5" disabled={!dirty || saving} onClick={save}>
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
+        </>
+      )}
+    </Surface>
   )
 }
 
@@ -176,55 +203,72 @@ function WebhookCard({
   }
 
   return (
-    <div className="bg-background rounded-xl border border-border shadow-sm p-6">
+    <Surface>
       <div className="flex items-center gap-2">
-        <h2 className="font-semibold">Webhooks</h2>
+        <h2 className="text-base font-medium text-foreground">Webhooks</h2>
         {!enabled && !loading && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider bg-background-section text-muted px-1.5 py-0.5 rounded-md">
+          <Chip size="sm" variant="warning">
             Upgrade required
-          </span>
+          </Chip>
         )}
       </div>
-      <p className="text-sm text-muted mt-0.5 mb-4">
-        We POST job results to this URL when a job completes or fails. Requests are signed with HMAC-SHA256.
+      <p className="mb-5 mt-1 text-sm text-muted-foreground">
+        We POST job results to this URL when a job completes or fails. Requests are signed with
+        HMAC-SHA256.
       </p>
 
-      <div className="space-y-1.5">
-        <Label>Endpoint URL</Label>
-        <Input
-          type="url"
-          value={value}
-          disabled={loading || !enabled}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="https://your-app.com/webhooks/robin"
-        />
-      </div>
-
-      {secret && (
-        <div className="mt-4 rounded-lg border border-border bg-background-section p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted">Signing secret — copy it now, shown once</span>
-            <button
-              type="button"
-              onClick={copySecret}
-              className="flex items-center gap-1 text-xs text-muted hover:text-foreground transition-colors"
-            >
-              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-          <code className="mt-1.5 block text-sm font-mono break-all">{secret}</code>
+      {loading ? (
+        <div className="space-y-4">
+          <FieldSkeleton />
+          <Skeleton className="h-10 w-32" />
         </div>
-      )}
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            <Label htmlFor="webhook-url">Endpoint URL</Label>
+            <Input
+              id="webhook-url"
+              type="url"
+              value={value}
+              disabled={!enabled}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="https://your-app.com/webhooks/robin"
+            />
+          </div>
 
-      <Button
-        type="button"
-        className="mt-4 rounded-full bg-accent-strong text-foreground hover:bg-accent-light"
-        disabled={!enabled || !dirty || saving}
-        onClick={save}
-      >
-        {saving ? 'Saving…' : 'Save webhook'}
-      </Button>
-    </div>
+          {secret && (
+            <div className="mt-4 rounded-lg bg-muted p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Signing secret — copy it now, shown once
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                  onClick={copySecret}
+                >
+                  {copied ? <Check /> : <Copy />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+              <code className="mt-1.5 block break-all font-mono text-sm text-foreground">
+                {secret}
+              </code>
+            </div>
+          )}
+
+          <Button
+            type="button"
+            className="mt-5"
+            disabled={!enabled || !dirty || saving}
+            onClick={save}
+          >
+            {saving ? 'Saving…' : 'Save webhook'}
+          </Button>
+        </>
+      )}
+    </Surface>
   )
 }

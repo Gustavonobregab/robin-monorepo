@@ -14,13 +14,13 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         'flex h-screen overflow-hidden transition-colors duration-300',
-        chatOpen ? 'bg-foreground/9' : 'bg-background'
+        chatOpen ? 'bg-secondary' : 'bg-background'
       )}
     >
       {/* Mobile sidebar overlay + drawer */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity duration-200',
+          'fixed inset-0 z-40 bg-foreground/40 md:hidden transition-opacity duration-200',
           mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={() => setMobileOpen(false)}
@@ -45,9 +45,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <div className="hidden md:flex">
           <Sidebar />
         </div>
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background">
           <Topbar />
-          <main className="relative flex-1 overflow-hidden bg-background">
+          <main className="relative flex-1 overflow-y-auto px-4 pb-12 sm:px-6 md:px-8">
             {children}
           </main>
         </div>

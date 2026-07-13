@@ -4,12 +4,69 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Neutrals do the structural work: white content, a warm grey rail, and
+       hairline borders. Brand colour appears only in actions and data. */
+    --background: 0 0% 100%; /* content area — white */
+    --foreground: 30 6% 12%; /* #211F1D */
+
+    --card: 0 0% 100%;
+    --card-foreground: 30 6% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 6% 12%;
+
+    /* The sidebar rail and inset chrome — a shade off white, plus a border. */
+    --sidebar: 40 14% 97%; /* #F8F7F5 */
+    --sidebar-foreground: 30 6% 12%;
+
+    /* Brand action colour. */
+    --primary: 72 100% 22%; /* #5B6F00 olive */
+    --primary-foreground: 0 0% 100%;
+
+    /* Quiet fills — secondary buttons, hovers, table stripes. */
+    --secondary: 40 12% 96%; /* #F6F5F2 */
+    --secondary-foreground: 30 6% 12%;
+
+    --muted: 40 12% 96%;
+    --muted-foreground: 30 4% 44%; /* #756F6B */
+
+    --accent: 40 12% 94%; /* hover fill */
+    --accent-foreground: 30 6% 12%;
+
+    /* Brand greens — chips, charts, highlights. Never structure. */
+    --brand: 91 42% 63%; /* #A0C878 */
+    --brand-foreground: 30 6% 12%;
+    --brand-subtle: 76 62% 88%;
+
+    /* Warm cream, kept for brand moments (marketing, illustration). */
+    --cream: 45 60% 98%; /* #FFFDF6 */
+
+    --destructive: 6 59% 44%; /* #B23B2E */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-subtle: 14 55% 96%;
+
+    --warning: 38 76% 34%; /* #9A6B15 */
+    --warning-foreground: 0 0% 100%;
+    --warning-subtle: 42 60% 95%;
+
+    --success: 72 100% 22%;
+    --success-subtle: 76 50% 93%;
+
+    --border: 40 10% 91%; /* #EAE8E5 hairline */
+    --input: 40 10% 91%;
+    --ring: 72 100% 22%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
   * {
-    border-color: theme('colors.border');
+    @apply border-border;
   }
   body {
-    background-color: theme('colors.background');
-    color: theme('colors.foreground');
+    @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
   }
 }

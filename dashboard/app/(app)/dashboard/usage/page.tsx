@@ -1,7 +1,14 @@
 'use client'
 import useSWR from 'swr'
 import Link from 'next/link'
+import { BarChart3 } from 'lucide-react'
+import { Button } from '@/app/components/ui/button'
+import { Chip } from '@/app/components/ui/chip'
+import { EmptyState } from '@/app/components/ui/empty-state'
+import { PageHeader } from '@/app/components/ui/page-header'
+import { Progress } from '@/app/components/ui/progress'
 import { Skeleton } from '@/app/components/ui/skeleton'
+import { Surface } from '@/app/components/ui/surface'
 import { getProfile } from '@/app/http/users'
 import { cn, formatBytes, formatDate } from '@/app/lib/utils'
 import type { ApiResponse, CurrentUsage, UserProfile } from '@/types'
@@ -52,67 +59,101 @@ export default function UsagePage() {
   const totalRequests = rows.reduce((sum, row) => sum + row.requests, 0)
 
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
-      <div className="space-y-5 max-w-2xl mx-auto">
-        <div>
-          <h2 className="text-lg font-semibold">Usage</h2>
-          <p className="text-sm text-muted mt-0.5">Credits and processing for the current cycle.</p>
-        </div>
+    <div className="mx-auto max-w-2xl pt-8">
+      <PageHeader title="Usage" description="Credits and processing for the current cycle." />
 
-        {isLoading ? (
-          <>
-            <Skeleton className="h-36 rounded-xl" />
-            <Skeleton className="h-56 rounded-xl" />
-          </>
-        ) : (
-          <>
-            {subscription && (
-              <div className="bg-background rounded-xl border border-border shadow-sm p-6">
-                <CreditsSummary
-                  used={subscription.credits.used}
-                  limit={subscription.credits.limit}
-                  resetsAt={subscription.currentPeriodEnd}
-                />
+      {isLoading ? (
+        <div className="space-y-6">
+          <Surface>
+            <div className="space-y-4">
+              <div className="flex items-baseline justify-between">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-5 w-20" />
               </div>
-            )}
+              <Skeleton className="h-2 w-full rounded-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </Surface>
 
-            <div className="bg-background rounded-xl border border-border shadow-sm p-6">
-              <div className="flex items-baseline justify-between mb-4">
-                <h3 className="font-medium">By pipeline</h3>
-                {usage && (
-                  <span className="text-xs text-muted">
-                    {formatDate(usage.period.start)} – {formatDate(usage.period.end)}
-                  </span>
-                )}
+          <Surface>
+            <div className="space-y-6">
+              <div className="flex items-baseline justify-between">
+                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-6 w-40 rounded-md" />
               </div>
-
-              {rows.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-sm text-muted">No usage this cycle.</p>
-                  <p className="text-xs text-muted mt-1">
-                    Compress some{' '}
-                    <Link href="/dashboard/text" className="underline text-foreground">text</Link>,{' '}
-                    <Link href="/dashboard/audio" className="underline text-foreground">audio</Link>, or{' '}
-                    <Link href="/dashboard/image" className="underline text-foreground">images</Link>.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-2xl font-semibold mb-5">
-                    {totalRequests.toLocaleString()}{' '}
-                    <span className="text-sm font-normal text-muted">total requests</span>
-                  </p>
-                  <div className="space-y-4">
-                    {rows.map((row) => (
-                      <PipelineBar key={row.label} row={row} total={totalRequests} />
-                    ))}
+              <Skeleton className="h-8 w-48" />
+              <div className="space-y-5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <Skeleton className="h-2 w-full rounded-full" />
+                    <Skeleton className="h-3 w-32" />
                   </div>
-                </>
+                ))}
+              </div>
+            </div>
+          </Surface>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {subscription && (
+            <Surface>
+              <CreditsSummary
+                used={subscription.credits.used}
+                limit={subscription.credits.limit}
+                resetsAt={subscription.currentPeriodEnd}
+              />
+            </Surface>
+          )}
+
+          <Surface padding="none">
+            <div className="flex items-baseline justify-between gap-4 px-6 pt-6">
+              <h2 className="text-[0.9375rem] font-medium text-foreground">By pipeline</h2>
+              {usage && (
+                <Chip size="sm">
+                  {formatDate(usage.period.start)} – {formatDate(usage.period.end)}
+                </Chip>
               )}
             </div>
-          </>
-        )}
-      </div>
+
+            {rows.length === 0 ? (
+              <EmptyState
+                icon={BarChart3}
+                title="No usage this cycle"
+                description="Compress something to see how your credits are being spent."
+                action={
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/dashboard/text">Text</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/dashboard/audio">Audio</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/dashboard/image">Images</Link>
+                    </Button>
+                  </div>
+                }
+              />
+            ) : (
+              <div className="px-6 pb-6 pt-5">
+                <p className="mb-6 text-2xl font-medium tracking-[-0.01em] text-foreground">
+                  {totalRequests.toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">total requests</span>
+                </p>
+                <div className="space-y-5">
+                  {rows.map((row) => (
+                    <PipelineBar key={row.label} row={row} total={totalRequests} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </Surface>
+        </div>
+      )}
     </div>
   )
 }
@@ -131,26 +172,33 @@ function CreditsSummary({
   const isHigh = pct >= 80
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline justify-between">
-        <p className="text-2xl font-semibold">
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-2xl font-medium tracking-[-0.01em] text-foreground">
           {used.toLocaleString()}{' '}
-          <span className="text-sm font-normal text-muted">of {limit.toLocaleString()} credits used</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            of {limit.toLocaleString()} credits used
+          </span>
         </p>
-        <span className={cn('text-sm font-medium', isHigh && 'text-danger')}>
+        <span
+          className={cn(
+            'text-sm font-medium text-muted-foreground',
+            isHigh && 'text-destructive',
+          )}
+        >
           {remaining.toLocaleString()} left
         </span>
       </div>
 
-      <div className="h-2 rounded-full bg-accent-light overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all', isHigh ? 'bg-danger' : 'bg-accent-strong')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <Progress
+        value={pct}
+        className="bg-brand-subtle"
+        indicatorClassName={isHigh ? 'bg-destructive' : 'bg-brand'}
+      />
 
-      <p className="text-xs text-muted">
-        Resets on {formatDate(resetsAt)}. Credits are charged by input size — bigger files cost more.
+      <p className="text-xs text-muted-foreground">
+        Resets on {formatDate(resetsAt)}. Credits are charged by input size — bigger files cost
+        more.
       </p>
     </div>
   )
@@ -160,23 +208,24 @@ function PipelineBar({ row, total }: { row: PipelineRow; total: number }) {
   const pct = total > 0 ? (row.requests / total) * 100 : 0
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{row.label}</span>
-        <span className="text-sm text-muted">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm font-medium text-foreground">{row.label}</span>
+        <span className="text-sm text-muted-foreground">
           {row.requests.toLocaleString()} req · {pct.toFixed(1)}%
         </span>
       </div>
-      <div className="h-4 rounded-full bg-accent-light overflow-hidden">
-        <div
-          className="h-full rounded-full bg-accent-strong transition-all"
-          style={{ width: `${Math.max(pct, 1.5)}%` }}
-        />
-      </div>
-      <div className="flex gap-3 text-xs text-muted">
+
+      <Progress
+        value={Math.max(pct, 1.5)}
+        className="bg-brand-subtle"
+        indicatorClassName="bg-brand"
+      />
+
+      <div className="flex gap-2 text-xs text-muted-foreground">
         <span>{row.detail}</span>
         <span>·</span>
-        <span>{row.data}</span>
+        <span className="font-mono">{row.data}</span>
       </div>
     </div>
   )

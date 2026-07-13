@@ -4,6 +4,7 @@ import { StatCard } from '@/app/components/dashboard/StatCard'
 import { UsageChart } from '@/app/components/dashboard/UsageChart'
 import { RecentJobsTable } from '@/app/components/dashboard/RecentJobsTable'
 import { QuickActions } from '@/app/components/dashboard/QuickActions'
+import { PageHeader } from '@/app/components/ui/page-header'
 import { Skeleton } from '@/app/components/ui/skeleton'
 import { getUsageAnalytics } from '@/app/http/usage'
 import { formatBytes } from '@/app/lib/utils'
@@ -17,50 +18,61 @@ export default function DashboardPage() {
 
   const analytics = data?.data
 
-  if (isLoading) {
-    return (
-      <div className="h-full overflow-y-auto p-4 sm:p-6">
-        <div className="space-y-6 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-24 rounded-xl" />
-          </div>
-          <Skeleton className="h-44 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Total Requests" value={analytics?.summary.totalRequests ?? 0} />
-          <StatCard
-            label="Data Processed"
-            value={formatBytes(analytics?.summary.totalInputBytes ?? 0)}
-            description="total input across all jobs"
-          />
-          <StatCard
-            label="Data Saved"
-            value={formatBytes((analytics?.summary.totalInputBytes ?? 0) - (analytics?.summary.totalOutputBytes ?? 0))}
-            description="total reduction in output size"
-          />
-        </div>
+    <div className="pt-8">
+      <div className="mx-auto max-w-4xl">
+        <PageHeader title="Dashboard" />
 
-        <UsageChart data={analytics?.chart ?? []} />
+        {isLoading ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Skeleton className="h-24 rounded-lg" />
+              <Skeleton className="h-24 rounded-lg" />
+              <Skeleton className="h-24 rounded-lg" />
+            </div>
+            <Skeleton className="h-44 rounded-lg" />
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-28" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-64 rounded-lg" />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatCard label="Total Requests" value={analytics?.summary.totalRequests ?? 0} />
+              <StatCard
+                label="Data Processed"
+                value={formatBytes(analytics?.summary.totalInputBytes ?? 0)}
+                description="total input across all jobs"
+              />
+              <StatCard
+                label="Data Saved"
+                value={formatBytes((analytics?.summary.totalInputBytes ?? 0) - (analytics?.summary.totalOutputBytes ?? 0))}
+                description="total reduction in output size"
+              />
+            </div>
 
-        <div>
-          <h2 className="font-medium text-sm mb-3">Quick actions</h2>
-          <QuickActions />
-        </div>
+            <UsageChart data={analytics?.chart ?? []} />
 
-        <div>
-          <h2 className="font-medium text-sm mb-3">Recent activity</h2>
-          <RecentJobsTable jobs={analytics?.recent ?? []} />
-        </div>
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-foreground">Quick actions</h2>
+              <QuickActions />
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-foreground">Recent activity</h2>
+              <RecentJobsTable jobs={analytics?.recent ?? []} />
+            </section>
+          </div>
+        )}
       </div>
     </div>
   )
