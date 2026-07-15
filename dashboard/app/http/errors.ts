@@ -6,7 +6,7 @@ const GENERIC_MESSAGE = 'Something went wrong. Please try again.'
 
 export const ERROR_MESSAGES: Record<string, string> = {
   INSUFFICIENT_CREDITS: "You've run out of credits for this billing cycle.",
-  RATE_LIMITED: 'Too many requests — wait a moment and try again.',
+  RATE_LIMITED: 'Too many requests. Wait a moment and try again.',
   NO_PLAN: "Your account doesn't have an active plan. Pick one on the billing page.",
   SUBSCRIPTION_ENDED: 'Your subscription has ended. Renew it to keep processing.',
   FEATURE_NOT_AVAILABLE: "This feature isn't available on your current plan.",
@@ -52,4 +52,20 @@ export const getErrorMessage = async (
 
 export const toastApiError = async (err: unknown, fallback?: string): Promise<void> => {
   toast.error(await getErrorMessage(err, fallback))
+}
+
+/* Submit-error funnel: only INSUFFICIENT_CREDITS is special-cased (View plan action). */
+export const toastSubmitError = async (
+  err: unknown,
+  fallback: string,
+  onViewPlan: () => void,
+): Promise<void> => {
+  const { code } = await parseApiError(err)
+  if (code === 'INSUFFICIENT_CREDITS') {
+    toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
+      action: { label: 'View plan', onClick: onViewPlan },
+    })
+    return
+  }
+  toast.error(ERROR_MESSAGES[code] ?? fallback)
 }

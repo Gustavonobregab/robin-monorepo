@@ -18,10 +18,10 @@ import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { PageHeader } from '@/app/components/ui/PageHeader'
 import { InlineSelect } from '@/app/components/ui/Select'
-import { Textarea } from '@/app/components/ui/Field'
 import { Skeleton } from '@/app/components/ui/Skeleton'
 import { EmptyState } from '@/app/components/ui/EmptyState'
-import { StatusBadge, type JobStatus as BadgeStatus } from '@/app/components/ui/StatusBadge'
+import { RetryCard } from '@/app/components/ui/RetryCard'
+import { StatusBadge } from '@/app/components/ui/StatusBadge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +32,18 @@ import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { submitTextJob } from '@/app/http/text'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
-import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
-import { formatBytes, formatDate, randomKey, triggerDownload } from '@/app/lib/utils'
-import type { JobListItem, JobMetrics, SubmitTextJobInput, TextPreset } from '@/types'
+import { toastApiError, toastSubmitError } from '@/app/http/errors'
+import {
+  cn,
+  downloadTextAsFile,
+  formatBytes,
+  formatSaved,
+  randomKey,
+  savedPercent,
+  timeAgo,
+  triggerDownload,
+} from '@/app/lib/utils'
+import type { JobListItem, JobMetrics, JobView, SubmitTextJobInput, TextPreset } from '@/types'
 
 /* Intensity options map 1:1 to the API's text presets (chill/medium/aggressive). */
 const INTENSITY_OPTIONS: { value: TextPreset; label: string; hint: string }[] = [
@@ -43,32 +52,14 @@ const INTENSITY_OPTIONS: { value: TextPreset; label: string; hint: string }[] = 
   { value: 'aggressive', label: 'Aggressive', hint: 'Full cleanup, JSON converted to TOON' },
 ]
 
-const BADGE_STATUS: Record<JobListItem['status'], BadgeStatus> = {
-  created: 'queued',
-  pending: 'queued',
-  processing: 'processing',
-  completed: 'done',
-  failed: 'failed',
-}
-
-function savedPercent(metrics?: JobMetrics): number | null {
-  if (!metrics || metrics.inputSize <= 0) return null
-  return Math.round((1 - metrics.outputSize / metrics.inputSize) * 100)
-}
-
-function formatSaved(saved: number): string {
-  return `${saved >= 0 ? '−' : '+'}${Math.abs(saved)}%`
-}
-
-function timeAgo(iso: string): string {
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return formatDate(iso)
+function SizeDelta({ metrics, className }: { metrics: JobMetrics; className?: string }) {
+  const saved = savedPercent(metrics.inputSize, metrics.outputSize)
+  return (
+    <span className={cn('text-[13px] text-muted-foreground', className)}>
+      {formatBytes(metrics.inputSize)} to {formatBytes(metrics.outputSize)}
+      {saved !== null && `, ${formatSaved(saved)}`}
+    </span>
+  )
 }
 
 export default function TextPage() {
@@ -81,11 +72,7 @@ export default function TextPage() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const [output, setOutput] = useState<{
-    text?: string
-    downloadUrl?: string
-    metrics?: JobMetrics
-  } | null>(null)
+  const [instantResult, setInstantResult] = useState<JobView['result'] | null>(null)
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
 
@@ -94,23 +81,19 @@ export default function TextPage() {
     error: jobsError,
     isLoading: jobsLoading,
     mutate: mutateJobs,
-  } = useSWR('jobs-text-recent', () => listJobs({ type: 'text', limit: 10 }))
+  } = useSWR('jobs/text', () => listJobs({ type: 'text', limit: 10 }))
 
   useEffect(() => {
-    if (job?.status !== 'completed' || !job.result) return
-    setOutput({
-      text: job.result.outputText,
-      downloadUrl: job.result.outputUrl,
-      metrics: job.result.metrics,
-    })
-    mutateJobs()
-  }, [job?.status, job?.result?.outputText, job?.result?.outputUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (job?.status === 'completed') void mutateJobs()
+  }, [job?.status, mutateJobs])
 
   useEffect(() => {
     if (!isFailed) return
     toast.error(job?.error ?? 'Job failed')
     mutateJobs()
   }, [isFailed]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const output = job?.status === 'completed' ? job.result : instantResult
 
   const hasInput = file !== null || text.trim().length > 0
   const busy = submitting || isPolling
@@ -119,7 +102,7 @@ export default function TextPage() {
     if (!hasInput || busy) return
 
     setJobId(null)
-    setOutput(null)
+    setInstantResult(null)
     setSubmitting(true)
 
     try {
@@ -133,45 +116,33 @@ export default function TextPage() {
       const submitted = await submitTextJob(input, randomKey())
 
       if (submitted.status === 'completed' && submitted.result) {
-        setOutput({
-          text: submitted.result.outputText,
-          downloadUrl: submitted.result.outputUrl,
-          metrics: submitted.result.metrics,
-        })
+        setInstantResult(submitted.result)
         mutateJobs()
       } else {
         setJobId(submitted.id)
       }
     } catch (err) {
-      const { code } = await parseApiError(err)
-      if (code === 'INSUFFICIENT_CREDITS') {
-        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
-          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
-        })
-      } else {
-        await toastApiError(err, 'Failed to submit job. Check your input and try again.')
-      }
+      await toastSubmitError(err, 'Failed to submit job. Check your input and try again.', () =>
+        router.push('/dashboard/billing'),
+      )
     } finally {
       setSubmitting(false)
     }
   }
 
   function copyOutput() {
-    if (!output?.text) return
-    navigator.clipboard.writeText(output.text)
+    if (!output?.outputText) return
+    navigator.clipboard.writeText(output.outputText)
     toast.success('Copied to clipboard')
   }
 
   function downloadOutput() {
-    if (output?.downloadUrl) {
-      triggerDownload(output.downloadUrl)
+    if (output?.outputUrl) {
+      triggerDownload(output.outputUrl)
       return
     }
-    if (!output?.text) return
-    const blob = new Blob([output.text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    triggerDownload(url, 'output.txt')
-    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    if (!output?.outputText) return
+    downloadTextAsFile(output.outputText, 'output.txt')
   }
 
   async function downloadJob(item: JobListItem) {
@@ -181,10 +152,7 @@ export default function TextPage() {
       if (detail.result?.outputUrl) {
         triggerDownload(detail.result.outputUrl)
       } else if (detail.result?.outputText) {
-        const blob = new Blob([detail.result.outputText], { type: 'text/plain' })
-        const url = URL.createObjectURL(blob)
-        triggerDownload(url, 'output.txt')
-        setTimeout(() => URL.revokeObjectURL(url), 10_000)
+        downloadTextAsFile(detail.result.outputText, 'output.txt')
       }
     } catch (err) {
       await toastApiError(err, 'Failed to download the result. Try again.')
@@ -193,7 +161,6 @@ export default function TextPage() {
     }
   }
 
-  const outputSaved = savedPercent(output?.metrics)
   const recentJobs = jobList?.items ?? []
 
   return (
@@ -204,7 +171,7 @@ export default function TextPage() {
         className="mb-8"
       />
 
-      {/* Composer — outer r24 white card, inner r16 grey well, settings bar below */}
+      {/* Composer: outer r24 white card, inner r16 grey well, settings bar below */}
       <div className="rounded-3xl border border-border bg-card p-2">
         {file ? (
           <div className="flex items-center gap-3 rounded-2xl bg-black/[0.02] p-4">
@@ -225,14 +192,12 @@ export default function TextPage() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-2xl bg-black/[0.02] transition-colors focus-within:bg-black/[0.03]">
-            <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste your text here"
-              className="block min-h-[11rem] w-full resize-none rounded-2xl border-0 bg-transparent px-4 py-3.5 focus:border-0"
-            />
-          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste your text here"
+            className="block min-h-[11rem] w-full resize-none rounded-2xl bg-black/[0.02] px-4 py-3.5 text-sm text-foreground transition-colors placeholder:text-muted-foreground hover:bg-black/[0.04] focus:outline-none"
+          />
         )}
 
         <div className="flex items-center gap-1 px-1 pb-1 pt-2">
@@ -267,7 +232,7 @@ export default function TextPage() {
             )}
             <Button
               title="Compress"
-              className="h-10 w-10 rounded-full"
+              size="orb"
               disabled={!hasInput || busy}
               onClick={handleSubmit}
             >
@@ -283,7 +248,7 @@ export default function TextPage() {
 
       {isPolling && (
         <Card className="mt-6 flex items-center justify-between p-4">
-          <StatusBadge status={job?.status === 'processing' ? 'processing' : 'queued'} />
+          <StatusBadge status={job?.status ?? 'pending'} />
           <span className="text-[13px] text-muted-foreground">Large inputs can take a minute.</span>
         </Card>
       )}
@@ -291,7 +256,7 @@ export default function TextPage() {
       {timedOut && (
         <Card className="mt-6 p-4">
           <p className="text-sm text-muted-foreground">
-            Still processing in the background — the result will show up in your recent jobs.
+            Still processing in the background. The result will show up in your recent jobs.
           </p>
         </Card>
       )}
@@ -301,15 +266,10 @@ export default function TextPage() {
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
             <div className="flex min-w-0 items-center gap-3">
               <span className="text-sm font-medium text-foreground">Output</span>
-              {output.metrics && (
-                <span className="truncate text-[13px] text-muted-foreground">
-                  {formatBytes(output.metrics.inputSize)} → {formatBytes(output.metrics.outputSize)}
-                  {outputSaved !== null && ` · ${formatSaved(outputSaved)}`}
-                </span>
-              )}
+              {output.metrics && <SizeDelta metrics={output.metrics} className="truncate" />}
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {output.text && (
+              {output.outputText && (
                 <Button variant="ghost" size="sm" onClick={copyOutput}>
                   <Copy className="h-4 w-4" />
                   Copy
@@ -322,9 +282,9 @@ export default function TextPage() {
             </div>
           </div>
 
-          {output.text ? (
+          {output.outputText ? (
             <div className="max-h-[24rem] overflow-y-auto whitespace-pre-wrap break-words p-4 text-sm leading-relaxed text-foreground">
-              {output.text}
+              {output.outputText}
             </div>
           ) : (
             <p className="p-8 text-center text-sm text-muted-foreground">
@@ -345,12 +305,7 @@ export default function TextPage() {
             ))}
           </div>
         ) : jobsError ? (
-          <Card className="flex items-center justify-between gap-4 p-4">
-            <p className="text-sm text-muted-foreground">Couldn&apos;t load your recent jobs.</p>
-            <Button variant="secondary" size="sm" onClick={() => mutateJobs()}>
-              Try again
-            </Button>
-          </Card>
+          <RetryCard message="Couldn't load your recent jobs." onRetry={() => mutateJobs()} />
         ) : recentJobs.length === 0 ? (
           <EmptyState
             icon={<FileText className="h-5 w-5" />}
@@ -359,56 +314,47 @@ export default function TextPage() {
           />
         ) : (
           <div className="space-y-1">
-            {recentJobs.map((item) => {
-              const saved = savedPercent(item.metrics)
-              return (
-                <div
-                  key={item.id}
-                  className="group flex items-center gap-4 rounded-2xl p-2 transition-colors hover:bg-black/[0.04]"
-                >
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/[0.04]">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {item.name ?? 'Text'}
-                    </p>
-                    {item.metrics && (
-                      <p className="mt-0.5 text-[13px] text-muted-foreground">
-                        {formatBytes(item.metrics.inputSize)} →{' '}
-                        {formatBytes(item.metrics.outputSize)}
-                        {saved !== null && ` · ${formatSaved(saved)}`}
-                      </p>
-                    )}
-                  </div>
-                  <StatusBadge status={BADGE_STATUS[item.status]} />
-                  <span className="w-16 text-right text-[13px] text-muted-foreground">
-                    {timeAgo(item.createdAt)}
-                  </span>
-                  {item.status === 'completed' ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" title="Actions">
-                          {downloadingId === item.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => downloadJob(item)}>
-                          <Download className="h-4 w-4" />
-                          Download
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <div className="h-8 w-8 shrink-0" />
-                  )}
+            {recentJobs.map((item) => (
+              <div
+                key={item.id}
+                className="group flex items-center gap-4 rounded-2xl p-2 transition-colors hover:bg-black/[0.04]"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/[0.04]">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
                 </div>
-              )
-            })}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {item.name ?? 'Text'}
+                  </p>
+                  {item.metrics && <SizeDelta metrics={item.metrics} className="mt-0.5 block" />}
+                </div>
+                <StatusBadge status={item.status} />
+                <span className="w-16 text-right text-[13px] text-muted-foreground">
+                  {timeAgo(item.createdAt)}
+                </span>
+                {item.status === 'completed' ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" title="Actions">
+                        {downloadingId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MoreHorizontal className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => downloadJob(item)}>
+                        <Download className="h-4 w-4" />
+                        Download
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="h-8 w-8 shrink-0" />
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

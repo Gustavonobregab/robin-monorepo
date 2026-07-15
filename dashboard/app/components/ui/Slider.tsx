@@ -2,8 +2,7 @@
 
 import { cn } from '@/app/lib/utils'
 
-/* Styled native range input — grey track, near-black filled portion, white
-   bordered thumb. No extra deps. */
+/* Styled native range input: grey track, near-black fill, no extra deps. */
 export function Slider({
   value,
   onChange,

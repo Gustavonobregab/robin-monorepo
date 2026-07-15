@@ -3,15 +3,12 @@
 import { useCallback, useRef, useState } from 'react'
 import { cn } from '@/app/lib/utils'
 
-/* Voice-isolator composer surface: outer card 24px radius with hairline
-   border; inner drop well 16px radius, 2% black fill, muted label. Children
-   render below the well (settings bar, submit). */
+/* Composer surface: outer card + inner drop well; children render below. */
 export function Dropzone({
   onFiles,
   accept,
   label = 'Drop files here',
   hint,
-  multiple = false,
   className,
   children,
 }: {
@@ -19,7 +16,6 @@ export function Dropzone({
   accept?: string
   label?: string
   hint?: string
-  multiple?: boolean
   className?: string
   children?: React.ReactNode
 }) {
@@ -31,9 +27,9 @@ export function Dropzone({
       e.preventDefault()
       setDragging(false)
       const files = Array.from(e.dataTransfer.files)
-      if (files.length) onFiles(multiple ? files : files.slice(0, 1))
+      if (files.length) onFiles(files.slice(0, 1))
     },
-    [onFiles, multiple],
+    [onFiles],
   )
 
   return (
@@ -52,14 +48,13 @@ export function Dropzone({
           dragging ? 'bg-black/[0.06]' : 'bg-black/[0.02] hover:bg-black/[0.04]',
         )}
       >
-        <span className="text-sm text-black/50">{label}</span>
-        {hint && <span className="text-xs text-black/35">{hint}</span>}
+        <span className="text-sm text-muted-foreground">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground/70">{hint}</span>}
       </button>
       <input
         ref={inputRef}
         type="file"
         accept={accept}
-        multiple={multiple}
         className="hidden"
         onChange={(e) => {
           const files = Array.from(e.target.files ?? [])

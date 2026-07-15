@@ -137,7 +137,7 @@ export type KeyStatus = 'active' | 'revoked'
 export interface ApiKey {
   _id: string
   name: string
-  keyPrefix: string
+  keyPrefix?: string
   status: KeyStatus
   createdAt: string
   lastUsedAt?: string
@@ -199,9 +199,16 @@ export interface ImagePresetDef {
   operations: string[]
 }
 
+export type ImageOutputFormat = 'webp' | 'avif' | 'jpeg' | 'png'
+
+export type ImageOperationInput =
+  | { type: 'resize'; params: { width: number; height: number; fit: 'inside' } }
+  | { type: 'encode'; params: { format: ImageOutputFormat; quality: number } }
+
 export interface SubmitImageJobInput {
   imageId: string
   preset?: string
+  operations?: ImageOperationInput[]
 }
 
 export type AudioPreset = 'chill' | 'medium' | 'aggressive' | 'podcast' | 'lecture'

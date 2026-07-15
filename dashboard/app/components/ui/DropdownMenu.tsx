@@ -3,8 +3,7 @@
 import * as Dropdown from '@radix-ui/react-dropdown-menu'
 import { cn } from '@/app/lib/utils'
 
-/* ElevenLabs-style menu: white popover, 12px radius, hairline border, soft
-   shadow; items are 8px-radius rows that fill grey on highlight. */
+/* Menu: white popover, items fill grey on highlight. */
 
 export const DropdownMenu = Dropdown.Root
 export const DropdownMenuTrigger = Dropdown.Trigger

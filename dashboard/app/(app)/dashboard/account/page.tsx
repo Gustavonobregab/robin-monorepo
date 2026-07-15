@@ -10,6 +10,7 @@ import { Card } from '@/app/components/ui/Card'
 import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
 import { Field, Input } from '@/app/components/ui/Field'
 import { PageHeader } from '@/app/components/ui/PageHeader'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { Skeleton } from '@/app/components/ui/Skeleton'
 import { signOut, useSession } from '@/app/lib/auth-client'
 import { getProfile, updateProfile, updateWebhookConfig } from '@/app/http/users'
@@ -18,14 +19,14 @@ import { toastApiError } from '@/app/http/errors'
 export default function AccountPage() {
   const router = useRouter()
   const { data: session } = useSession()
-  const { data, error, mutate } = useSWR('profile', getProfile)
+  const { data, error, mutate } = useSWR('users/me', getProfile)
   const profile = data?.data
 
   const name = profile?.name ?? session?.user.name ?? ''
   const email = profile?.email ?? session?.user.email ?? ''
 
   return (
-    <div className="mx-auto max-w-2xl pt-8">
+    <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Settings"
         description="Your profile, webhooks and session."
@@ -34,15 +35,7 @@ export default function AccountPage() {
 
       <div className="space-y-6">
         {error ? (
-          <Card className="p-6">
-            <p className="text-sm text-foreground">Could not load your account.</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Something went wrong while fetching your profile.
-            </p>
-            <Button variant="secondary" size="sm" className="mt-4" onClick={() => mutate()}>
-              Try again
-            </Button>
-          </Card>
+          <RetryCard message="Could not load your account." onRetry={() => mutate()} />
         ) : (
           <>
             <ProfileCard
@@ -132,7 +125,7 @@ function ProfileCard({
           </>
         ) : (
           <>
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/[0.05] text-base font-medium text-foreground">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary text-base font-medium text-foreground">
               {name.trim().charAt(0).toUpperCase() || email.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -249,7 +242,6 @@ function WebhookCard({
                 disabled={!enabled}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="https://your-app.com/webhooks/robin"
-                className="disabled:bg-black/[0.02] disabled:text-muted-foreground"
               />
             </Field>
 
@@ -257,7 +249,7 @@ function WebhookCard({
               <div className="mt-4 rounded-xl bg-black/[0.02] p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
-                    Signing secret — copy it now, shown once
+                    Signing secret. Copy it now, shown once
                   </span>
                   <Button
                     type="button"

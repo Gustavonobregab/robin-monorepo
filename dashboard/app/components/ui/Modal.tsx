@@ -5,8 +5,7 @@ import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 
-/* Generic dialog shell — white panel, 20px radius, hairline border, blurred
-   scrim. Compose the body/footer inside; use ConfirmDialog for yes/no asks. */
+/* Generic dialog shell; use ConfirmDialog for yes/no asks. */
 export function Modal({
   open,
   onOpenChange,
@@ -61,5 +60,3 @@ export function Modal({
     </Dialog.Root>
   )
 }
-
-export const ModalClose = Dialog.Close

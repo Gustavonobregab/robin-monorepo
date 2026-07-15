@@ -6,6 +6,7 @@ import { ArrowUp, FileText, Sparkles, X } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
 import { Chip } from '@/app/components/ui/Chip'
 import { InlineSelect } from '@/app/components/ui/Select'
+import { cn } from '@/app/lib/utils'
 
 type AssistantMessage = {
   id: string
@@ -27,34 +28,32 @@ const SUGGESTIONS = [
   'Explain my usage',
 ]
 
-/* The single integration point: replace this with the real API call
-   (app/http/assistant.ts) when the backend lands. Same signature —
-   question + context in, assistant reply out. */
+/* Single integration point: swap for the real app/http/assistant.ts call when the backend lands. */
 async function sendToAssistant(text: string, context: AssistantContext): Promise<string> {
   void text
   void context
   await new Promise((resolve) => setTimeout(resolve, 800))
-  return "The assistant isn't wired up yet — I'll be able to answer this once the backend is connected. Everything you send here stays local for now."
+  return "The assistant isn't wired up yet. I'll be able to answer this once the backend is connected. Everything you send here stays local for now."
 }
 
+const TIME_FMT = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
+
 function formatTime(date: Date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return TIME_FMT.format(date)
 }
 
 function MessageRow({ message }: { message: AssistantMessage }) {
-  if (message.role === 'user') {
-    return (
-      <div className="flex flex-col items-end gap-1">
-        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-black/[0.04] px-3.5 py-2.5 text-sm text-foreground">
-          {message.content}
-        </div>
-        <span className="text-[11px] text-muted-foreground">{formatTime(message.createdAt)}</span>
-      </div>
-    )
-  }
+  const isUser = message.role === 'user'
   return (
-    <div className="flex flex-col items-start gap-1">
-      <p className="max-w-[95%] whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+    <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start')}>
+      <p
+        className={cn(
+          'whitespace-pre-wrap text-sm text-foreground',
+          isUser
+            ? 'max-w-[85%] rounded-2xl bg-black/[0.04] px-3.5 py-2.5'
+            : 'max-w-[95%] leading-relaxed',
+        )}
+      >
         {message.content}
       </p>
       <span className="text-[11px] text-muted-foreground">{formatTime(message.createdAt)}</span>
@@ -156,7 +155,7 @@ export function AssistantPanel({ open, onClose }: { open: boolean; onClose: () =
 
           {/* Composer */}
           <div className="shrink-0 p-3 pt-0">
-            <div className="rounded-3xl border border-black/10 bg-background p-2">
+            <div className="rounded-3xl border border-border bg-background p-2">
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -181,14 +180,15 @@ export function AssistantPanel({ open, onClose }: { open: boolean; onClose: () =
                   options={CONTEXT_OPTIONS}
                   icon={<FileText className="h-4 w-4 text-muted-foreground" />}
                 />
-                <button
+                <Button
+                  size="orb"
+                  className="h-9 w-9 shrink-0"
                   title="Send"
                   disabled={!canSend}
                   onClick={() => void send(draft)}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
                 >
                   <ArrowUp className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>

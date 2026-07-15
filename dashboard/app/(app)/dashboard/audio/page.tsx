@@ -15,7 +15,6 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
-import { Card } from '@/app/components/ui/Card'
 import { Chip } from '@/app/components/ui/Chip'
 import {
   DropdownMenu,
@@ -27,6 +26,7 @@ import { Dropzone } from '@/app/components/ui/Dropzone'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
 import { Progress } from '@/app/components/ui/Progress'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { SearchInput } from '@/app/components/ui/SearchInput'
 import { InlineSelect } from '@/app/components/ui/Select'
 import { Skeleton } from '@/app/components/ui/Skeleton'
@@ -34,22 +34,27 @@ import { Slider } from '@/app/components/ui/Slider'
 import { StatusBadge } from '@/app/components/ui/StatusBadge'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { getAudioPresets, submitAudioJob } from '@/app/http/audio'
-import { ERROR_MESSAGES, parseApiError, toastApiError } from '@/app/http/errors'
+import { toastApiError, toastSubmitError } from '@/app/http/errors'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { getPublicPlans } from '@/app/http/plans'
 import { uploadFile } from '@/app/http/upload'
 import { getProfile } from '@/app/http/users'
-import { formatBytes, formatDate, randomKey, triggerDownload } from '@/app/lib/utils'
+import {
+  formatBytes,
+  formatSaved,
+  randomKey,
+  savedPercent,
+  timeAgo,
+  triggerDownload,
+} from '@/app/lib/utils'
 import type {
   AudioOperationInput,
   AudioPreset,
   JobListItem,
-  JobStatus,
   SubmitAudioJobInput,
 } from '@/types'
 
-/* Audio tool rebuilt on the voice-isolator recipe: preset chips, r24 composer
-   with an InlineSelect settings bar, circular submit, history strip below. */
+/* Audio tool built on the voice-isolator layout. */
 
 const ACCEPTED_FORMATS = '.mp3,.wav'
 
@@ -60,17 +65,14 @@ interface EncodeSettings {
   speed: number
 }
 
-const DEFAULT_SETTINGS: EncodeSettings = { format: 'opus', bitrate: 24, channels: 1, speed: 1 }
-
-/* Composer mirror of the server-side preset params (api AUDIO_PRESETS) — a
-   preset submit sends only the id; the server owns the real recipe. */
-const PRESET_SETTINGS: Record<string, EncodeSettings | undefined> = {
+/* Composer mirror of the server AUDIO_PRESETS; submit sends only the preset id. */
+const PRESET_SETTINGS = {
   chill: { format: 'opus', bitrate: 32, channels: 1, speed: 1 },
   medium: { format: 'opus', bitrate: 24, channels: 1, speed: 1 },
   aggressive: { format: 'opus', bitrate: 12, channels: 1, speed: 1.75 },
   podcast: { format: 'opus', bitrate: 24, channels: 1, speed: 1 },
   lecture: { format: 'opus', bitrate: 16, channels: 1, speed: 1.5 },
-}
+} satisfies Record<AudioPreset, EncodeSettings>
 
 const FORMAT_OPTIONS = [
   { value: 'opus', label: 'Opus', hint: 'Best quality per bitrate' },
@@ -93,14 +95,6 @@ const CHANNEL_OPTIONS = [
   { value: '2', label: 'Stereo' },
 ]
 
-const BADGE_STATUS: Record<JobStatus, 'done' | 'processing' | 'queued' | 'failed'> = {
-  created: 'queued',
-  pending: 'queued',
-  processing: 'processing',
-  completed: 'done',
-  failed: 'failed',
-}
-
 function buildOperations(s: EncodeSettings): AudioOperationInput[] {
   const ops: AudioOperationInput[] = []
   if (s.speed !== 1) ops.push({ type: 'speedup', params: { rate: s.speed } })
@@ -111,30 +105,11 @@ function buildOperations(s: EncodeSettings): AudioOperationInput[] {
   return ops
 }
 
-function timeAgo(iso: string): string {
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  return formatDate(iso)
-}
-
-function savedPercent(item: JobListItem): string | null {
-  const m = item.metrics
-  if (!m || !m.inputSize || !m.outputSize) return null
-  return `−${Math.round((1 - m.outputSize / m.inputSize) * 100)}%`
-}
-
 export default function AudioPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [preset, setPreset] = useState<AudioPreset | null>('medium')
-  const [settings, setSettings] = useState<EncodeSettings>(
-    PRESET_SETTINGS.medium ?? DEFAULT_SETTINGS,
-  )
+  const [settings, setSettings] = useState<EncodeSettings>(PRESET_SETTINGS.medium)
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
@@ -150,7 +125,7 @@ export default function AudioPage() {
     error: jobsError,
     isLoading: jobsLoading,
     mutate: mutateJobs,
-  } = useSWR('jobs/audio/recent', () => listJobs({ type: 'audio', limit: 20 }))
+  } = useSWR('jobs/audio', () => listJobs({ type: 'audio', limit: 20 }))
 
   const { job, isPolling, isCompleted, isFailed, timedOut } = useJobPoll({
     jobId,
@@ -186,13 +161,16 @@ export default function AudioPage() {
     return synced.filter((it) => it.name?.toLowerCase().includes(q))
   }, [jobsData, jobId, job, query])
 
+  const noJobs = (jobsData?.items ?? []).length === 0
+
   function applyPreset(id: string) {
     if (preset === id) {
       setPreset(null)
       return
     }
-    setPreset(id as AudioPreset)
-    setSettings(PRESET_SETTINGS[id] ?? DEFAULT_SETTINGS)
+    const next = id as AudioPreset
+    setPreset(next)
+    setSettings(PRESET_SETTINGS[next])
   }
 
   function updateSettings(patch: Partial<EncodeSettings>) {
@@ -216,14 +194,9 @@ export default function AudioPage() {
       setJobId(res.id)
       void mutateJobs()
     } catch (err) {
-      const { code } = await parseApiError(err)
-      if (code === 'INSUFFICIENT_CREDITS') {
-        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
-          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
-        })
-      } else {
-        await toastApiError(err, 'Failed to submit job. Check your file and try again.')
-      }
+      await toastSubmitError(err, 'Failed to submit job. Check your file and try again.', () =>
+        router.push('/dashboard/billing'),
+      )
     } finally {
       setSubmitting(false)
     }
@@ -257,17 +230,17 @@ export default function AudioPage() {
     const url = job?.result?.outputUrl
     const ratio = job?.result?.metrics?.compressionRatio
     toast.success(
-      ratio ? `Audio compressed — ${ratio}× smaller` : 'Audio compressed',
+      ratio ? `Audio compressed, ${ratio}x smaller` : 'Audio compressed',
       url ? { action: { label: 'Download', onClick: () => triggerDownload(url) } } : undefined,
     )
   }, [isCompleted]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (timedOut) toast('Still processing — it will show up in the list below when done.')
+    if (timedOut) toast('Still processing. It will show up in the list below when done.')
   }, [timedOut])
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-3xl space-y-8">
       <PageHeader
         title="Audio"
         description="Shrink audio files with tuned presets or custom encoding."
@@ -303,7 +276,7 @@ export default function AudioPage() {
       >
         {file && (
           <div className="mt-2 flex items-center gap-3 px-2">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-secondary text-foreground">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-black/[0.04] text-foreground">
               <AudioLines className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
@@ -343,7 +316,7 @@ export default function AudioPage() {
           />
           <div className="flex h-8 items-center gap-2 rounded-[10px] px-2">
             <span className="text-[13px] font-medium text-foreground">
-              Speed {Number(settings.speed.toFixed(2))}×
+              Speed {Number(settings.speed.toFixed(2))}x
             </span>
             <Slider
               value={settings.speed}
@@ -362,8 +335,7 @@ export default function AudioPage() {
               </span>
             )}
             <Button
-              size="icon"
-              className="h-10 w-10 rounded-full"
+              size="orb"
               aria-label="Compress audio"
               disabled={!file || busy}
               onClick={() => void handleSubmit()}
@@ -391,14 +363,10 @@ export default function AudioPage() {
         </div>
 
         {jobsError ? (
-          <Card className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              We couldn&apos;t load your audio jobs.
-            </p>
-            <Button variant="secondary" className="mt-3" onClick={() => void mutateJobs()}>
-              Try again
-            </Button>
-          </Card>
+          <RetryCard
+            message="We couldn't load your audio jobs."
+            onRetry={() => void mutateJobs()}
+          />
         ) : jobsLoading ? (
           <div className="space-y-0.5">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -406,25 +374,22 @@ export default function AudioPage() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          (jobsData?.items ?? []).length === 0 ? (
-            <EmptyState
-              icon={<AudioLines className="h-5 w-5" />}
-              title="No audio jobs yet"
-              hint="Drop a file above to compress your first audio."
-            />
-          ) : (
-            <EmptyState title="No matching files" />
-          )
+          <EmptyState
+            icon={noJobs ? <AudioLines className="h-5 w-5" /> : undefined}
+            title={noJobs ? 'No audio jobs yet' : 'No matching files'}
+            hint={noJobs ? 'Drop a file above to compress your first audio.' : undefined}
+          />
         ) : (
           <ul className="space-y-0.5">
             {items.map((item) => {
               const processing = item.status === 'processing' || item.status === 'pending'
+              const saved = savedPercent(item.metrics?.inputSize, item.metrics?.outputSize)
               return (
                 <li
                   key={item.id}
                   className="group flex items-center gap-4 rounded-2xl px-3 py-2.5 transition-colors hover:bg-black/[0.04]"
                 >
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-secondary text-foreground">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-black/[0.04] text-foreground">
                     <AudioLines className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -434,16 +399,11 @@ export default function AudioPage() {
                         {formatBytes(item.metrics.inputSize)}
                       </p>
                     ) : null}
-                    {processing && (
-                      <Progress value={100} className="mt-1.5 w-40 [&>div]:animate-pulse" />
-                    )}
+                    {processing && <Progress indeterminate className="mt-1.5 w-40" />}
                   </div>
-                  <StatusBadge
-                    status={BADGE_STATUS[item.status]}
-                    className="hidden sm:inline-flex"
-                  />
+                  <StatusBadge status={item.status} className="hidden sm:inline-flex" />
                   <span className="hidden w-14 text-right text-[13px] font-medium tabular-nums text-foreground sm:block">
-                    {savedPercent(item) ?? '—'}
+                    {saved !== null && formatSaved(saved)}
                   </span>
                   <span className="hidden w-20 text-right text-[13px] tabular-nums text-muted-foreground md:block">
                     {timeAgo(item.createdAt)}

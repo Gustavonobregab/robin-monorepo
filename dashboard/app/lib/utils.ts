@@ -35,3 +35,40 @@ export function formatBytes(bytes: number, decimals = 1): string {
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
 }
+
+const DATE_TIME_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
+export function formatDateTime(date: string | Date): string {
+  return DATE_TIME_FMT.format(new Date(date))
+}
+
+export function timeAgo(date: string | Date): string {
+  const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return formatDate(date)
+}
+
+export function savedPercent(inputBytes?: number, outputBytes?: number): number | null {
+  if (!inputBytes || outputBytes == null) return null
+  return Math.max(0, Math.round((1 - outputBytes / inputBytes) * 100))
+}
+
+export function formatSaved(pct: number): string {
+  return `−${pct}%`
+}
+
+export function downloadTextAsFile(text: string, filename: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
+  triggerDownload(url, filename)
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}

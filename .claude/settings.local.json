@@ -59,7 +59,15 @@
       "WebFetch(domain:adam.holter.com)",
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:news.ycombinator.com)",
-      "Bash(mdls -name kMDItemNumberOfPages \"/Users/gustavonobregab/.claude/projects/-Users-gustavonobregab-Programming-robin-monorepo/027a06db-4db1-4b48-b719-34bce23adeaa/tool-results/webfetch-1781222987331-ojurb4.pdf\")"
+      "Bash(mdls -name kMDItemNumberOfPages \"/Users/gustavonobregab/.claude/projects/-Users-gustavonobregab-Programming-robin-monorepo/027a06db-4db1-4b48-b719-34bce23adeaa/tool-results/webfetch-1781222987331-ojurb4.pdf\")",
+      "Read(//Users/gustavonobregab/.claude/skills/**)",
+      "Read(//Users/gustavonobregab/.claude/**)",
+      "Bash(sips -g pixelWidth -g pixelHeight public/cta-brush.png)",
+      "Bash(rg -n \"delete|download|Download\" /Users/gustavonobregab/Programming/robin-monorepo/dashboard/app/http/jobs.ts /Users/gustavonobregab/Programming/robin-monorepo/dashboard/app/http/*.ts)",
+      "Bash(rg -rn \"jobs\" /Users/gustavonobregab/Programming/robin-monorepo/api/src/modules/jobs -l)",
+      "Bash(echo \"TSC-EXIT: $?\")",
+      "Skill(simplify)",
+      "Bash(bunx eslint *)"
     ]
   },
   "enabledPlugins": {

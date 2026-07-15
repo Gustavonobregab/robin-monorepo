@@ -119,3 +119,25 @@ never hand-roll `animate-pulse`.
 
 Never render `—`, `N/A`, `Not linked`, or any placeholder string for missing
 data. Render nothing (`null`). Empty beats noisy.
+
+## Glyphs & symbols
+
+No decorative keyboard/unicode glyphs in app UI or code — they read as AI slop.
+This covers rendered strings, JSX, toasts, and comments.
+
+- Banned: `•` bullets, arrow glyphs (`→` `←`), em/en dashes (`—` `–`), and the
+  multiplication sign `×`.
+- Need a non-letter element (an arrow, a separator)? Use a lucide **icon**
+  component, never a typed glyph. If a plain-letter phrasing works, prefer it and
+  skip the icon.
+- Conventions in place: compression ratio and multipliers use the letter `x`
+  (`2.5x smaller`, `Speed 1.5x`); before/after reads `565 KB to 12 KB`; a
+  secondary metric is joined with a comma (`12 KB, 2.5x`), not a middot.
+- Allowed: the real minus sign in signed numbers (`−0%`), and the `·` middot only
+  in decorative label lists on marketing/landing surfaces — never between data.
+
+## Comments
+
+One line only. No multi-line block-comment headers describing a component's
+look; a single terse `/* ... */` (or nothing) is enough. Comment the "why", and
+only when it isn't obvious from the code. Same glyph rules apply inside comments.

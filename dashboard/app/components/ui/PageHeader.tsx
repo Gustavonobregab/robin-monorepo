@@ -1,7 +1,6 @@
 import { cn } from '@/app/lib/utils'
 
-/* Page title row copied from the ElevenLabs app: quiet 24px medium title,
-   optional actions on the right, content (tabs, search) below. */
+/* Page title row: 24px title, optional right actions, content below. */
 export function PageHeader({
   title,
   description,

@@ -12,14 +12,13 @@ type Props = {
   title: string
   description?: string
   confirmLabel: string
-  cancelLabel?: string
   tone?: Tone
   icon?: React.ReactNode
   onConfirm?: () => void
 }
 
 const iconTone: Record<Tone, string> = {
-  primary: 'bg-brand-subtle text-primary',
+  primary: 'bg-secondary text-foreground',
   destructive: 'bg-destructive-subtle text-destructive',
 }
 
@@ -28,7 +27,6 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Cancel',
   tone = 'primary',
   icon,
   onConfirm,
@@ -69,7 +67,7 @@ export function ConfirmDialog({
             )}
             <div className="mt-6 flex justify-end gap-2">
               <Dialog.Close asChild>
-                <Button variant="secondary">{cancelLabel}</Button>
+                <Button variant="secondary">Cancel</Button>
               </Dialog.Close>
               <Button variant={tone} onClick={handleConfirm}>
                 {confirmLabel}

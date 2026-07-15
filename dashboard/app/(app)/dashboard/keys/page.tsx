@@ -7,6 +7,7 @@ import { Plus, KeyRound, Copy, Check, Trash2, MoreHorizontal, Loader2 } from 'lu
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { Modal } from '@/app/components/ui/Modal'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
 import { Field, Input } from '@/app/components/ui/Field'
 import { Skeleton } from '@/app/components/ui/Skeleton'
@@ -21,15 +22,8 @@ import {
 } from '@/app/components/ui/DropdownMenu'
 import { getApiKeys, createApiKey, revokeApiKey } from '@/app/http/keys'
 import { toastApiError } from '@/app/http/errors'
+import { formatDate } from '@/app/lib/utils'
 import type { ApiResponse, ApiKey } from '@/types'
-
-function maskKey(prefix: string) {
-  return `••••••••${prefix.slice(-4)}`
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString()
-}
 
 async function copyToClipboard(value: string): Promise<boolean> {
   try {
@@ -94,7 +88,7 @@ export default function KeysPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl py-8">
+    <div className="mx-auto w-full max-w-3xl">
       <PageHeader
         title="API keys"
         description="Authenticate requests to the public API. Maximum 5 active keys."
@@ -114,7 +108,7 @@ export default function KeysPage() {
           >
             {newKeyValue ? (
               <div>
-                <div className="flex items-center gap-2 rounded-xl bg-black/[0.04] p-3">
+                <div className="flex items-center gap-2 rounded-xl bg-black/[0.02] p-3">
                   <span className="min-w-0 flex-1 break-all text-sm text-foreground">
                     {newKeyValue}
                   </span>
@@ -162,12 +156,7 @@ export default function KeysPage() {
 
       <div className="mt-8">
         {error ? (
-          <Card className="flex flex-col items-center gap-3 p-10 text-center">
-            <p className="text-sm text-muted-foreground">Could not load your API keys.</p>
-            <Button variant="secondary" onClick={() => mutate()}>
-              Try again
-            </Button>
-          </Card>
+          <RetryCard message="Could not load your API keys." onRetry={() => mutate()} />
         ) : isLoading ? (
           <div className="space-y-1">
             {[0, 1, 2].map((i) => (
@@ -190,7 +179,9 @@ export default function KeysPage() {
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{key.name}</p>
-                  <p className="text-[13px] text-muted-foreground">{maskKey(key.keyPrefix)}</p>
+                  {key.keyPrefix && (
+                    <p className="text-[13px] text-muted-foreground">{key.keyPrefix}</p>
+                  )}
                 </div>
                 {key.status === 'revoked' && (
                   <span className="shrink-0 text-[13px] text-muted-foreground">Revoked</span>
@@ -214,7 +205,8 @@ export default function KeysPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onSelect={async () => {
-                        if (await copyToClipboard(key.keyPrefix)) toast.success('Prefix copied')
+                        if (key.keyPrefix && (await copyToClipboard(key.keyPrefix)))
+                          toast.success('Prefix copied')
                       }}
                     >
                       <Copy className="h-4 w-4" /> Copy prefix
@@ -250,7 +242,7 @@ export default function KeysPage() {
         <p className="mt-1 text-[13px] text-muted-foreground">
           Pass your key in the Authorization header on every /v1 request.
         </p>
-        {/* Code snippet — the one permitted font-mono exception. */}
+        {/* Code snippet: the one permitted font-mono exception. */}
         <div className="mt-3 overflow-x-auto rounded-xl bg-black/[0.02] p-4">
           <pre className="font-mono text-[13px] leading-relaxed text-muted-foreground">
             {`curl https://api.robinwood.dev/v1/upload \\

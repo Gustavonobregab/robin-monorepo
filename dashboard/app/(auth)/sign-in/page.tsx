@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { Button } from '@/app/components/ui/Button'
 import { signIn } from '@/app/lib/auth-client'
 
 function GoogleMark() {
@@ -65,10 +66,12 @@ function SignInForm() {
         </p>
       </div>
 
-      <button
+      <Button
+        variant="secondary"
+        size="lg"
+        className="w-full rounded-full"
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
           <>
@@ -81,7 +84,7 @@ function SignInForm() {
             Continue with Google
           </>
         )}
-      </button>
+      </Button>
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
         By continuing you agree to the Terms & Privacy Policy.

@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { cn } from '@/app/lib/utils'
 
-/* Underline tabs copied from ElevenLabs: quiet muted labels, the active one
-   inked near-black with a 2px underline flush to the bottom hairline. */
+/* Underline tabs: muted labels, active one inked with a 2px underline. */
 export function Tabs({
   tabs,
   defaultValue,

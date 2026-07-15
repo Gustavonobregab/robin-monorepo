@@ -1,7 +1,6 @@
 import { cn } from '@/app/lib/utils'
 
-/* Quiet empty state: icon in a grey well, short title, one-line hint, and an
-   optional action. Keep copy calm — no exclamation marks. */
+/* Quiet empty state: icon well, title, one-line hint, optional action. */
 export function EmptyState({
   icon,
   title,

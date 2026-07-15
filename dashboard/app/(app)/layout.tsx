@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
 import { AssistantPanel } from '@/app/components/assistant/AssistantPanel'
+import { useSession } from '@/app/lib/auth-client'
 
 type NavItem = { label: string; href: string; icon: LucideIcon }
 type NavGroup = { label?: string; items: NavItem[] }
@@ -53,8 +54,7 @@ const NAV: NavGroup[] = [
   },
 ]
 
-/* Label that fades + slides in when the sidebar is expanded — mirrors the
-   ElevenLabs `aria-expanded` reveal pattern. */
+/* Label that fades + slides in when the sidebar expands. */
 const revealClass =
   'whitespace-nowrap opacity-0 -translate-x-1 transition-all duration-150 group-aria-expanded/sidebar:opacity-100 group-aria-expanded/sidebar:translate-x-0'
 
@@ -78,10 +78,12 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [pinned, setPinned] = useState(true)
   const [hovered, setHovered] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const open = pinned || hovered
+  const user = session?.user
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,12 +137,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* User card */}
         <div className="border-t border-border p-3">
           <div className="flex h-11 items-center gap-3 rounded-lg px-2">
-            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-subtle text-sm font-medium text-primary">
-              G
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary text-sm font-medium text-foreground">
+              {(user?.name ?? user?.email)?.[0]?.toUpperCase()}
             </div>
             <div className={`flex min-w-0 flex-1 flex-col ${revealClass}`}>
-              <span className="truncate text-sm font-medium text-foreground">Gustavo</span>
-              <span className="truncate text-xs text-muted-foreground">gustavonobg@gmail.com</span>
+              {user?.name && (
+                <span className="truncate text-sm font-medium text-foreground">{user.name}</span>
+              )}
+              {user?.email && (
+                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+              )}
             </div>
             <Button
               variant="ghost"

@@ -9,6 +9,7 @@
     "start": "bun run src/server.ts",
     "worker": "bun run src/worker/index.ts",
     "seed:plans": "bun run src/scripts/seed-plans.ts",
+    "seed:cors": "bun run src/scripts/seed-bucket-cors.ts",
     "backfill:free": "bun run src/scripts/backfill-free-plan.ts"
   },
   "dependencies": {

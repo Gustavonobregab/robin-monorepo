@@ -2,8 +2,7 @@
 
 import { cn } from '@/app/lib/utils'
 
-/* ElevenLabs composer segmented pill (Image / Video / Lip sync): grey track,
-   active option lifts to a white pill. */
+/* Segmented pill: grey track, active option lifts to a white pill. */
 export function SegmentedControl<T extends string>({
   options,
   value,

@@ -6,7 +6,6 @@ import useSWR from 'swr'
 import { toast } from 'sonner'
 import { ArrowUp, Download, ImageIcon, Loader2, Maximize2, MoreHorizontal, X } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
-import { Card } from '@/app/components/ui/Card'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,6 +15,7 @@ import {
 import { Dropzone } from '@/app/components/ui/Dropzone'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { SearchInput } from '@/app/components/ui/SearchInput'
 import { SegmentedControl } from '@/app/components/ui/SegmentedControl'
 import { InlineSelect } from '@/app/components/ui/Select'
@@ -26,21 +26,11 @@ import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { uploadFile } from '@/app/http/upload'
 import { submitImageJob } from '@/app/http/image'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
-import { parseApiError, toastApiError, ERROR_MESSAGES } from '@/app/http/errors'
-import { formatBytes, formatDate, randomKey, triggerDownload } from '@/app/lib/utils'
-import type { JobStatus, JobView, SubmitImageJobInput } from '@/types'
+import { toastApiError, toastSubmitError } from '@/app/http/errors'
+import { formatBytes, randomKey, timeAgo, triggerDownload } from '@/app/lib/utils'
+import type { ImageOperationInput, ImageOutputFormat, JobView } from '@/types'
 
-type OutputFormat = 'webp' | 'avif' | 'jpeg' | 'png'
-
-type ImageOperation =
-  | { type: 'resize'; params: { width: number; height: number; fit: 'inside' } }
-  | { type: 'encode'; params: { format: OutputFormat; quality: number } }
-
-// The API's image endpoint accepts custom operations alongside presets; the
-// shared http input type only models presets, so widen it locally.
-type SubmitPayload = SubmitImageJobInput & { operations: ImageOperation[] }
-
-const FORMAT_OPTIONS: { value: OutputFormat; label: string }[] = [
+const FORMAT_OPTIONS: { value: ImageOutputFormat; label: string }[] = [
   { value: 'webp', label: 'WebP' },
   { value: 'avif', label: 'AVIF' },
   { value: 'jpeg', label: 'JPEG' },
@@ -55,33 +45,14 @@ const DIMENSION_OPTIONS = [
   { value: '512', label: 'Max 512px' },
 ]
 
-const STATUS_BADGE: Record<JobStatus, 'done' | 'processing' | 'queued' | 'failed'> = {
-  created: 'queued',
-  pending: 'queued',
-  processing: 'processing',
-  completed: 'done',
-  failed: 'failed',
-}
-
-function timeAgo(iso: string): string {
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return formatDate(iso)
-}
-
 export default function ImagePage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
-  const [format, setFormat] = useState<OutputFormat>('webp')
+  const [format, setFormat] = useState<ImageOutputFormat>('webp')
   const [quality, setQuality] = useState(80)
   const [maxDimension, setMaxDimension] = useState('original')
   const [jobId, setJobId] = useState<string | null>(null)
-  const [result, setResult] = useState<JobView | null>(null)
+  const [instantResult, setInstantResult] = useState<JobView | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -91,17 +62,14 @@ export default function ImagePage() {
     error: jobsError,
     isLoading: jobsLoading,
     mutate: mutateJobs,
-  } = useSWR('jobs-image', () => listJobs({ type: 'image', limit: 20 }))
-  const jobs = useMemo(() => jobsData?.items ?? [], [jobsData])
+  } = useSWR('jobs/image', () => listJobs({ type: 'image', limit: 20 }))
+  const jobs = jobsData?.items ?? []
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
 
   useEffect(() => {
-    if (job?.status === 'completed') {
-      setResult(job)
-      void mutateJobs()
-    }
-  }, [job, mutateJobs])
+    if (job?.status === 'completed') void mutateJobs()
+  }, [job?.status, mutateJobs])
 
   useEffect(() => {
     if (isFailed) {
@@ -119,33 +87,27 @@ export default function ImagePage() {
     if (!file) return
 
     setJobId(null)
-    setResult(null)
+    setInstantResult(null)
     setSubmitting(true)
     try {
       const { id: imageId } = await uploadFile(file)
 
-      const operations: ImageOperation[] = []
+      const operations: ImageOperationInput[] = []
       if (maxDimension !== 'original') {
         const size = Number(maxDimension)
         operations.push({ type: 'resize', params: { width: size, height: size, fit: 'inside' } })
       }
       operations.push({ type: 'encode', params: { format, quality } })
 
-      const payload: SubmitPayload = { imageId, operations }
-      const submitted = await submitImageJob(payload, randomKey())
+      const submitted = await submitImageJob({ imageId, operations }, randomKey())
 
-      if (submitted.status === 'completed') setResult(submitted)
+      if (submitted.status === 'completed') setInstantResult(submitted)
       else setJobId(submitted.id)
       void mutateJobs()
     } catch (err) {
-      const { code } = await parseApiError(err)
-      if (code === 'INSUFFICIENT_CREDITS') {
-        toast.error(ERROR_MESSAGES.INSUFFICIENT_CREDITS, {
-          action: { label: 'View plan', onClick: () => router.push('/dashboard/billing') },
-        })
-      } else {
-        await toastApiError(err, 'Failed to compress the image. Check the file and try again.')
-      }
+      await toastSubmitError(err, 'Failed to compress the image. Check the file and try again.', () =>
+        router.push('/dashboard/billing'),
+      )
     } finally {
       setSubmitting(false)
     }
@@ -165,6 +127,7 @@ export default function ImagePage() {
     }
   }
 
+  const result = job?.status === 'completed' ? job : instantResult
   const resultMetrics = result?.result?.metrics
   const outputUrl = result?.result?.outputUrl
   const busy = submitting || isPolling
@@ -179,7 +142,8 @@ export default function ImagePage() {
       <Dropzone
         onFiles={(files) => {
           setFile(files[0] ?? null)
-          setResult(null)
+          setJobId(null)
+          setInstantResult(null)
         }}
         accept="image/jpeg,image/png,image/webp"
         label="Drop an image here, or click to browse"
@@ -201,7 +165,8 @@ export default function ImagePage() {
               aria-label="Remove file"
               onClick={() => {
                 setFile(null)
-                setResult(null)
+                setJobId(null)
+                setInstantResult(null)
               }}
             >
               <X className="h-4 w-4" />
@@ -229,8 +194,7 @@ export default function ImagePage() {
 
           <div className="ml-auto">
             <Button
-              size="icon"
-              className="h-10 w-10 rounded-full"
+              size="orb"
               aria-label="Compress image"
               disabled={!file || busy}
               onClick={() => void handleSubmit()}
@@ -247,11 +211,11 @@ export default function ImagePage() {
         {resultMetrics && (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-black/[0.02] px-3 py-2.5">
             <span className="text-[13px] text-muted-foreground">
-              {formatBytes(resultMetrics.inputSize)} →{' '}
+              {formatBytes(resultMetrics.inputSize)} to{' '}
               <span className="font-medium text-foreground">
                 {formatBytes(resultMetrics.outputSize)}
-              </span>{' '}
-              · {resultMetrics.compressionRatio}× smaller
+              </span>
+              , {resultMetrics.compressionRatio}x smaller
             </span>
             {outputUrl && (
               <Button variant="secondary" size="sm" onClick={() => triggerDownload(outputUrl)}>
@@ -289,14 +253,10 @@ export default function ImagePage() {
             ))}
           </div>
         ) : jobsError ? (
-          <Card className="flex items-center justify-between gap-4 px-4 py-3">
-            <p className="text-sm text-muted-foreground">
-              Something went wrong loading your recent jobs.
-            </p>
-            <Button variant="secondary" size="sm" onClick={() => void mutateJobs()}>
-              Try again
-            </Button>
-          </Card>
+          <RetryCard
+            message="Something went wrong loading your recent jobs."
+            onRetry={() => void mutateJobs()}
+          />
         ) : jobs.length === 0 ? (
           <EmptyState
             icon={<ImageIcon className="h-5 w-5" />}
@@ -321,12 +281,12 @@ export default function ImagePage() {
                   )}
                 </div>
 
-                <StatusBadge status={STATUS_BADGE[j.status]} className="shrink-0" />
+                <StatusBadge status={j.status} className="shrink-0" />
 
                 {j.metrics && (
                   <span className="hidden shrink-0 text-[13px] text-muted-foreground sm:inline">
-                    → <span className="text-foreground">{formatBytes(j.metrics.outputSize)}</span>{' '}
-                    · {j.metrics.compressionRatio}×
+                    to <span className="text-foreground">{formatBytes(j.metrics.outputSize)}</span>
+                    , {j.metrics.compressionRatio}x
                   </span>
                 )}
 

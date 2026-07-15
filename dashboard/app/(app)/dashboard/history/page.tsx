@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -24,11 +24,12 @@ import {
 } from '@/app/components/ui/DropdownMenu'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { SearchInput } from '@/app/components/ui/SearchInput'
 import { Skeleton } from '@/app/components/ui/Skeleton'
-import { StatusBadge, type JobStatus as BadgeStatus } from '@/app/components/ui/StatusBadge'
+import { StatusBadge } from '@/app/components/ui/StatusBadge'
 import { Tabs } from '@/app/components/ui/Tabs'
-import { formatBytes, triggerDownload } from '@/app/lib/utils'
+import { downloadTextAsFile, formatBytes, formatDateTime, triggerDownload } from '@/app/lib/utils'
 import { listJobs, getJobStatus } from '@/app/http/jobs'
 import { toastApiError } from '@/app/http/errors'
 import type { JobListItem, JobPipeline, JobStatus } from '@/types'
@@ -49,14 +50,6 @@ const STATUS_CHIPS: { label: string; value: JobStatus }[] = [
   { label: 'Failed', value: 'failed' },
 ]
 
-const BADGE_STATUS: Record<JobStatus, BadgeStatus> = {
-  completed: 'done',
-  processing: 'processing',
-  pending: 'queued',
-  created: 'queued',
-  failed: 'failed',
-}
-
 const KIND_ICON: Record<JobPipeline, LucideIcon> = {
   text: FileText,
   audio: Mic,
@@ -69,15 +62,6 @@ const KIND_LABEL: Record<JobPipeline, string> = {
   audio: 'Audio',
   image: 'Image',
   video: 'Video',
-}
-
-function formatTime(date: string): string {
-  return new Date(date).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 export default function HistoryPage() {
@@ -169,12 +153,7 @@ export default function HistoryPage() {
         {loading ? (
           <SkeletonRows />
         ) : loadError ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-border py-12 text-center">
-            <p className="text-sm text-muted-foreground">Could not load your jobs.</p>
-            <Button variant="secondary" size="sm" onClick={() => load(true)}>
-              Try again
-            </Button>
-          </div>
+          <RetryCard message="Could not load your jobs." onRetry={() => load(true)} />
         ) : visible.length === 0 ? (
           <EmptyState
             icon={<FileClock className="h-5 w-5" />}
@@ -223,7 +202,7 @@ export default function HistoryPage() {
   )
 }
 
-function JobRow({ job }: { job: JobListItem }) {
+const JobRow = memo(function JobRow({ job }: { job: JobListItem }) {
   const [downloading, setDownloading] = useState(false)
   const Icon = KIND_ICON[job.type]
   const metrics = job.metrics
@@ -235,10 +214,7 @@ function JobRow({ job }: { job: JobListItem }) {
       if (detail.result?.outputUrl) {
         triggerDownload(detail.result.outputUrl)
       } else if (detail.result?.outputText) {
-        const blob = new Blob([detail.result.outputText], { type: 'text/plain' })
-        const url = URL.createObjectURL(blob)
-        triggerDownload(url, 'output.txt')
-        setTimeout(() => URL.revokeObjectURL(url), 10_000)
+        downloadTextAsFile(detail.result.outputText, 'output.txt')
       } else {
         toast.error('No output available for this job')
       }
@@ -264,18 +240,18 @@ function JobRow({ job }: { job: JobListItem }) {
         )}
       </div>
 
-      <StatusBadge status={BADGE_STATUS[job.status]} className="w-24 shrink-0" />
+      <StatusBadge status={job.status} className="w-24 shrink-0" />
 
       <p className="hidden w-32 shrink-0 whitespace-nowrap text-[13px] text-muted-foreground sm:block">
         {metrics && (
           <>
-            {formatBytes(metrics.outputSize)} · {metrics.compressionRatio}×
+            {formatBytes(metrics.outputSize)}, {metrics.compressionRatio}x
           </>
         )}
       </p>
 
       <p className="hidden w-32 shrink-0 whitespace-nowrap text-[13px] text-muted-foreground md:block">
-        {formatTime(job.createdAt)}
+        {formatDateTime(job.createdAt)}
       </p>
 
       <div className="flex h-8 w-8 shrink-0 items-center justify-center">
@@ -299,7 +275,7 @@ function JobRow({ job }: { job: JobListItem }) {
       </div>
     </div>
   )
-}
+})
 
 function SkeletonRows() {
   return (

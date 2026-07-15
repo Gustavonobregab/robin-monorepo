@@ -2,8 +2,7 @@ import { forwardRef } from 'react'
 import { Search } from 'lucide-react'
 import { cn } from '@/app/lib/utils'
 
-/* ElevenLabs search field: 40px tall, 12px radius, 1.5px alpha-black border,
-   leading search glyph, transparent fill. */
+/* Search field: 40px tall, 12px radius, leading search glyph. */
 export const SearchInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (
     <div

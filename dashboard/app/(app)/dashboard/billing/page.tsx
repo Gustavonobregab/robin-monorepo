@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
 import { Progress } from '@/app/components/ui/Progress'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { Skeleton } from '@/app/components/ui/Skeleton'
 import { getProfile } from '@/app/http/users'
 import { getPublicPlans } from '@/app/http/plans'
@@ -31,14 +32,14 @@ export default function BillingPage() {
     error: profileError,
     isLoading: profileLoading,
     mutate: mutateProfile,
-  } = useSWR<ApiResponse<UserProfile>>('user-profile', getProfile)
+  } = useSWR<ApiResponse<UserProfile>>('users/me', getProfile)
 
   const {
     data: plansData,
     error: plansError,
     isLoading: plansLoading,
     mutate: mutatePlans,
-  } = useSWR('public-plans', getPublicPlans)
+  } = useSWR('plans/public', getPublicPlans)
 
   const profile = profileData?.data
   const plan = profile?.plan
@@ -247,19 +248,8 @@ function FeatureRow({ children }: { children: React.ReactNode }) {
 
 function CurrentTag() {
   return (
-    <span className="rounded-full border-[1.5px] border-black/10 px-2 py-px text-[11px] font-medium text-muted-foreground">
+    <span className="rounded-full border border-black/10 px-2 py-px text-[11px] font-medium text-muted-foreground">
       Current
     </span>
-  )
-}
-
-function RetryCard({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <Card className="flex flex-col items-center gap-3 p-8 text-center">
-      <p className="text-sm text-muted-foreground">{message}</p>
-      <Button variant="secondary" size="sm" onClick={onRetry}>
-        Try again
-      </Button>
-    </Card>
   )
 }

@@ -13,16 +13,16 @@ import {
 } from 'recharts'
 import type { TooltipProps } from 'recharts'
 import { BarChart3 } from 'lucide-react'
-import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
 import { Progress } from '@/app/components/ui/Progress'
+import { RetryCard } from '@/app/components/ui/RetryCard'
 import { Select } from '@/app/components/ui/Select'
 import { Skeleton } from '@/app/components/ui/Skeleton'
 import { getUsageAnalytics } from '@/app/http/usage'
 import { getProfile } from '@/app/http/users'
-import { cn, formatBytes, formatDate } from '@/app/lib/utils'
+import { cn, formatBytes, formatDate, formatSaved, savedPercent } from '@/app/lib/utils'
 import type { UsageAnalytics } from '@/types'
 
 type Range = '7d' | '30d' | '90d' | '1y'
@@ -47,8 +47,10 @@ function shortDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+const COMPACT_NUMBER_FMT = new Intl.NumberFormat('en-US', { notation: 'compact' })
+
 function compactNumber(n: number) {
-  return Intl.NumberFormat('en-US', { notation: 'compact' }).format(n)
+  return COMPACT_NUMBER_FMT.format(n)
 }
 
 export default function UsagePage() {
@@ -61,14 +63,14 @@ export default function UsagePage() {
     mutate: retryAnalytics,
   } = useSWR(`usage-analytics-${range}`, () => getUsageAnalytics(range))
 
-  const { data: profileRes, isLoading: profileLoading } = useSWR('user-profile', getProfile)
+  const { data: profileRes, isLoading: profileLoading } = useSWR('users/me', getProfile)
 
   const analytics = analyticsRes?.data
   const subscription = profileRes?.data?.subscription
   const isLoading = analyticsLoading || profileLoading
 
   return (
-    <div className="mx-auto max-w-3xl pt-8">
+    <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Usage"
         description="Analytics for your API and dashboard activity."
@@ -84,12 +86,10 @@ export default function UsagePage() {
       />
 
       {analyticsError ? (
-        <Card className="flex flex-col items-center gap-3 p-10 text-center">
-          <p className="text-sm text-muted-foreground">Couldn&apos;t load your usage data.</p>
-          <Button variant="secondary" size="sm" onClick={() => retryAnalytics()}>
-            Try again
-          </Button>
-        </Card>
+        <RetryCard
+          message="Couldn't load your usage data."
+          onRetry={() => retryAnalytics()}
+        />
       ) : isLoading ? (
         <UsageSkeleton />
       ) : analytics ? (
@@ -271,14 +271,11 @@ function PipelineBreakdown({ analytics }: { analytics: UsageAnalytics }) {
             </thead>
             <tbody>
               {rows.map((row) => {
-                const saved =
-                  row.totalInputBytes > 0
-                    ? Math.max(1 - row.totalOutputBytes / row.totalInputBytes, 0) * 100
-                    : null
+                const saved = savedPercent(row.totalInputBytes, row.totalOutputBytes)
                 return (
                   <tr
                     key={row.key}
-                    className="border-t border-border transition-colors hover:bg-black/[0.02]"
+                    className="border-t border-border transition-colors hover:bg-black/[0.04]"
                   >
                     <td className="py-3 pr-4 font-medium text-foreground">{row.label}</td>
                     <td className="py-3 pr-4 text-right text-foreground">
@@ -291,7 +288,7 @@ function PipelineBreakdown({ analytics }: { analytics: UsageAnalytics }) {
                       {formatBytes(row.totalOutputBytes)}
                     </td>
                     <td className="py-3 text-right text-foreground">
-                      {saved !== null ? `${saved.toFixed(1)}%` : '—'}
+                      {saved !== null ? formatSaved(saved) : null}
                     </td>
                   </tr>
                 )
@@ -328,7 +325,7 @@ function CreditsMeter({
       </div>
       <Progress value={pct} />
       <p className="text-xs text-muted-foreground">
-        Resets on {formatDate(resetsAt)}. Credits are charged by input size — bigger files cost
+        Resets on {formatDate(resetsAt)}. Credits are charged by input size, so bigger files cost
         more.
       </p>
     </Card>

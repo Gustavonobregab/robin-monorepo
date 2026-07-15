@@ -34,28 +34,10 @@
     --accent: 0 0% 89%; /* #E3E3E3 stronger hover */
     --accent-foreground: 0 0% 18%;
 
-    /* Neutralised while black & white — kept so components still resolve. */
-    --brand: 0 0% 45%;
-    --brand-foreground: 0 0% 100%;
-    --brand-subtle: 0 0% 94%;
-
-    --cream: 0 0% 99%;
-
-    --brown: 0 0% 30%;
-    --brown-foreground: 0 0% 98%;
-    --brown-subtle: 0 0% 92%;
-
     /* Red — destructive actions only (delete, revoke). */
     --destructive: 4 68% 47%; /* #CB3628 */
     --destructive-foreground: 0 0% 100%;
     --destructive-subtle: 6 72% 96%;
-
-    --warning: 0 0% 45%;
-    --warning-foreground: 0 0% 100%;
-    --warning-subtle: 0 0% 94%;
-
-    --success: 0 0% 30%;
-    --success-subtle: 0 0% 94%;
 
     --border: 0 0% 92%; /* #EBEBEB ≈ black/7.5% over white */
     --input: 0 0% 90%;

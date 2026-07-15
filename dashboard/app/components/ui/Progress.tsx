@@ -1,20 +1,24 @@
 import { cn } from '@/app/lib/utils'
 
-/* Thin neutral meter — grey track, near-black fill. Used for credits and
-   quota; keep it quiet, no colour until the day we add semantic states. */
+/* Thin neutral meter for credits/quota; indeterminate renders a pulsing bar. */
 export function Progress({
   value,
   max = 100,
+  indeterminate = false,
   className,
 }: {
-  value: number
+  value?: number
   max?: number
+  indeterminate?: boolean
   className?: string
 }) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100))
+  const pct = indeterminate ? 100 : Math.min(100, Math.max(0, ((value ?? 0) / max) * 100))
   return (
     <div className={cn('h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]', className)}>
-      <div className="h-full rounded-full bg-foreground transition-[width]" style={{ width: `${pct}%` }} />
+      <div
+        className={cn('h-full rounded-full bg-foreground transition-[width]', indeterminate && 'animate-pulse')}
+        style={{ width: `${pct}%` }}
+      />
     </div>
   )
 }

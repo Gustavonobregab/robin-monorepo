@@ -1,8 +1,7 @@
 import { forwardRef } from 'react'
 import { cn } from '@/app/lib/utils'
 
-/* Filter chip copied from ElevenLabs: 40px tall, 12px radius, transparent with a
-   1.5px alpha-black border; when active it fills with a soft grey. */
+/* Filter chip: 40px tall, 12px radius, fills grey when active. */
 interface ChipProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean
 }

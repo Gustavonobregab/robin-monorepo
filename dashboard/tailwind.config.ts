@@ -25,7 +25,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--sidebar))',
           foreground: 'hsl(var(--sidebar-foreground))',
         },
-        cream: 'hsl(var(--cream))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -42,30 +41,10 @@ const config: Config = {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
         },
-        // Brand greens beyond the primary action colour.
-        brand: {
-          DEFAULT: 'hsl(var(--brand))',
-          foreground: 'hsl(var(--brand-foreground))',
-          subtle: 'hsl(var(--brand-subtle))',
-        },
-        brown: {
-          DEFAULT: 'hsl(var(--brown))',
-          foreground: 'hsl(var(--brown-foreground))',
-          subtle: 'hsl(var(--brown-subtle))',
-        },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
           subtle: 'hsl(var(--destructive-subtle))',
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))',
-          subtle: 'hsl(var(--warning-subtle))',
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          subtle: 'hsl(var(--success-subtle))',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
