@@ -48,6 +48,11 @@ const config: Config = {
           foreground: 'hsl(var(--brand-foreground))',
           subtle: 'hsl(var(--brand-subtle))',
         },
+        brown: {
+          DEFAULT: 'hsl(var(--brown))',
+          foreground: 'hsl(var(--brown-foreground))',
+          subtle: 'hsl(var(--brown-subtle))',
+        },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',

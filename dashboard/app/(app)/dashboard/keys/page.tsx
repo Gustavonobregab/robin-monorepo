@@ -1,40 +1,58 @@
-// dashboard/app/(app)/dashboard/keys/page.tsx
 'use client'
+
 import { useState } from 'react'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Plus, Trash2, Copy, KeyRound } from 'lucide-react'
-import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { Skeleton } from '@/app/components/ui/skeleton'
-import { Chip } from '@/app/components/ui/chip'
-import { Surface } from '@/app/components/ui/surface'
-import { PageHeader } from '@/app/components/ui/page-header'
-import { EmptyState } from '@/app/components/ui/empty-state'
-import { DataTable, type Column } from '@/app/components/ui/data-table'
+import { Plus, KeyRound, Copy, Check, Trash2, MoreHorizontal, Loader2 } from 'lucide-react'
+import { Button } from '@/app/components/ui/Button'
+import { Card } from '@/app/components/ui/Card'
+import { Modal } from '@/app/components/ui/Modal'
+import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
+import { Field, Input } from '@/app/components/ui/Field'
+import { Skeleton } from '@/app/components/ui/Skeleton'
+import { EmptyState } from '@/app/components/ui/EmptyState'
+import { PageHeader } from '@/app/components/ui/PageHeader'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/app/components/ui/dialog'
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from '@/app/components/ui/alert-dialog'
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/app/components/ui/DropdownMenu'
 import { getApiKeys, createApiKey, revokeApiKey } from '@/app/http/keys'
 import { toastApiError } from '@/app/http/errors'
 import type { ApiResponse, ApiKey } from '@/types'
+
+function maskKey(prefix: string) {
+  return `••••••••${prefix.slice(-4)}`
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString()
+}
+
+async function copyToClipboard(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value)
+    return true
+  } catch {
+    toast.error('Failed to copy')
+    return false
+  }
+}
 
 export default function KeysPage() {
   const { data, isLoading, error, mutate } = useSWR<ApiResponse<ApiKey[]>>('api-keys', getApiKeys)
   const keys = data?.data ?? []
 
+  const [modalOpen, setModalOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
   const [creating, setCreating] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
   const [newKeyValue, setNewKeyValue] = useState<string | null>(null)
+  const [secretCopied, setSecretCopied] = useState(false)
 
   async function handleCreate() {
-    if (!newKeyName.trim()) return
+    if (!newKeyName.trim() || creating) return
     setCreating(true)
     try {
       const res = await createApiKey(newKeyName.trim())
@@ -58,212 +76,189 @@ export default function KeysPage() {
     }
   }
 
-  const columns: Column<ApiKey>[] = [
-    {
-      key: 'name',
-      header: 'Name',
-      cell: (key) => <span className="font-medium text-foreground">{key.name}</span>,
-    },
-    {
-      key: 'key',
-      header: 'Key',
-      cell: (key) => (
-        <code className="font-mono text-sm text-muted-foreground">{key.keyPrefix}…</code>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (key) => (
-        <Chip size="sm" variant={key.status === 'active' ? 'success' : 'default'}>
-          {key.status}
-        </Chip>
-      ),
-    },
-    {
-      key: 'createdAt',
-      header: 'Created',
-      cell: (key) => (
-        <span className="text-sm text-muted-foreground">
-          {new Date(key.createdAt).toLocaleDateString()}
-        </span>
-      ),
-    },
-    {
-      key: 'lastUsedAt',
-      header: 'Last used',
-      /* "Never" is real information, not a placeholder — it says the key has
-         never been used, which is not the same as unknown. */
-      cell: (key) => (
-        <span className="text-sm text-muted-foreground">
-          {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'text-right',
-      cell: (key) =>
-        key.status === 'active' ? (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Revoke ${key.name}`}
-                className="h-8 w-8 text-destructive hover:text-destructive"
-              >
-                <Trash2 />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Revoke key?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Any apps using &quot;{key.name}&quot; will stop working immediately.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleRevoke(key._id)}
-                  className="bg-destructive hover:bg-destructive/90"
-                >
-                  Revoke
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        ) : null,
-    },
-  ]
+  function handleModalChange(open: boolean) {
+    setModalOpen(open)
+    if (!open) {
+      setNewKeyValue(null)
+      setNewKeyName('')
+      setSecretCopied(false)
+    }
+  }
+
+  async function handleCopySecret() {
+    if (!newKeyValue) return
+    if (await copyToClipboard(newKeyValue)) {
+      setSecretCopied(true)
+      setTimeout(() => setSecretCopied(false), 2000)
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-5xl pt-8">
+    <div className="mx-auto w-full max-w-3xl py-8">
       <PageHeader
-        title="API Keys"
-        description="Manage your API keys. Maximum 5 active keys."
+        title="API keys"
+        description="Authenticate requests to the public API. Maximum 5 active keys."
         actions={
-          <Dialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-              setDialogOpen(open)
-              if (!open) setNewKeyValue(null)
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus /> New key
+          <Modal
+            open={modalOpen}
+            onOpenChange={handleModalChange}
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4" /> Create key
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              {newKeyValue ? (
-                <>
-                  <DialogHeader>
-                    <DialogTitle>Key created</DialogTitle>
-                  </DialogHeader>
-                  <p className="mb-3 text-sm text-muted-foreground">
-                    Copy this key now. It won&apos;t be shown again.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 break-all rounded-md bg-muted px-3 py-2 font-mono text-sm text-foreground">
-                      {newKeyValue}
-                    </code>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      aria-label="Copy key"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(newKeyValue)
-                          toast.success('Copied!')
-                        } catch {
-                          toast.error('Failed to copy')
-                        }
-                      }}
-                    >
-                      <Copy />
-                    </Button>
-                  </div>
+            }
+            title={newKeyValue ? 'Key created' : 'Create API key'}
+            description={
+              newKeyValue ? undefined : 'Name the key after where it will be used.'
+            }
+          >
+            {newKeyValue ? (
+              <div>
+                <div className="flex items-center gap-2 rounded-xl bg-black/[0.04] p-3">
+                  <span className="min-w-0 flex-1 break-all text-sm text-foreground">
+                    {newKeyValue}
+                  </span>
                   <Button
-                    className="mt-4 w-full"
-                    onClick={() => {
-                      setDialogOpen(false)
-                      setNewKeyValue(null)
-                    }}
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Copy key"
+                    onClick={handleCopySecret}
                   >
-                    Done
+                    {secretCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
-                </>
-              ) : (
-                <>
-                  <DialogHeader>
-                    <DialogTitle>Create API key</DialogTitle>
-                  </DialogHeader>
-                  <div className="mt-2 space-y-1.5">
-                    <Label htmlFor="key-name">Name</Label>
-                    <Input
-                      id="key-name"
-                      placeholder="e.g. Production"
-                      value={newKeyName}
-                      onChange={(e) => setNewKeyName(e.target.value)}
-                      maxLength={50}
-                    />
-                  </div>
-                  <Button
-                    className="mt-4 w-full"
-                    onClick={handleCreate}
-                    disabled={creating || !newKeyName.trim()}
-                  >
-                    {creating ? 'Creating...' : 'Create key'}
-                  </Button>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  You won&apos;t see this key again. Store it somewhere safe.
+                </p>
+                <Button className="mt-5 w-full" onClick={() => handleModalChange(false)}>
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <form
+                className="flex flex-col gap-4"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleCreate()
+                }}
+              >
+                <Field label="Name">
+                  <Input
+                    autoFocus
+                    placeholder="e.g. Production"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    maxLength={50}
+                  />
+                </Field>
+                <Button type="submit" className="w-full" disabled={creating || !newKeyName.trim()}>
+                  {creating && <Loader2 className="h-4 w-4 animate-spin" />} Create key
+                </Button>
+              </form>
+            )}
+          </Modal>
         }
       />
 
-      {error ? (
-        <Surface>
-          <EmptyState
-            icon={KeyRound}
-            title="Could not load your API keys."
-            action={
-              <Button variant="outline" size="sm" onClick={() => mutate()}>
-                Try again
-              </Button>
-            }
-          />
-        </Surface>
-      ) : isLoading ? (
-        <Surface padding="none" className="overflow-hidden">
-          <div className="space-y-3 p-4">
-            <Skeleton className="h-8 w-full" />
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+      <div className="mt-8">
+        {error ? (
+          <Card className="flex flex-col items-center gap-3 p-10 text-center">
+            <p className="text-sm text-muted-foreground">Could not load your API keys.</p>
+            <Button variant="secondary" onClick={() => mutate()}>
+              Try again
+            </Button>
+          </Card>
+        ) : isLoading ? (
+          <div className="space-y-1">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
             ))}
           </div>
-        </Surface>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={keys}
-          rowKey={(key) => key._id}
-          empty={
-            <EmptyState
-              icon={KeyRound}
-              title="No API keys yet."
-              action={
-                <Button size="sm" onClick={() => setDialogOpen(true)}>
-                  Create your first key
-                </Button>
-              }
-            />
-          }
-        />
-      )}
+        ) : keys.length === 0 ? (
+          <EmptyState
+            icon={<KeyRound className="h-5 w-5" />}
+            title="No API keys yet."
+            hint="Create a key to start calling the API."
+            action={<Button onClick={() => setModalOpen(true)}>Create key</Button>}
+          />
+        ) : (
+          <div className="space-y-1">
+            {keys.map((key) => (
+              <div
+                key={key._id}
+                className="flex items-center gap-4 rounded-2xl px-4 py-3 transition-colors hover:bg-black/[0.04]"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{key.name}</p>
+                  <p className="text-[13px] text-muted-foreground">{maskKey(key.keyPrefix)}</p>
+                </div>
+                {key.status === 'revoked' && (
+                  <span className="shrink-0 text-[13px] text-muted-foreground">Revoked</span>
+                )}
+                <div className="hidden shrink-0 text-right sm:block">
+                  <p className="text-[13px] text-muted-foreground">
+                    Created {formatDate(key.createdAt)}
+                  </p>
+                  {key.lastUsedAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Last used {formatDate(key.lastUsedAt)}
+                    </p>
+                  )}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label={`Actions for ${key.name}`}>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={async () => {
+                        if (await copyToClipboard(key.keyPrefix)) toast.success('Prefix copied')
+                      }}
+                    >
+                      <Copy className="h-4 w-4" /> Copy prefix
+                    </DropdownMenuItem>
+                    {key.status === 'active' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <ConfirmDialog
+                          tone="destructive"
+                          title="Revoke key?"
+                          description={`Any apps using "${key.name}" will stop working immediately.`}
+                          confirmLabel="Revoke"
+                          icon={<Trash2 className="h-5 w-5" />}
+                          onConfirm={() => handleRevoke(key._id)}
+                          trigger={
+                            <DropdownMenuItem destructive onSelect={(e) => e.preventDefault()}>
+                              <Trash2 className="h-4 w-4" /> Revoke
+                            </DropdownMenuItem>
+                          }
+                        />
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Card className="mt-8 p-5">
+        <p className="text-sm font-medium text-foreground">Quick start</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Pass your key in the Authorization header on every /v1 request.
+        </p>
+        {/* Code snippet — the one permitted font-mono exception. */}
+        <div className="mt-3 overflow-x-auto rounded-xl bg-black/[0.02] p-4">
+          <pre className="font-mono text-[13px] leading-relaxed text-muted-foreground">
+            {`curl https://api.robinwood.dev/v1/upload \\
+  -H "Authorization: Bearer sk_live_..." \\
+  -d '{"filename": "episode.mp3", "size": 52428800}'`}
+          </pre>
+        </div>
+      </Card>
     </div>
   )
 }

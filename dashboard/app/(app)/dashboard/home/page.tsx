@@ -1,297 +1,172 @@
 'use client'
+
 import Link from 'next/link'
-import useSWR from 'swr'
-import { useSession } from '@/app/lib/auth-client'
-import { getUsageAnalytics } from '@/app/http/usage'
-import { FileText, Mic, CreditCard } from 'lucide-react'
-import { PageHeader } from '@/app/components/ui/page-header'
-import { Surface } from '@/app/components/ui/surface'
-import { Chip } from '@/app/components/ui/chip'
-import { Skeleton } from '@/app/components/ui/skeleton'
-import type { ApiResponse, UsageAnalytics, UsageEvent } from '@/types'
+import { ArrowUpDown, FileText, Mic, ImageIcon, Plus, Rocket, Trash2 } from 'lucide-react'
+import { Button } from '@/app/components/ui/Button'
+import { Chip } from '@/app/components/ui/Chip'
+import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
+import { SearchInput } from '@/app/components/ui/SearchInput'
+import { Tabs } from '@/app/components/ui/Tabs'
 
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+/* Home rebuilt as a black & white copy of the ElevenLabs voice-library:
+   underline tabs, near-black primary button, filter chips, transparent
+   hover cards, and 16px-radius table rows that fill grey on hover. */
 
-/* ── Tool portal visuals ── */
+const FILTERS = ['All', 'Text', 'Audio', 'Image', 'Done', 'Queued', 'Failed']
 
-function TextVisual() {
-  return (
-    <div className="flex h-full items-center justify-center gap-5">
-      {/* "Before" document */}
-      <div className="w-24 space-y-1.5 rounded-lg bg-card px-3 py-2.5">
-        {[100, 75, 90, 60, 85, 55].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-full bg-foreground/15" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-
-      {/* Divider between before / after */}
-      <div className="h-12 w-px shrink-0 rounded-full bg-brand/50" aria-hidden />
-
-      {/* "After" document: shorter lines */}
-      <div className="w-16 space-y-1.5 rounded-lg bg-card px-3 py-2.5">
-        {[100, 75, 90, 60].map((w, i) => (
-          <div key={i} className="h-1.5 rounded-full bg-brand/50" style={{ width: `${w}%` }} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AudioVisual() {
-  const bars = [2, 4, 7, 9, 6, 8, 11, 7, 5, 9, 12, 8, 6, 4, 7, 10, 8, 5, 3, 7]
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="flex items-end gap-0.5">
-        {bars.map((h, i) => (
-          <div
-            key={i}
-            className="w-1.5 rounded-full bg-brand/50"
-            style={{ height: `${h * 4}px` }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function ImageVisual() {
-  const palette = [
-    'bg-border/60', 'bg-brand-subtle/40', 'bg-brand/20',
-    'bg-foreground/10', 'bg-brand-subtle/25', 'bg-border/40',
-  ]
-  return (
-    <div className="flex h-full items-center justify-center">
-      <div className="grid grid-cols-5 gap-1 opacity-50">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div key={i} className={`h-5 w-5 rounded-sm ${palette[i % palette.length]}`} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* ── Data ── */
-
-const TOOLS = [
-  {
-    label: 'Text',
-    subtitle: 'Clean & compress text',
-    href: '/dashboard/text',
-    bg: 'bg-brand-subtle/25',
-    Visual: TextVisual,
-    disabled: false,
-  },
-  {
-    label: 'Audio',
-    subtitle: 'Process audio files',
-    href: '/dashboard/audio',
-    bg: 'bg-brand/15',
-    Visual: AudioVisual,
-    disabled: false,
-  },
-  {
-    label: 'Image',
-    subtitle: 'Compress to WebP & AVIF',
-    href: '/dashboard/image',
-    bg: 'bg-muted',
-    Visual: ImageVisual,
-    disabled: false,
-  },
+const QUICK_START = [
+  { label: 'Text', desc: 'Clean & compress prose', meta: 'gzip · brotli', href: '/dashboard/text', Icon: FileText },
+  { label: 'Audio', desc: 'Shrink audio, keep fidelity', meta: 'opus · mp3', href: '/dashboard/audio', Icon: Mic },
+  { label: 'Image', desc: 'Encode to modern formats', meta: 'webp · avif', href: '/dashboard/image', Icon: ImageIcon },
 ]
 
-const QUICK_STARTS = [
-  {
-    label: 'Billing',
-    description: 'Plans, invoices, and payment method',
-    href: '/dashboard/billing',
-    icon: CreditCard,
-  },
+type Status = 'done' | 'queued' | 'failed'
+const STATUS_LABEL: Record<Status, string> = { done: 'Done', queued: 'Queued', failed: 'Failed' }
+const STATUS_DOT: Record<Status, string> = {
+  done: 'bg-foreground',
+  queued: 'bg-muted-foreground/50',
+  failed: 'bg-transparent ring-1 ring-inset ring-muted-foreground/60',
+}
+const KIND_ICON: Record<string, typeof FileText> = { Text: FileText, Audio: Mic, Image: ImageIcon }
+
+const JOBS: { name: string; kind: keyof typeof KIND_ICON; ratio: string; size: string; at: string; status: Status }[] = [
+  { name: 'quarterly-report.txt', kind: 'Text', ratio: '−71%', size: '2.4 MB', at: '2h ago', status: 'done' },
+  { name: 'podcast-ep-42.wav', kind: 'Audio', ratio: '—', size: '58 MB', at: '3h ago', status: 'queued' },
+  { name: 'hero-banner.png', kind: 'Image', ratio: '−82%', size: '4.1 MB', at: '5h ago', status: 'done' },
+  { name: 'transcript-raw.txt', kind: 'Text', ratio: '—', size: '880 KB', at: '1d ago', status: 'failed' },
+  { name: 'intro-voiceover.mp3', kind: 'Audio', ratio: '−64%', size: '12 MB', at: '1d ago', status: 'done' },
 ]
-
-/* ── Page ── */
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-3 shrink-0 text-sm font-medium text-foreground">{children}</h2>
-}
-
-function ToolCard({ tool }: { tool: (typeof TOOLS)[number] }) {
-  const card = (
-    <Surface
-      padding="none"
-      radius="xl"
-      className={`overflow-hidden transition-transform duration-200 ${
-        tool.disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:-translate-y-0.5'
-      }`}
-    >
-      {/* Visual area */}
-      <div className={`h-40 ${tool.bg}`}>
-        <tool.Visual />
-      </div>
-
-      {/* Label */}
-      <div className="flex items-center gap-2 px-4 py-3">
-        <div>
-          <p className="text-sm font-medium text-foreground">{tool.label}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{tool.subtitle}</p>
-        </div>
-        {tool.disabled && (
-          <Chip variant="brand" size="sm" className="ml-auto rounded-full font-medium">
-            Soon
-          </Chip>
-        )}
-      </div>
-    </Surface>
-  )
-
-  return tool.disabled ? card : <Link href={tool.href}>{card}</Link>
-}
-
-function RecentActivitySkeleton() {
-  return (
-    <div className="flex min-h-0 flex-col">
-      <SectionTitle>Recent activity</SectionTitle>
-      <Surface padding="sm" radius="lg" className="space-y-1.5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-3 py-2.5">
-            <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-36" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-            <div className="shrink-0 space-y-1.5">
-              <Skeleton className="ml-auto h-3 w-16" />
-              <Skeleton className="ml-auto h-3 w-24" />
-            </div>
-          </div>
-        ))}
-      </Surface>
-    </div>
-  )
-}
-
-function RecentActivity({ jobs }: { jobs: UsageEvent[] }) {
-  return (
-    <div className="flex min-h-0 flex-col">
-      <SectionTitle>Recent activity</SectionTitle>
-      <Surface padding="sm" radius="lg" className="space-y-1.5">
-        {jobs.map((job) => {
-          const ratio = job.inputBytes > 0 ? (job.inputBytes / job.outputBytes).toFixed(1) : 'n/a'
-          return (
-            <div
-              key={job._id}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                {job.pipelineType === 'text'
-                  ? <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                  : <Mic className="h-3.5 w-3.5 text-muted-foreground" />
-                }
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium capitalize text-foreground">
-                  {job.pipelineType} compression
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(job.timestamp).toLocaleString('en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                  })}
-                </p>
-              </div>
-
-              <div className="shrink-0 text-right">
-                <p className="font-mono text-xs font-medium text-foreground">{ratio}x smaller</p>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {formatBytes(job.inputBytes)} to {formatBytes(job.outputBytes)}
-                </p>
-              </div>
-            </div>
-          )
-        })}
-      </Surface>
-    </div>
-  )
-}
-
-function QuickStart({ fullWidth }: { fullWidth?: boolean }) {
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <SectionTitle>Quick start</SectionTitle>
-      <div className={`flex min-h-0 flex-1 gap-4 ${fullWidth ? 'flex-row' : 'flex-col'}`}>
-        {QUICK_STARTS.map((item) => (
-          <Link key={item.label} href={item.href} className="flex flex-1">
-            <Surface
-              padding="none"
-              radius="lg"
-              className="flex min-h-[4.5rem] flex-1 items-center gap-4 px-4 py-5 transition-transform duration-200 hover:-translate-y-0.5"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-subtle">
-                <item.icon className="h-4 w-4 text-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
-              </div>
-            </Surface>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function HomePage() {
-  const { data: session } = useSession()
-  const firstName = session?.user?.name?.split(' ')[0] ?? 'there'
-
-  const { data, isLoading } = useSWR<ApiResponse<UsageAnalytics>>(
-    'usage-analytics-home',
-    () => getUsageAnalytics('30d'),
-  )
-
-  const recentJobs = (data?.data?.recent ?? []).slice(0, 5)
-  const hasActivity = recentJobs.length > 0
-
   return (
-    <div className="mx-auto w-full max-w-5xl py-8">
-      <PageHeader title={`${getGreeting()}, ${firstName}`} description="My Workspace" />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-5">
+        <h1 className="text-2xl font-medium tracking-tight text-foreground">Compress</h1>
+        <div className="flex items-end justify-between gap-4">
+          <Tabs tabs={['Overview', 'History']} />
+          <div className="flex items-center gap-2 pb-1">
+            <Button variant="secondary" asChild>
+              <Link href="/dashboard/usage">Usage</Link>
+            </Button>
+            <ConfirmDialog
+              tone="primary"
+              icon={<Rocket className="h-[1.05rem] w-[1.05rem]" />}
+              title="Start a compression job?"
+              description="We'll queue your file and spend credits based on its size. Nothing runs until you confirm."
+              confirmLabel="Start job"
+              onConfirm={() => {}}
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4" />
+                  New job
+                </Button>
+              }
+            />
+          </div>
+        </div>
+      </div>
 
-      <div className="space-y-8 md:space-y-10">
-        {/* Tool portals */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 md:gap-8">
-          {TOOLS.map((tool) => (
-            <ToolCard key={tool.label} tool={tool} />
+      {/* Search + sort */}
+      <div className="flex items-center gap-2">
+        <SearchInput placeholder="Search jobs…" className="flex-1" />
+        <Button variant="secondary" size="lg" className="gap-2">
+          <ArrowUpDown className="h-4 w-4" />
+          Sort
+        </Button>
+      </div>
+
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {FILTERS.map((f, i) => (
+          <Chip key={f} active={i === 0}>
+            {f}
+          </Chip>
+        ))}
+      </div>
+
+      {/* Quick start — transparent hover cards */}
+      <section className="space-y-3">
+        <p className="text-sm font-medium text-foreground">Quick start</p>
+        <div className="grid gap-1 sm:grid-cols-3">
+          {QUICK_START.map(({ label, desc, meta, href, Icon }) => (
+            <Link
+              key={label}
+              href={href}
+              className="flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-black/[0.04]"
+            >
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{label}</p>
+                <p className="truncate text-[13px] text-muted-foreground">{desc}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/80">{meta}</p>
+              </div>
+            </Link>
           ))}
         </div>
+      </section>
 
-        {/* Bottom section: two columns if activity exists, full width quick start otherwise */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 items-stretch gap-8 md:grid-cols-2 md:gap-12">
-            <RecentActivitySkeleton />
-            <QuickStart />
-          </div>
-        ) : hasActivity ? (
-          <div className="grid grid-cols-1 items-stretch gap-8 md:grid-cols-2 md:gap-12">
-            <RecentActivity jobs={recentJobs} />
-            <QuickStart />
-          </div>
-        ) : (
-          <QuickStart fullWidth />
-        )}
-      </div>
+      {/* Recent jobs — table rows with rounded grey hover */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-foreground">Recent jobs</p>
+          <Link
+            href="/dashboard/history"
+            className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            View all
+          </Link>
+        </div>
+        <ul className="space-y-0.5">
+          {JOBS.map((job) => {
+            const Icon = KIND_ICON[job.kind]
+            return (
+              <li
+                key={job.name}
+                className="group flex items-center gap-4 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04]"
+              >
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-secondary text-foreground">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-foreground">{job.name}</p>
+                  <p className="text-[13px] text-muted-foreground">{job.size}</p>
+                </div>
+                <span className="hidden items-center gap-1.5 text-[13px] text-muted-foreground sm:flex">
+                  <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[job.status]}`} />
+                  {STATUS_LABEL[job.status]}
+                </span>
+                <span className="hidden w-14 text-right text-[13px] font-medium tabular-nums text-foreground sm:block">
+                  {job.ratio}
+                </span>
+                <span className="hidden w-16 text-right text-[13px] tabular-nums text-muted-foreground md:block">
+                  {job.at}
+                </span>
+                <ConfirmDialog
+                  tone="destructive"
+                  icon={<Trash2 className="h-[1.05rem] w-[1.05rem]" />}
+                  title="Delete this job?"
+                  description="This removes the compressed file and its history entry. This can't be undone."
+                  confirmLabel="Delete"
+                  onConfirm={() => {}}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Delete job"
+                      className="text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </li>
+            )
+          })}
+        </ul>
+      </section>
     </div>
   )
 }

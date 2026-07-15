@@ -1,77 +1,170 @@
 'use client'
-import { Sidebar } from '@/app/components/layout/Sidebar'
-import { Topbar } from '@/app/components/layout/Topbar'
-import { ChatPanel } from '@/app/components/layout/ChatPanel'
-import { ChatProvider, useChat } from '@/app/components/layout/ChatContext'
-import { SidebarProvider, useSidebar } from '@/app/components/layout/SidebarContext'
-import { cn } from '@/app/lib/utils'
 
-function AppShell({ children }: { children: React.ReactNode }) {
-  const { chatOpen } = useChat()
-  const { mobileOpen, setMobileOpen } = useSidebar()
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import {
+  AudioLines,
+  Home,
+  FileText,
+  Mic,
+  ImageIcon,
+  History,
+  BarChart3,
+  CreditCard,
+  KeyRound,
+  Settings,
+  PanelLeft,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react'
+import { Button } from '@/app/components/ui/Button'
+import { AssistantPanel } from '@/app/components/assistant/AssistantPanel'
 
+type NavItem = { label: string; href: string; icon: LucideIcon }
+type NavGroup = { label?: string; items: NavItem[] }
+
+const NAV: NavGroup[] = [
+  {
+    items: [{ label: 'Home', href: '/dashboard/home', icon: Home }],
+  },
+  {
+    label: 'Compress',
+    items: [
+      { label: 'Text', href: '/dashboard/text', icon: FileText },
+      { label: 'Audio', href: '/dashboard/audio', icon: Mic },
+      { label: 'Image', href: '/dashboard/image', icon: ImageIcon },
+    ],
+  },
+  {
+    label: 'Activity',
+    items: [
+      { label: 'History', href: '/dashboard/history', icon: History },
+      { label: 'Usage', href: '/dashboard/usage', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { label: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+      { label: 'API Keys', href: '/dashboard/keys', icon: KeyRound },
+      { label: 'Settings', href: '/dashboard/account', icon: Settings },
+    ],
+  },
+]
+
+/* Label that fades + slides in when the sidebar is expanded — mirrors the
+   ElevenLabs `aria-expanded` reveal pattern. */
+const revealClass =
+  'whitespace-nowrap opacity-0 -translate-x-1 transition-all duration-150 group-aria-expanded/sidebar:opacity-100 group-aria-expanded/sidebar:translate-x-0'
+
+function NavRow({ item, active }: { item: NavItem; active: boolean }) {
+  const { icon: Icon, label, href } = item
   return (
-    <div
-      className={cn(
-        'flex h-screen overflow-hidden transition-colors duration-300',
-        chatOpen ? 'bg-secondary' : 'bg-background'
-      )}
+    <Link
+      href={href}
+      title={label}
+      className={`flex h-9 items-center gap-3 rounded-lg px-[0.7rem] text-sm transition-colors ${
+        active
+          ? 'bg-secondary font-medium text-foreground'
+          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+      }`}
     >
-      {/* Mobile sidebar overlay + drawer */}
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-foreground/40 md:hidden transition-opacity duration-200',
-          mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={() => setMobileOpen(false)}
-      />
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 md:hidden transition-transform duration-200 ease-in-out',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
-        <Sidebar />
-      </aside>
-
-      {/* Main app: compresses and gets rounded when chat is open */}
-      <div
-        className={cn(
-          'flex flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-in-out',
-          chatOpen && 'md:m-4 md:rounded-3xl md:shadow-xl md:overflow-hidden'
-        )}
-      >
-        {/* Desktop sidebar */}
-        <div className="hidden md:flex">
-          <Sidebar />
-        </div>
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-background">
-          <Topbar />
-          <main className="relative flex-1 overflow-y-auto px-4 pb-12 sm:px-6 md:px-8">
-            {children}
-          </main>
-        </div>
-      </div>
-
-      {/* Chat panel: slides in from right — hidden on mobile */}
-      <div
-        className={cn(
-          'hidden md:block shrink-0 overflow-hidden transition-all duration-300 ease-in-out',
-          chatOpen ? 'w-80 opacity-100' : 'w-0 opacity-0'
-        )}
-      >
-        <ChatPanel />
-      </div>
-    </div>
+      <Icon className={`h-[1.05rem] w-[1.05rem] shrink-0 ${active ? 'text-primary' : ''}`} />
+      <span className={revealClass}>{label}</span>
+    </Link>
   )
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [pinned, setPinned] = useState(true)
+  const [hovered, setHovered] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
+  const open = pinned || hovered
+
   return (
-    <ChatProvider>
-      <SidebarProvider>
-        <AppShell>{children}</AppShell>
-      </SidebarProvider>
-    </ChatProvider>
+    <div className="min-h-screen bg-background">
+      <aside
+        aria-expanded={open}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={`group/sidebar fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-hidden border-r border-border bg-sidebar transition-[width] duration-200 ease-out md:flex ${
+          open ? 'w-64' : 'w-[4.5rem]'
+        }`}
+      >
+        {/* Brand + collapse toggle */}
+        <div className="flex h-[3.75rem] items-center gap-3 px-[0.9rem]">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <AudioLines className="h-[1.05rem] w-[1.05rem]" />
+          </div>
+          <span className={`flex-1 text-sm font-medium tracking-tight text-foreground ${revealClass}`}>
+            Robin Wood
+          </span>
+          <button
+            onClick={() => setPinned((v) => !v)}
+            title={pinned ? 'Collapse' : 'Expand'}
+            className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${revealClass}`}
+          >
+            <PanelLeft className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2 no-scrollbar">
+          {NAV.map((group, gi) => (
+            <div key={gi} className="space-y-1">
+              {group.label && (
+                <p
+                  className={`h-4 px-[0.7rem] text-[11px] font-medium text-muted-foreground/70 ${revealClass}`}
+                >
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => (
+                <NavRow
+                  key={item.href}
+                  item={item}
+                  active={pathname === item.href || pathname.startsWith(item.href + '/')}
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        {/* User card */}
+        <div className="border-t border-border p-3">
+          <div className="flex h-11 items-center gap-3 rounded-lg px-2">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-subtle text-sm font-medium text-primary">
+              G
+            </div>
+            <div className={`flex min-w-0 flex-1 flex-col ${revealClass}`}>
+              <span className="truncate text-sm font-medium text-foreground">Gustavo</span>
+              <span className="truncate text-xs text-muted-foreground">gustavonobg@gmail.com</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Assistant"
+              onClick={() => setAssistantOpen(true)}
+              className={`shrink-0 ${revealClass}`}
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+
+      {/* Content */}
+      <div
+        className={`transition-[padding] duration-200 ease-out ${
+          pinned ? 'md:pl-64' : 'md:pl-[4.5rem]'
+        }`}
+      >
+        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-10">{children}</main>
+      </div>
+    </div>
   )
 }

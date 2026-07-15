@@ -1,6 +1,6 @@
 'use client'
 import { SWRConfig } from 'swr'
-import { Toaster } from '@/app/components/ui/sonner'
+import { Toaster } from 'sonner'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

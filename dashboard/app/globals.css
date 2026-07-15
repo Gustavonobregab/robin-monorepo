@@ -5,57 +5,61 @@
 
 @layer base {
   :root {
-    /* Neutrals do the structural work: white content, a warm grey rail, and
-       hairline borders. Brand colour appears only in actions and data. */
-    --background: 0 0% 100%; /* content area — white */
-    --foreground: 30 6% 12%; /* #211F1D */
+    /* Black & white system copied from ElevenLabs (light). Near-black ink on
+       white, alpha-grey borders/fills. Colour will be layered back in later. */
+    --background: 0 0% 100%; /* white */
+    --foreground: 240 3% 6%; /* #0F0F10 near-black ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 30 6% 12%;
+    --card-foreground: 240 3% 6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 30 6% 12%;
+    --popover-foreground: 240 3% 6%;
 
-    /* The sidebar rail and inset chrome — a shade off white, plus a border. */
-    --sidebar: 40 14% 97%; /* #F8F7F5 */
-    --sidebar-foreground: 30 6% 12%;
+    /* Sidebar rail — white, separated only by a border, like ElevenLabs. */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 240 3% 6%;
 
-    /* Brand action colour. */
-    --primary: 72 100% 22%; /* #5B6F00 olive */
+    /* Primary action — near-black. */
+    --primary: 240 3% 6%; /* #0F0F10 */
     --primary-foreground: 0 0% 100%;
 
     /* Quiet fills — secondary buttons, hovers, table stripes. */
-    --secondary: 40 12% 96%; /* #F6F5F2 */
-    --secondary-foreground: 30 6% 12%;
+    --secondary: 0 0% 96%; /* #F5F5F5 */
+    --secondary-foreground: 240 3% 6%;
 
-    --muted: 40 12% 96%;
-    --muted-foreground: 30 4% 44%; /* #756F6B */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%; /* #737373 */
 
-    --accent: 40 12% 94%; /* hover fill */
-    --accent-foreground: 30 6% 12%;
+    --accent: 0 0% 89%; /* #E3E3E3 stronger hover */
+    --accent-foreground: 0 0% 18%;
 
-    /* Brand greens — chips, charts, highlights. Never structure. */
-    --brand: 91 42% 63%; /* #A0C878 */
-    --brand-foreground: 30 6% 12%;
-    --brand-subtle: 76 62% 88%;
+    /* Neutralised while black & white — kept so components still resolve. */
+    --brand: 0 0% 45%;
+    --brand-foreground: 0 0% 100%;
+    --brand-subtle: 0 0% 94%;
 
-    /* Warm cream, kept for brand moments (marketing, illustration). */
-    --cream: 45 60% 98%; /* #FFFDF6 */
+    --cream: 0 0% 99%;
 
-    --destructive: 6 59% 44%; /* #B23B2E */
+    --brown: 0 0% 30%;
+    --brown-foreground: 0 0% 98%;
+    --brown-subtle: 0 0% 92%;
+
+    /* Red — destructive actions only (delete, revoke). */
+    --destructive: 4 68% 47%; /* #CB3628 */
     --destructive-foreground: 0 0% 100%;
-    --destructive-subtle: 14 55% 96%;
+    --destructive-subtle: 6 72% 96%;
 
-    --warning: 38 76% 34%; /* #9A6B15 */
+    --warning: 0 0% 45%;
     --warning-foreground: 0 0% 100%;
-    --warning-subtle: 42 60% 95%;
+    --warning-subtle: 0 0% 94%;
 
-    --success: 72 100% 22%;
-    --success-subtle: 76 50% 93%;
+    --success: 0 0% 30%;
+    --success-subtle: 0 0% 94%;
 
-    --border: 40 10% 91%; /* #EAE8E5 hairline */
-    --input: 40 10% 91%;
-    --ring: 72 100% 22%;
+    --border: 0 0% 92%; /* #EBEBEB ≈ black/7.5% over white */
+    --input: 0 0% 90%;
+    --ring: 240 3% 6%;
 
     --radius: 0.5rem;
   }

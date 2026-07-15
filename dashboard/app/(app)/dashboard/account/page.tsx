@@ -1,52 +1,56 @@
 'use client'
-import { useState, useEffect } from 'react'
+
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { toast } from 'sonner'
-import { Copy, Check, UserRound } from 'lucide-react'
-import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { Chip } from '@/app/components/ui/chip'
-import { Surface } from '@/app/components/ui/surface'
-import { Skeleton } from '@/app/components/ui/skeleton'
-import { PageHeader } from '@/app/components/ui/page-header'
-import { EmptyState } from '@/app/components/ui/empty-state'
-import { signOut } from '@/app/lib/auth-client'
+import { Check, Copy } from 'lucide-react'
+import { Button } from '@/app/components/ui/Button'
+import { Card } from '@/app/components/ui/Card'
+import { ConfirmDialog } from '@/app/components/ui/ConfirmDialog'
+import { Field, Input } from '@/app/components/ui/Field'
+import { PageHeader } from '@/app/components/ui/PageHeader'
+import { Skeleton } from '@/app/components/ui/Skeleton'
+import { signOut, useSession } from '@/app/lib/auth-client'
 import { getProfile, updateProfile, updateWebhookConfig } from '@/app/http/users'
 import { toastApiError } from '@/app/http/errors'
 
 export default function AccountPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const { data, error, mutate } = useSWR('profile', getProfile)
   const profile = data?.data
 
+  const name = profile?.name ?? session?.user.name ?? ''
+  const email = profile?.email ?? session?.user.email ?? ''
+
   return (
     <div className="mx-auto max-w-2xl pt-8">
-      <PageHeader title="Account" description="Your profile, webhooks and session." />
+      <PageHeader
+        title="Settings"
+        description="Your profile, webhooks and session."
+        className="mb-8"
+      />
 
       <div className="space-y-6">
         {error ? (
-          <Surface>
-            <EmptyState
-              icon={UserRound}
-              title="Could not load your account."
-              action={
-                <Button variant="outline" size="sm" onClick={() => mutate()}>
-                  Try again
-                </Button>
-              }
-            />
-          </Surface>
+          <Card className="p-6">
+            <p className="text-sm text-foreground">Could not load your account.</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Something went wrong while fetching your profile.
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4" onClick={() => mutate()}>
+              Try again
+            </Button>
+          </Card>
         ) : (
           <>
             <ProfileCard
-              name={profile?.name ?? ''}
-              email={profile?.email ?? ''}
+              name={name}
+              email={email}
               loading={!profile}
               onSaved={() => mutate()}
             />
-
             <WebhookCard
               enabled={profile?.webhooksEnabled ?? false}
               currentUrl={profile?.webhookUrl ?? null}
@@ -56,25 +60,16 @@ export default function AccountPage() {
           </>
         )}
 
-        <Surface>
-          <h2 className="text-base font-medium text-foreground">Session</h2>
-          <p className="mb-5 mt-1 text-sm text-muted-foreground">
-            Sign out of the dashboard on this device.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              try {
-                await signOut()
-              } catch {}
-              router.push('/sign-in')
-            }}
-          >
-            Sign out
-          </Button>
-        </Surface>
+        <SessionCard
+          onSignOut={async () => {
+            try {
+              await signOut()
+            } catch {}
+            router.push('/sign-in')
+          }}
+        />
+
+        <DangerZoneCard />
       </div>
     </div>
   )
@@ -83,7 +78,7 @@ export default function AccountPage() {
 function FieldSkeleton() {
   return (
     <div className="space-y-1.5">
-      <Skeleton className="h-4 w-20" />
+      <Skeleton className="h-4 w-24" />
       <Skeleton className="h-10 w-full" />
     </div>
   )
@@ -123,39 +118,61 @@ function ProfileCard({
   }
 
   return (
-    <Surface>
-      <h2 className="mb-5 text-base font-medium text-foreground">Profile</h2>
+    <Card className="p-6">
+      <h2 className="text-base font-medium text-foreground">Profile</h2>
 
-      {loading ? (
-        <div className="space-y-4">
-          <FieldSkeleton />
-          <FieldSkeleton />
-          <Skeleton className="h-10 w-32" />
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4">
+      <div className="mt-5 flex items-center gap-4">
+        {loading ? (
+          <>
+            <Skeleton className="h-12 w-12 rounded-full" />
             <div className="space-y-1.5">
-              <Label htmlFor="account-name">Name</Label>
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-44" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/[0.05] text-base font-medium text-foreground">
+              {name.trim().charAt(0).toUpperCase() || email.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              {name && (
+                <p className="truncate text-sm font-medium text-foreground">{name}</p>
+              )}
+              {email && <p className="truncate text-[13px] text-muted-foreground">{email}</p>}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-6 border-t border-border pt-5">
+        {loading ? (
+          <div className="space-y-4">
+            <FieldSkeleton />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        ) : (
+          <>
+            <Field label="Display name">
               <Input
-                id="account-name"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="Your name"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="account-email">Email</Label>
-              <Input id="account-email" value={email} disabled className="bg-muted" />
-            </div>
-          </div>
-
-          <Button type="button" className="mt-5" disabled={!dirty || saving} onClick={save}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </Button>
-        </>
-      )}
-    </Surface>
+            </Field>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-4"
+              disabled={!dirty || saving}
+              onClick={save}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        )}
+      </div>
+    </Card>
   )
 }
 
@@ -203,72 +220,111 @@ function WebhookCard({
   }
 
   return (
-    <Surface>
+    <Card className="p-6">
       <div className="flex items-center gap-2">
         <h2 className="text-base font-medium text-foreground">Webhooks</h2>
         {!enabled && !loading && (
-          <Chip size="sm" variant="warning">
+          <span className="rounded-full border border-black/10 px-2 py-0.5 text-xs text-muted-foreground">
             Upgrade required
-          </Chip>
+          </span>
         )}
       </div>
-      <p className="mb-5 mt-1 text-sm text-muted-foreground">
+      <p className="mt-1 text-[13px] text-muted-foreground">
         We POST job results to this URL when a job completes or fails. Requests are signed with
         HMAC-SHA256.
       </p>
 
-      {loading ? (
-        <div className="space-y-4">
-          <FieldSkeleton />
-          <Skeleton className="h-10 w-32" />
-        </div>
-      ) : (
-        <>
-          <div className="space-y-1.5">
-            <Label htmlFor="webhook-url">Endpoint URL</Label>
-            <Input
-              id="webhook-url"
-              type="url"
-              value={value}
-              disabled={!enabled}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="https://your-app.com/webhooks/robin"
-            />
+      <div className="mt-5">
+        {loading ? (
+          <div className="space-y-4">
+            <FieldSkeleton />
+            <Skeleton className="h-9 w-32" />
           </div>
+        ) : (
+          <>
+            <Field label="Endpoint URL">
+              <Input
+                type="url"
+                value={value}
+                disabled={!enabled}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="https://your-app.com/webhooks/robin"
+                className="disabled:bg-black/[0.02] disabled:text-muted-foreground"
+              />
+            </Field>
 
-          {secret && (
-            <div className="mt-4 rounded-lg bg-muted p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Signing secret — copy it now, shown once
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs text-muted-foreground"
-                  onClick={copySecret}
-                >
-                  {copied ? <Check /> : <Copy />}
-                  {copied ? 'Copied' : 'Copy'}
-                </Button>
+            {secret && (
+              <div className="mt-4 rounded-xl bg-black/[0.02] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Signing secret — copy it now, shown once
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={copySecret}
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </Button>
+                </div>
+                <p className="mt-1.5 break-all text-[13px] text-foreground">{secret}</p>
               </div>
-              <code className="mt-1.5 block break-all font-mono text-sm text-foreground">
-                {secret}
-              </code>
-            </div>
-          )}
+            )}
 
-          <Button
-            type="button"
-            className="mt-5"
-            disabled={!enabled || !dirty || saving}
-            onClick={save}
-          >
-            {saving ? 'Saving…' : 'Save webhook'}
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-4"
+              disabled={!enabled || !dirty || saving}
+              onClick={save}
+            >
+              {saving ? 'Saving…' : 'Save webhook'}
+            </Button>
+          </>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+function SessionCard({ onSignOut }: { onSignOut: () => void }) {
+  return (
+    <Card className="p-6">
+      <h2 className="text-base font-medium text-foreground">Session</h2>
+      <p className="mt-1 text-[13px] text-muted-foreground">
+        Sign out of the dashboard on this device.
+      </p>
+      <Button type="button" variant="secondary" className="mt-4" onClick={onSignOut}>
+        Sign out
+      </Button>
+    </Card>
+  )
+}
+
+function DangerZoneCard() {
+  return (
+    <Card className="p-6">
+      <h2 className="text-base font-medium text-foreground">Danger zone</h2>
+      <p className="mt-1 text-[13px] text-muted-foreground">
+        Permanently delete your account, API keys and job history.
+      </p>
+      <ConfirmDialog
+        tone="destructive"
+        title="Delete account?"
+        description="This permanently removes your account, API keys and job history. This action cannot be undone."
+        confirmLabel="Delete account"
+        trigger={
+          <Button type="button" variant="destructive" className="mt-4">
+            Delete account
           </Button>
-        </>
-      )}
-    </Surface>
+        }
+        onConfirm={() => {
+          toast.error('Account deletion is not available yet. Contact support to delete your account.')
+        }}
+      />
+    </Card>
   )
 }
