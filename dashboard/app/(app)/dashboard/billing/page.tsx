@@ -12,18 +12,39 @@ import { PageHeader } from '@/app/components/ui/PageHeader'
 import { Progress } from '@/app/components/ui/Progress'
 import { RetryCard } from '@/app/components/ui/RetryCard'
 import { Skeleton } from '@/app/components/ui/Skeleton'
+import { useEffect, useState } from 'react'
+import { SegmentedControl } from '@/app/components/ui/SegmentedControl'
+import { cancelSubscription, createCheckout } from '@/app/http/billing'
+import { toastApiError } from '@/app/http/errors'
 import { getProfile } from '@/app/http/users'
 import { getPublicPlans } from '@/app/http/plans'
 import { formatBytes, formatDate } from '@/app/lib/utils'
 import type { ApiResponse, PublicPlan, UserProfile } from '@/types'
 
-const isSellable = (plan: PublicPlan) =>
-  plan.prices.usd !== undefined || plan.prices.brl !== undefined
+type Currency = 'usd' | 'brl'
 
-function planPrice(plan: PublicPlan): string | null {
-  if (plan.prices.usd !== undefined) return `$${plan.prices.usd}`
-  if (plan.prices.brl !== undefined) return `R$${plan.prices.brl}`
-  return null
+/* Currency picks the payment gateway: USD → Stripe, BRL → AbacatePay. */
+const CURRENCY_GATEWAY: Record<Currency, 'stripe' | 'abacatepay'> = {
+  usd: 'stripe',
+  brl: 'abacatepay',
+}
+
+const isSellable = (plan: PublicPlan, currency: Currency) =>
+  plan.prices[currency] !== undefined && plan.prices[currency]! > 0
+
+async function startCheckout(planSlug: string, currency: Currency) {
+  try {
+    const res = await createCheckout(planSlug, CURRENCY_GATEWAY[currency])
+    window.location.href = res.data.url
+  } catch (err) {
+    toastApiError(err, "Couldn't start checkout. Try again.")
+  }
+}
+
+function planPrice(plan: PublicPlan, currency: Currency): string | null {
+  const value = plan.prices[currency]
+  if (value === undefined) return null
+  return currency === 'usd' ? `$${value}` : `R$${value}`
 }
 
 export default function BillingPage() {
@@ -47,11 +68,42 @@ export default function BillingPage() {
   const plans = plansData?.data ?? []
   const currentPublicPlan = plans.find((p) => p.slug === plan?.slug)
 
-  const sellableOthers = plans.filter((p) => p.slug !== plan?.slug && isSellable(p))
+  const [currency, setCurrency] = useState<Currency>('usd')
+
+  const sellableOthers = plans.filter((p) => p.slug !== plan?.slug && isSellable(p, currency))
   const recommended =
     sellableOthers
       .filter((p) => p.credits > (plan?.credits ?? 0))
       .sort((a, b) => a.credits - b.credits)[0] ?? sellableOthers[0]
+
+  const onPaidPlan = Boolean(
+    currentPublicPlan &&
+      (isSellable(currentPublicPlan, 'usd') || isSellable(currentPublicPlan, 'brl')),
+  )
+
+  // Post-checkout landing: Stripe redirects back with ?checkout=success|canceled
+  useEffect(() => {
+    const outcome = new URLSearchParams(window.location.search).get('checkout')
+    if (!outcome) return
+    window.history.replaceState(null, '', window.location.pathname)
+    if (outcome === 'success') {
+      toast.success('Payment confirmed. Your plan is being activated.')
+      mutateProfile()
+    } else {
+      toast.info('Checkout canceled.')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function handleCancel() {
+    try {
+      await cancelSubscription()
+      toast.success('Subscription canceled. Your plan runs until the end of the cycle.')
+      mutateProfile()
+    } catch (err) {
+      toastApiError(err, "Couldn't cancel the subscription. Try again.")
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
@@ -83,9 +135,9 @@ export default function BillingPage() {
                 </p>
                 <CurrentTag />
               </div>
-              {currentPublicPlan && planPrice(currentPublicPlan) && (
+              {currentPublicPlan && planPrice(currentPublicPlan, currency) && (
                 <p className="mt-2 text-2xl font-medium tabular-nums tracking-tight text-foreground">
-                  {planPrice(currentPublicPlan)}
+                  {planPrice(currentPublicPlan, currency)}
                   <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">
                     / month
                   </span>
@@ -104,14 +156,30 @@ export default function BillingPage() {
                 </p>
               )}
             </div>
-            {recommended && (
-              <Button asChild className="shrink-0">
-                <a href="#plans">
-                  Upgrade plan
-                  <ArrowUpRight className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              {onPaidPlan && subscription?.status !== 'canceled' && (
+                <ConfirmDialog
+                  tone="destructive"
+                  title="Cancel your subscription?"
+                  description="Your plan and credits stay active until the end of the current cycle, then you move to the Free plan."
+                  confirmLabel="Cancel subscription"
+                  onConfirm={handleCancel}
+                  trigger={
+                    <Button variant="ghost" className="text-muted-foreground">
+                      Cancel
+                    </Button>
+                  }
+                />
+              )}
+              {recommended && (
+                <Button asChild>
+                  <a href="#plans">
+                    Upgrade plan
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
           {subscription && (
             <div className="mt-6 space-y-2">
@@ -133,7 +201,17 @@ export default function BillingPage() {
 
       {/* Plans */}
       <section id="plans" className="space-y-3">
-        <p className="text-sm font-medium text-foreground">Plans</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-foreground">Plans</p>
+          <SegmentedControl<Currency>
+            value={currency}
+            onChange={setCurrency}
+            options={[
+              { value: 'usd', label: 'USD' },
+              { value: 'brl', label: 'BRL · Pix' },
+            ]}
+          />
+        </div>
         {plansLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Skeleton className="h-60 rounded-2xl" />
@@ -148,6 +226,7 @@ export default function BillingPage() {
               <PlanCard
                 key={p.slug}
                 plan={p}
+                currency={currency}
                 isCurrent={p.slug === plan?.slug}
                 isRecommended={p.slug === recommended?.slug}
                 currentCredits={plan?.credits ?? 0}
@@ -174,17 +253,19 @@ export default function BillingPage() {
 
 function PlanCard({
   plan,
+  currency,
   isCurrent,
   isRecommended,
   currentCredits,
 }: {
   plan: PublicPlan
+  currency: Currency
   isCurrent: boolean
   isRecommended: boolean
   currentCredits: number
 }) {
-  const price = planPrice(plan)
-  const sellable = isSellable(plan)
+  const price = planPrice(plan, currency)
+  const sellable = isSellable(plan, currency)
   const switchLabel = plan.credits > currentCredits ? 'Upgrade' : 'Switch plan'
 
   return (
@@ -215,9 +296,9 @@ function PlanCard({
             tone="primary"
             icon={<ArrowUpRight className="h-[1.05rem] w-[1.05rem]" />}
             title={`Switch to the ${plan.name} plan?`}
-            description={`${plan.credits.toLocaleString()} credits per month${price ? ` for ${price}/month` : ''}. The change applies to your next billing cycle.`}
+            description={`${plan.credits.toLocaleString()} credits per month${price ? ` for ${price}/month` : ''}. Your current subscription ends now and the new plan starts as soon as payment completes.`}
             confirmLabel={switchLabel}
-            onConfirm={() => toast.info('Checkout is coming soon.')}
+            onConfirm={() => startCheckout(plan.slug, currency)}
             trigger={
               <Button
                 variant={isRecommended ? 'primary' : 'secondary'}

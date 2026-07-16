@@ -13,9 +13,16 @@ const userSchema = new Schema<User>({
   subscription: {
     status: {                                                      // subscription state
       type: String,
-      enum: ['active', 'canceled'],
+      enum: ['active', 'canceled', 'past_due'],
       default: 'active',
     },
+    gateway: { type: String, enum: ['stripe', 'abacatepay'] },     // absent = internal cycle (free)
+    gatewayCustomerIds: {
+      stripe: { type: String },
+      abacatepay: { type: String },
+    },
+    gatewaySubscriptionId: { type: String },
+    cancelAtPeriodEnd: { type: Boolean },
     credits: {
       limit: { type: Number, default: 0 },                        // credits for this cycle
       used: { type: Number, default: 0 },                         // credits consumed this cycle

@@ -33,7 +33,39 @@ async function renewCycleIfExpired(userId: string) {
   }).lean();
 
   const subscription = user?.subscription;
-  if (!user || !subscription || subscription.status !== 'active') return;
+  if (!user || !subscription) return;
+
+  // Paid cycles renew only on a gateway payment webhook — renewing here would hand out
+  // free credits. Exception: sweep canceled+expired to free (AbacatePay has no end event).
+  if (subscription.gateway) {
+    if (
+      subscription.status === 'canceled' &&
+      subscription.currentPeriodEnd &&
+      subscription.currentPeriodEnd < now
+    ) {
+      const freePlan = await PlanModel.findOne({ isDefault: true, active: true }).lean();
+      if (!freePlan) return;
+      await UserModel.updateOne(
+        { _id: user._id, 'subscription.currentPeriodEnd': subscription.currentPeriodEnd },
+        {
+          $set: {
+            plan: freePlan._id,
+            subscription: {
+              status: 'active',
+              gatewayCustomerIds: subscription.gatewayCustomerIds,
+              credits: { limit: freePlan.credits, used: 0 },
+              currentPeriodStart: now,
+              currentPeriodEnd: addDays(now, CYCLE_DAYS),
+              planChangedAt: now,
+            },
+          },
+        },
+      );
+    }
+    return;
+  }
+
+  if (subscription.status !== 'active') return;
   if (!subscription.currentPeriodEnd || subscription.currentPeriodEnd > now) return;
 
   const plan = await PlanModel.findById(user.plan).lean();

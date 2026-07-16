@@ -18,6 +18,15 @@ const planSchema = new Schema<Plan>(
       brl: { type: Number },                             // monthly price; absent = not sellable yet
       usd: { type: Number },
     },
+    gateways: {
+      stripe: {
+        productId: { type: String },
+        priceId: { type: String },
+      },
+      abacatepay: {
+        productId: { type: String },
+      },
+    },
     features: {
       maxFileSize: { type: Number, required: true },     // max upload size in bytes
       maxApiKeys: { type: Number, required: true },      // max active API keys

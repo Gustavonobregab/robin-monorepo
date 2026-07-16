@@ -18,6 +18,8 @@ const { jobRoutes } = await import('./modules/jobs/job.routes');
 const { uploadRoutes } = await import('./modules/upload/upload.routes');
 const { plansRoutes } = await import('./modules/plans/plans.routes');
 const { healthRoutes } = await import('./modules/health/health.routes');
+const { billingRoutes } = await import('./modules/billing/billing.routes');
+const { billingWebhookRoutes } = await import('./modules/billing/billing.webhook.routes');
 const { v1Routes } = await import('./v1/index');
 
 const app = new Elysia()
@@ -73,5 +75,7 @@ const app = new Elysia()
   .use(jobRoutes)
   .use(uploadRoutes)
   .use(plansRoutes)
+  .use(billingRoutes)
+  .use(billingWebhookRoutes)
   .use(v1Routes)
   app.listen(3002);

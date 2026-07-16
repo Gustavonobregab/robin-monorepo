@@ -10,7 +10,9 @@
     "worker": "bun run src/worker/index.ts",
     "seed:plans": "bun run src/scripts/seed-plans.ts",
     "seed:cors": "bun run src/scripts/seed-bucket-cors.ts",
-    "backfill:free": "bun run src/scripts/backfill-free-plan.ts"
+    "backfill:free": "bun run src/scripts/backfill-free-plan.ts",
+    "seed:stripe": "bun run src/scripts/seed-stripe-products.ts",
+    "seed:abacate": "bun run src/scripts/seed-abacate-products.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -27,6 +29,7 @@
     "mongoose": "^8.0.0",
     "pdf-parse": "^2.4.5",
     "sharp": "^0.35.3",
+    "stripe": "^22.3.2",
     "ulidx": "^2.4.1"
   },
   "devDependencies": {

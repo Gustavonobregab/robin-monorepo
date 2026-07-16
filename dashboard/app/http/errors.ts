@@ -22,6 +22,9 @@ export const ERROR_MESSAGES: Record<string, string> = {
   KEY_ALREADY_REVOKED: 'This key was already revoked. Refresh the page.',
   JOB_NOT_FOUND: "We couldn't find that job.",
   UNAUTHORIZED: 'Your session has expired. Sign in again.',
+  PLAN_NOT_SELLABLE: "This plan can't be purchased yet.",
+  ALREADY_SUBSCRIBED: "You're already on this plan.",
+  NO_ACTIVE_SUBSCRIPTION: "There's no paid subscription to cancel.",
   USER_NOT_FOUND: 'Your session has expired. Sign in again.',
 }
 
