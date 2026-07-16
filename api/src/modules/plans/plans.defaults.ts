@@ -30,7 +30,7 @@ export const DEFAULT_PLANS = [
     description: 'For professionals who need more processing power',
     credits: 1000,
     creditWeights: DEFAULT_CREDIT_WEIGHTS,
-    prices: {},
+    prices: { brl: 97, usd: 19 },
     features: { maxFileSize: 100 * MB, maxApiKeys: 5, webhooks: true },
     isPublic: true,
     isDefault: false,
