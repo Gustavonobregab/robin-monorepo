@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Instalado em /opt/robin/repo.git/hooks/post-receive (chmod +x).
+set -euo pipefail
+
+APP=/opt/robin/app
+GIT_DIR=/opt/robin/repo.git
+
+while read -r _old _new ref; do
+  if [ "$ref" = "refs/heads/main" ]; then
+    echo "==> checkout main em $APP"
+    git --work-tree="$APP" --git-dir="$GIT_DIR" checkout -f main
+    echo "==> docker compose up"
+    docker compose -f "$APP/deploy/docker-compose.yml" up -d --build
+    echo "==> deploy ok"
+  fi
+done
