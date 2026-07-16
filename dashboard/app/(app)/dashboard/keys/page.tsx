@@ -245,7 +245,7 @@ export default function KeysPage() {
         {/* Code snippet: the one permitted font-mono exception. */}
         <div className="mt-3 overflow-x-auto rounded-xl bg-black/[0.02] p-4">
           <pre className="font-mono text-[13px] leading-relaxed text-muted-foreground">
-            {`curl https://api.robinwood.dev/v1/upload \\
+            {`curl https://api.robinzip.app/v1/upload \\
   -H "Authorization: Bearer sk_live_..." \\
   -d '{"filename": "episode.mp3", "size": 52428800}'`}
           </pre>

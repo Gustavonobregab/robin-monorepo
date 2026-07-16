@@ -1,4 +1,4 @@
-# Robin Wood API
+# Robin API
 
 API built with Bun and ElysiaJS for managing API keys, usage tracking, and billing.
 
@@ -11,7 +11,7 @@ bun install
 
 2. Set environment variables:
 ```bash
-MONGODB_URI=mongodb://localhost:27017/robin-wood
+MONGODB_URI=mongodb://localhost:27017/robin
 ```
 
 3. Run the development server:

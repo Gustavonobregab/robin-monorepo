@@ -63,7 +63,7 @@ End-to-end — upload a photo, then thumbnail it synchronously:
 
 ```bash End-to-end (sync)
 # 1. Create the upload
-curl -s https://api.robinwood.dev/v1/upload \
+curl -s https://api.robinzip.app/v1/upload \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"filename": "photo.jpg", "size": 2097152}'
@@ -75,14 +75,14 @@ curl -s -X PUT "$UPLOAD_URL" \
   --data-binary @photo.jpg
 
 # 3. Process — small non-AVIF input, so the job returns completed (200)
-curl -s https://api.robinwood.dev/v1/image \
+curl -s https://api.robinzip.app/v1/image \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"imageId": "665f1c2ab8d4e91a2c3d4e5f", "preset": "thumbnail"}'
 ```
 
 ```bash Custom operations, AVIF output (queued)
-curl -s https://api.robinwood.dev/v1/image \
+curl -s https://api.robinzip.app/v1/image \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: hero-banner-v2" \

@@ -15,7 +15,7 @@ export const DEFAULT_PLANS = [
   {
     name: 'Free',
     slug: 'free',
-    description: 'Get started with Robin Wood for free',
+    description: 'Get started with Robin for free',
     credits: 100,
     creditWeights: DEFAULT_CREDIT_WEIGHTS,
     prices: { brl: 0, usd: 0 },

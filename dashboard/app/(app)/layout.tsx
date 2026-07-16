@@ -101,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <AudioLines className="h-[1.05rem] w-[1.05rem]" />
           </div>
           <span className={`flex-1 text-sm font-medium tracking-tight text-foreground ${revealClass}`}>
-            Robin Wood
+            Robin
           </span>
           <button
             onClick={() => setPinned((v) => !v)}

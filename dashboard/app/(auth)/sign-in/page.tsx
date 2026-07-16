@@ -58,7 +58,7 @@ function SignInForm() {
     >
       <div className="space-y-3 text-center">
         <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          Robin Wood
+          Robin
         </span>
         <h1 className="text-2xl font-medium tracking-tight text-foreground">Sign in</h1>
         <p className="text-sm text-muted-foreground">

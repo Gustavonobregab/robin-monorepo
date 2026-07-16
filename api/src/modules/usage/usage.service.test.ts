@@ -24,7 +24,7 @@ const baseEvent = (userId: string, idempotencyKey: string): RecordUsageInput => 
 
 describe.skipIf(!MONGODB_URI)('usageService', () => {
   beforeAll(async () => {
-    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-wood-test' });
+    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-test' });
     await UsageEventModel.deleteMany({});
     await UsageEventModel.init();
   });

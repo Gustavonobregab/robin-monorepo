@@ -69,7 +69,7 @@ Three ways to get a result, in order of preference:
 `GET /v1/jobs` returns newest-first, cursor-paginated:
 
 ```bash
-curl -s "https://api.robinwood.dev/v1/jobs?type=audio&status=completed&limit=20" \
+curl -s "https://api.robinzip.app/v1/jobs?type=audio&status=completed&limit=20" \
   -H "Authorization: Bearer $ROBIN_KEY"
 ```
 
@@ -100,7 +100,7 @@ Pass `nextCursor` back as `cursor` to fetch the next page. `limit` defaults to 2
 `POST /v1/text` and `POST /v1/audio` accept an optional `Idempotency-Key` header (1–255 characters, scoped to your account):
 
 ```bash
-curl -s https://api.robinwood.dev/v1/audio \
+curl -s https://api.robinzip.app/v1/audio \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Idempotency-Key: episode-42" \
   -H "Content-Type: application/json" \

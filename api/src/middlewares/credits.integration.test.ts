@@ -48,7 +48,7 @@ async function createUserWithCredits(limit: number, used = 0) {
 
 describe.skipIf(!MONGODB_URI)('reserveCredits (integration)', () => {
   beforeAll(async () => {
-    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-wood-test' });
+    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-test' });
   });
 
   beforeEach(async () => {

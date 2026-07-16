@@ -24,10 +24,10 @@ for (const plan of plans) {
 
   let productId = plan.gateways?.stripe?.productId;
   if (productId) {
-    await stripe.products.update(productId, { name: `Robin Wood ${plan.name}` });
+    await stripe.products.update(productId, { name: `Robin ${plan.name}` });
   } else {
     const product = await stripe.products.create({
-      name: `Robin Wood ${plan.name}`,
+      name: `Robin ${plan.name}`,
       metadata: { planSlug: plan.slug },
     });
     productId = product.id;

@@ -1,4 +1,4 @@
-# Robin Wood — Monorepo
+# Robin — Monorepo
 
 Compression-as-a-service: audio and text compression jobs behind a dashboard
 and a public API (`/v1`, API-key auth).
@@ -6,7 +6,7 @@ and a public API (`/v1`, API-key auth).
 ## Structure
 
 ```
-robin-wood-api/
+robin-monorepo/
 ├── api/          # Backend — Elysia + Bun (conventions: api/CLAUDE.md)
 ├── dashboard/    # Frontend — Next.js (conventions: dashboard/CLAUDE.md)
 ├── docs-site/    # Public API docs (Mintlify)

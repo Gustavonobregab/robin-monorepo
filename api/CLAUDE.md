@@ -1,4 +1,4 @@
-# Robin Wood — API
+# Robin — API
 
 Bun + Elysia + MongoDB (Mongoose) + Redis (BullMQ) + better-auth. Two surfaces:
 session-cookie routes for the dashboard (mounted in `server.ts`) and the public
@@ -133,7 +133,7 @@ tiers, nothing else:
   (`worker/operations-registry.test.ts` catches a preset referencing a removed
   op at test time instead of failing jobs at runtime).
 - **Integration** (`*.integration.test.ts` or DB-touching tests) — gated with
-  `describe.skipIf(!MONGODB_URI)`, connect to the `robin-wood-test` database,
+  `describe.skipIf(!MONGODB_URI)`, connect to the `robin-test` database,
   clean up in `beforeEach`/`afterAll` (drop the test db). Reserve these for
   invariants that only Mongo can prove: atomic credit reservation under
   concurrency, unique-index idempotency, aggregation results.

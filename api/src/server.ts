@@ -36,7 +36,7 @@ const app = new Elysia()
       path: '/v1/docs',
       documentation: {
         info: {
-          title: 'Robin Wood API',
+          title: 'Robin API',
           version: '1.0.0',
           description:
             'Public API for audio and text compression jobs. Authenticate every /v1 request with an API key: `Authorization: Bearer sk_live_...`. Responses are wrapped as `{ success, data }`.',

@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "robin-wood-api",
+      "name": "robin",
     },
     "api": {
       "name": "api",

@@ -20,7 +20,7 @@ export ROBIN_KEY="sk_live_..."
 Declare the filename and size in bytes. You get back a presigned URL valid for 15 minutes.
 
 ```bash
-curl -s https://api.robinwood.dev/v1/upload \
+curl -s https://api.robinzip.app/v1/upload \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"filename": "episode.mp3", "size": 52428800}'
@@ -56,7 +56,7 @@ curl -s -X PUT "$UPLOAD_URL" \
 Reference the upload `id` as `audioId` and pick the `podcast` preset.
 
 ```bash
-curl -s https://api.robinwood.dev/v1/audio \
+curl -s https://api.robinzip.app/v1/audio \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: episode-42" \
@@ -81,7 +81,7 @@ Credits are reserved now, based on file size (1 credit per started 5 MB for audi
 Pass `?wait=25` to long-poll: the server holds the response until the job finishes (or 25 seconds pass), so you usually need a single call instead of a polling loop.
 
 ```bash
-curl -s "https://api.robinwood.dev/v1/jobs/665f1d00b8d4e91a2c3d4e60?wait=25" \
+curl -s "https://api.robinzip.app/v1/jobs/665f1d00b8d4e91a2c3d4e60?wait=25" \
   -H "Authorization: Bearer $ROBIN_KEY"
 ```
 

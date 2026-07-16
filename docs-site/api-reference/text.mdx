@@ -57,14 +57,14 @@ Compress text with a preset or a custom operation chain. Every request returns a
 ## Examples
 
 ```bash Fast path (inline text)
-curl -s https://api.robinwood.dev/v1/text \
+curl -s https://api.robinzip.app/v1/text \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text": "Hello   world...", "preset": "medium"}'
 ```
 
 ```bash Queued (uploaded PDF)
-curl -s https://api.robinwood.dev/v1/text \
+curl -s https://api.robinzip.app/v1/text \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: report-2026-07" \

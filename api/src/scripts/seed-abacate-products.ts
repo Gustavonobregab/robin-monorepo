@@ -32,7 +32,7 @@ for (const plan of plans) {
     },
     body: JSON.stringify({
       externalId: plan.slug,
-      name: `Robin Wood ${plan.name}`,
+      name: `Robin ${plan.name}`,
       description: plan.description,
       price: Math.round(brl * 100),
       currency: 'BRL',

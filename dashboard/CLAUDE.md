@@ -1,4 +1,4 @@
-# Robin Wood — Dashboard (Frontend)
+# Robin — Dashboard (Frontend)
 
 ## Stack
 

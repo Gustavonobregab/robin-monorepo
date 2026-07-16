@@ -14,7 +14,7 @@ Files are never sent through the API directly. You request a presigned URL, then
 
 ```bash
 # 1. Request URL
-curl -s https://api.robinwood.dev/v1/upload \
+curl -s https://api.robinzip.app/v1/upload \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"filename": "notes.pdf", "size": 1048576}'

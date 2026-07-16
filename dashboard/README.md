@@ -1,6 +1,6 @@
 # Dashboard
 
-Frontend app for Robin Wood. Add your preferred stack (e.g. Vite + React, Next.js) here.
+Frontend app for Robin. Add your preferred stack (e.g. Vite + React, Next.js) here.
 
 ## Scripts
 

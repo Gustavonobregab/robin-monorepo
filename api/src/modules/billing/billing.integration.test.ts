@@ -72,7 +72,7 @@ function activatedEvent(
 describe.skipIf(!MONGODB_URI)('billingService.handleEvent', () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(MONGODB_URI!, { dbName: 'robin-wood-test' });
+      await mongoose.connect(MONGODB_URI!, { dbName: 'robin-test' });
     }
     await BillingEventModel.init(); // ensure the unique index exists
   });

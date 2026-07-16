@@ -13,7 +13,7 @@ const payload = {
 
 describe.skipIf(!MONGODB_URI)('job idempotency index', () => {
   beforeAll(async () => {
-    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-wood-test' });
+    await mongoose.connect(MONGODB_URI!, { dbName: 'robin-test' });
     await JobModel.deleteMany({});
     await JobModel.init();
   });
