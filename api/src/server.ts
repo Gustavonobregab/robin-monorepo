@@ -24,7 +24,7 @@ const { v1Routes } = await import('./v1/index');
 
 const app = new Elysia()
   .use(cors({
-      origin: ['http://localhost:3000', 'http://localhost:3333', 'http://localhost:3002', 'https://robin-dashboard-amber.vercel.app'],
+      origin: ['http://localhost:3000', 'http://localhost:3333', 'http://localhost:3002', 'https://robin-dashboard-amber.vercel.app', 'https://robinzip.app', 'https://www.robinzip.app'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Idempotency-Key'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
