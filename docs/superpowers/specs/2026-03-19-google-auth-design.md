@@ -2,7 +2,7 @@
 
 ## Context
 
-Robin Wood has better-auth configured with Google OAuth provider, MongoDB adapter, and the auth handler mounted at `/api/auth/*`. The auth middleware is stubbed, dashboard sign-in/sign-up pages exist with email/password forms, and the dashboard middleware is a no-op. This spec connects the existing pieces and fixes config issues to create a working Google-only login flow.
+Robin has better-auth configured with Google OAuth provider, MongoDB adapter, and the auth handler mounted at `/api/auth/*`. The auth middleware is stubbed, dashboard sign-in/sign-up pages exist with email/password forms, and the dashboard middleware is a no-op. This spec connects the existing pieces and fixes config issues to create a working Google-only login flow.
 
 ### Decisions Made
 

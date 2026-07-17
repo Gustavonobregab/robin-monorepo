@@ -1,4 +1,4 @@
-# VPS Setup — Robin Wood (MVP)
+# VPS Setup — Robin (MVP)
 
 Data: 2026-07-16
 Alvo: Hostinger KVM2 (VM 1835183), Ubuntu 24.04 + Docker (template 1121), Campinas (DC 22).

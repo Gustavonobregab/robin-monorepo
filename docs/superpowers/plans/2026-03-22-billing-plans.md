@@ -231,7 +231,7 @@ const DEFAULT_PLANS = [
   {
     name: 'Free',
     slug: 'free',
-    description: 'Get started with Robin Wood for free',
+    description: 'Get started with Robin for free',
     credits: 100,
     creditWeights: { text: 1, image: 3, audio: 5, video: 10 },
     features: { maxFileSize: 25 * MB, maxApiKeys: 2, webhooks: false },

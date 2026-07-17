@@ -2,7 +2,7 @@
 
 ## Context
 
-Robin Wood processes audio and text (with image/video planned). Before deciding on a billing model (Free/Pro/Enterprise tiers with per-resource quotas), we need a rich metering layer that records everything that happens — bytes, durations, dimensions, formats, operations — so billing can be built on top without rewriting the metering.
+Robin processes audio and text (with image/video planned). Before deciding on a billing model (Free/Pro/Enterprise tiers with per-resource quotas), we need a rich metering layer that records everything that happens — bytes, durations, dimensions, formats, operations — so billing can be built on top without rewriting the metering.
 
 ### Decisions Made
 

@@ -1,4 +1,4 @@
-# Robin Wood — UI rebuild (ElevenLabs-inspired, black & white)
+# Robin — UI rebuild (ElevenLabs-inspired, black & white)
 
 Design system copied from the ElevenLabs app (measured from the live DOM).
 Colors will be re-themed later — build everything on tokens, never hex.
