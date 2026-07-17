@@ -16,7 +16,7 @@ Create an asynchronous audio compression [job](/concepts/jobs) from an uploaded 
 </ParamField>
 
 <ParamField body="audioId" type="string" required>
-  Id of an [upload](/concepts/uploads) — must be an audio file (`.mp3` or `.wav`).
+  Id of an [upload](/concepts/uploads), must be an audio file (`.mp3` or `.wav`).
 </ParamField>
 
 <ParamField body="preset" type="string">
@@ -35,10 +35,10 @@ Create an asynchronous audio compression [job](/concepts/jobs) from an uploaded 
 
 | Preset | Pipeline | Output |
 | --- | --- | --- |
-| `chill` | trim-silence (0.2) → normalize (-16) | Opus 32k — near-transparent |
-| `medium` | trim-silence (0.5) → normalize (-14) → compress (3:1) | Opus 24k — balanced |
-| `aggressive` | trim-silence (0.8) → speedup (1.75x) → normalize (-10) → compress (8:1) | Opus 12k — max size reduction |
-| `podcast` | trim-silence (0.6) → normalize (-16) → compress (4:1) | Opus 24k — voice-optimized |
+| `chill` | trim-silence (0.2) → normalize (-16) | Opus 32k: near-transparent |
+| `medium` | trim-silence (0.5) → normalize (-14) → compress (3:1) | Opus 24k: balanced |
+| `aggressive` | trim-silence (0.8) → speedup (1.75x) → normalize (-10) → compress (8:1) | Opus 12k: max size reduction |
+| `podcast` | trim-silence (0.6) → normalize (-16) → compress (4:1) | Opus 24k: voice-optimized |
 | `lecture` | trim-silence (0.4) → speedup (1.5x) → normalize (-14) | Opus 16k |
 
 ## Operations
@@ -55,7 +55,7 @@ Encoding rules:
 
 - If your chain has no `encode` operation, one is appended with defaults (Opus, 24 kbps, mono).
 - `encode` always runs last, regardless of where you place it. If several are sent, the last one wins.
-- Output is **`.ogg` (Opus)** by default — best quality per bitrate for voice. Pass `{"type": "encode", "params": {"format": "mp3"}}` for `.mp3` when you need broad compatibility.
+- Output is **`.ogg` (Opus)** by default, the best quality per bitrate for voice. Pass `{"type": "encode", "params": {"format": "mp3"}}` for `.mp3` when you need broad compatibility.
 
 `GET /v1/audio/presets` and `GET /v1/audio/operations` return these definitions as JSON.
 
@@ -99,7 +99,7 @@ curl -s https://api.robinzip.app/v1/audio \
 
 ## Results
 
-Poll `GET /v1/jobs/:id` — ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll — until `status` is `completed`, then download `result.outputUrl` (signed, 1-hour validity, regenerated on every read). Results are retained for 7 days.
+Poll `GET /v1/jobs/:id` (ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll) until `status` is `completed`, then download `result.outputUrl` (signed, 1-hour validity, regenerated on every read). Results are retained for 7 days.
 
 ## Credits
 

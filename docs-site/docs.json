@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Robin",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#4ADE80",
-    "dark": "#15803D"
+    "primary": "#171717",
+    "light": "#FAFAFA",
+    "dark": "#000000"
   },
   "favicon": "/favicon.svg",
   "navigation": {

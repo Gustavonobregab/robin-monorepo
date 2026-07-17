@@ -35,10 +35,10 @@ Retry-After: 23
 
 ## Handling 429s
 
-- Respect `Retry-After` before retrying — the window is fixed, so retrying earlier will fail again.
+- Respect `Retry-After` before retrying; the window is fixed, so retrying earlier will fail again.
 - Job creation is safe to retry with the same [`Idempotency-Key`](/concepts/jobs#idempotency); you won't create duplicates.
 - When polling jobs, prefer intervals of a few seconds (or [webhooks](/concepts/webhooks)) over tight loops.
 
 <Note>
-`INSUFFICIENT_CREDITS` also returns HTTP 429 but is not a rate limit — it means your monthly credit allowance is exhausted. Always branch on `error.code`.
+`INSUFFICIENT_CREDITS` also returns HTTP 429 but is not a rate limit; it means your monthly credit allowance is exhausted. Always branch on `error.code`.
 </Note>

@@ -40,5 +40,5 @@ curl https://api.robinzip.app/v1/jobs \
 Every authenticated response includes an `X-Request-Id` header (`req_<uuid>`). Include it when reporting issues.
 
 <Warning>
-Treat keys as secrets: use them server-side only, never in client-side code, and rotate them if they leak. Rate limits are enforced per key — see [Rate Limits](/concepts/rate-limits).
+Treat keys as secrets: use them server-side only, never in client-side code, and rotate them if they leak. Rate limits are enforced per key; see [Rate Limits](/concepts/rate-limits).
 </Warning>

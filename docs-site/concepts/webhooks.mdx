@@ -9,8 +9,8 @@ Instead of polling, Robin can `POST` to your server when a job finishes. Webhook
 
 Two options, in order of precedence:
 
-1. **Per job** — pass `webhookUrl` in the `POST /v1/text` or `POST /v1/audio` body.
-2. **Account default** — set a default webhook URL in dashboard settings. Used for any job without its own `webhookUrl`.
+1. **Per job**: pass `webhookUrl` in the `POST /v1/text` or `POST /v1/audio` body.
+2. **Account default**: set a default webhook URL in dashboard settings. Used for any job without its own `webhookUrl`.
 
 ## Payload
 
@@ -49,7 +49,7 @@ Request headers:
 
 ## Verifying signatures
 
-Each account has a webhook secret (`whsec_...`), shown in dashboard settings. The signature is an HMAC-SHA256 of the string `"{timestamp}.{body}"` — the timestamp header, a dot, and the **raw** request body.
+Each account has a webhook secret (`whsec_...`), shown in dashboard settings. The signature is an HMAC-SHA256 of the string `"{timestamp}.{body}"`: the timestamp header, a dot, and the **raw** request body.
 
 ```ts
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -72,11 +72,11 @@ function verifyRobinWebhook(rawBody: string, headers: Record<string, string>, se
 }
 ```
 
-Verify against the **raw** body bytes — parsing and re-serializing the JSON will break the signature.
+Verify against the **raw** body bytes; parsing and re-serializing the JSON will break the signature.
 
 ## Delivery and retries
 
 - Your endpoint must respond with a 2xx status within **10 seconds**.
-- Failed deliveries (timeout or non-2xx) are retried up to **5 times** with exponential backoff — the first retry after ~15 seconds, then increasing.
+- Failed deliveries (timeout or non-2xx) are retried up to **5 times** with exponential backoff, the first retry after ~15 seconds, then increasing.
 - Deliveries can arrive out of order or more than once; make your handler idempotent on `job.id` + `event`.
 - Webhook delivery never affects the job itself: the result is persisted and remains fetchable via `GET /v1/jobs/:id` even if every delivery fails.

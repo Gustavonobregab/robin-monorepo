@@ -15,6 +15,7 @@ import {
 import { Dropzone } from '@/app/components/ui/Dropzone'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { PageHeader } from '@/app/components/ui/PageHeader'
+import { PresetPicker } from '@/app/components/ui/PresetPicker'
 import { RetryCard } from '@/app/components/ui/RetryCard'
 import { SearchInput } from '@/app/components/ui/SearchInput'
 import { SegmentedControl } from '@/app/components/ui/SegmentedControl'
@@ -24,7 +25,7 @@ import { Slider } from '@/app/components/ui/Slider'
 import { StatusBadge } from '@/app/components/ui/StatusBadge'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
 import { uploadFile } from '@/app/http/upload'
-import { submitImageJob } from '@/app/http/image'
+import { getImagePresets, submitImageJob } from '@/app/http/image'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { toastApiError, toastSubmitError } from '@/app/http/errors'
 import { formatBytes, randomKey, timeAgo, triggerDownload } from '@/app/lib/utils'
@@ -48,6 +49,7 @@ const DIMENSION_OPTIONS = [
 export default function ImagePage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
+  const [preset, setPreset] = useState<string | null>(null)
   const [format, setFormat] = useState<ImageOutputFormat>('webp')
   const [quality, setQuality] = useState(80)
   const [maxDimension, setMaxDimension] = useState('original')
@@ -64,6 +66,9 @@ export default function ImagePage() {
     mutate: mutateJobs,
   } = useSWR('jobs/image', () => listJobs({ type: 'image', limit: 20 }))
   const jobs = jobsData?.items ?? []
+
+  const { data: presetsData } = useSWR('image/presets', () => getImagePresets())
+  const presets = presetsData?.data ?? []
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
 
@@ -92,14 +97,18 @@ export default function ImagePage() {
     try {
       const { id: imageId } = await uploadFile(file)
 
-      const operations: ImageOperationInput[] = []
-      if (maxDimension !== 'original') {
-        const size = Number(maxDimension)
-        operations.push({ type: 'resize', params: { width: size, height: size, fit: 'inside' } })
+      let submitted: JobView
+      if (preset) {
+        submitted = await submitImageJob({ imageId, preset }, randomKey())
+      } else {
+        const operations: ImageOperationInput[] = []
+        if (maxDimension !== 'original') {
+          const size = Number(maxDimension)
+          operations.push({ type: 'resize', params: { width: size, height: size, fit: 'inside' } })
+        }
+        operations.push({ type: 'encode', params: { format, quality } })
+        submitted = await submitImageJob({ imageId, operations }, randomKey())
       }
-      operations.push({ type: 'encode', params: { format, quality } })
-
-      const submitted = await submitImageJob({ imageId, operations }, randomKey())
 
       if (submitted.status === 'completed') setInstantResult(submitted)
       else setJobId(submitted.id)
@@ -174,38 +183,43 @@ export default function ImagePage() {
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 px-1 pb-1">
-          <SegmentedControl options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
+        <div className="mt-2 flex items-start gap-2 px-1 pb-1">
+          <PresetPicker
+            className="min-w-0 flex-1"
+            presets={presets}
+            value={preset}
+            onChange={setPreset}
+            loading={!presetsData}
+          >
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <SegmentedControl options={FORMAT_OPTIONS} value={format} onChange={setFormat} />
 
-          <div className="flex items-center gap-2 px-2">
-            <span className="text-[13px] font-medium text-muted-foreground">Quality</span>
-            <Slider value={quality} onChange={setQuality} min={1} max={100} className="w-24" />
-            <span className="w-7 text-[13px] font-medium tabular-nums text-foreground">
-              {quality}
-            </span>
-          </div>
+              <div className="flex items-center gap-2 px-2">
+                <span className="text-[13px] font-medium text-muted-foreground">Quality</span>
+                <Slider value={quality} onChange={setQuality} min={1} max={100} className="w-24" />
+                <span className="w-7 text-[13px] font-medium tabular-nums text-foreground">
+                  {quality}
+                </span>
+              </div>
 
-          <InlineSelect
-            value={maxDimension}
-            onValueChange={setMaxDimension}
-            options={DIMENSION_OPTIONS}
-            icon={<Maximize2 className="h-4 w-4 text-muted-foreground" />}
-          />
+              <InlineSelect
+                value={maxDimension}
+                onValueChange={setMaxDimension}
+                options={DIMENSION_OPTIONS}
+                icon={<Maximize2 className="h-4 w-4 text-muted-foreground" />}
+              />
+            </div>
+          </PresetPicker>
 
-          <div className="ml-auto">
-            <Button
-              size="orb"
-              aria-label="Compress image"
-              disabled={!file || busy}
-              onClick={() => void handleSubmit()}
-            >
-              {busy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowUp className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            size="orb"
+            className="shrink-0"
+            aria-label="Compress image"
+            disabled={!file || busy}
+            onClick={() => void handleSubmit()}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+          </Button>
         </div>
 
         {resultMetrics && (

@@ -9,7 +9,7 @@ Files are never sent through the API directly. You request a presigned URL, then
 
 1. `POST /v1/upload` with `{ filename, size }` (size in bytes).
 2. Receive `{ id, uploadUrl, contentType, uploadUrlExpiresIn, expiresAt }`.
-3. `PUT` the raw file bytes to `uploadUrl` with **exactly** the returned `Content-Type` — the presigned signature is bound to it.
+3. `PUT` the raw file bytes to `uploadUrl` with **exactly** the returned `Content-Type`; the presigned signature is bound to it.
 4. Use `id` as `audioId` (audio jobs), `imageId` (image jobs), or `fileId` (text jobs).
 
 ```bash
@@ -46,9 +46,9 @@ The declared `size` is checked against your plan limit when the URL is created. 
 
 Which uploads a job accepts:
 
-- `POST /v1/audio` — `.mp3` and `.wav` only.
-- `POST /v1/image` — `.jpg`, `.jpeg`, `.png`, `.webp` only.
-- `POST /v1/text` (`fileId`) — `.pdf` and `.txt` only.
+- `POST /v1/audio`: `.mp3` and `.wav` only.
+- `POST /v1/image`: `.jpg`, `.jpeg`, `.png`, `.webp` only.
+- `POST /v1/text` (`fileId`): `.pdf` and `.txt` only.
 
 ## Errors
 

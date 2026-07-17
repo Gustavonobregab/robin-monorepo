@@ -3,7 +3,7 @@ title: "Compress text"
 description: "POST /v1/text"
 ---
 
-Compress text with a preset or a custom operation chain. Every request returns a [job](/concepts/jobs) — always the same shape. Small inline inputs are processed inline and the job comes back already `completed` (HTTP **200**, result included); everything else is queued (HTTP **202**) and finishes asynchronously.
+Compress text with a preset or a custom operation chain. Every request returns a [job](/concepts/jobs), always the same shape. Small inline inputs are processed inline and the job comes back already `completed` (HTTP **200**, result included); everything else is queued (HTTP **202**) and finishes asynchronously.
 
 **Fast-path eligibility:** inline `text` of at most **50 KB** (UTF-8) with no `webhookUrl`. Everything else is queued.
 
@@ -14,7 +14,7 @@ Compress text with a preset or a custom operation chain. Every request returns a
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional, 1–255 characters. Returns the existing job if a job with this key was already created. Applies to queued jobs only — fast-path jobs complete inline and are not deduplicated.
+  Optional, 1–255 characters. Returns the existing job if a job with this key was already created. Applies to queued jobs only; fast-path jobs complete inline and are not deduplicated.
 </ParamField>
 
 <ParamField body="text" type="string">
@@ -22,7 +22,7 @@ Compress text with a preset or a custom operation chain. Every request returns a
 </ParamField>
 
 <ParamField body="fileId" type="string">
-  Id of an [upload](/concepts/uploads) — `.pdf` or `.txt` only.
+  Id of an [upload](/concepts/uploads), `.pdf` or `.txt` only.
 </ParamField>
 
 <ParamField body="preset" type="string">
@@ -41,16 +41,16 @@ Compress text with a preset or a custom operation chain. Every request returns a
 
 | Preset | Operations |
 | --- | --- |
-| `chill` | `trim` (intensity 30) — light whitespace cleanup |
-| `medium` | `trim` (intensity 70) — full whitespace, punctuation, and unicode normalization |
+| `chill` | `trim` (intensity 30): light whitespace cleanup |
+| `medium` | `trim` (intensity 70): full whitespace, punctuation, and unicode normalization |
 | `aggressive` | `trim` (intensity 80) + `json-to-toon` |
 
 ## Operations
 
 | Type | Params | Description |
 | --- | --- | --- |
-| `trim` | `intensity` (0–100, default 50) | Whitespace, punctuation and unicode cleanup — lossless for meaning |
-| `json-to-toon` | — | Convert large JSON blocks to TOON tabular notation (skips blocks too small to benefit) |
+| `trim` | `intensity` (0–100, default 50) | Whitespace, punctuation and unicode cleanup, lossless for meaning |
+| `json-to-toon` | None | Convert large JSON blocks to TOON tabular notation (skips blocks too small to benefit) |
 
 `GET /v1/text/presets` and `GET /v1/text/operations` return these definitions as JSON.
 
@@ -73,7 +73,7 @@ curl -s https://api.robinzip.app/v1/text \
 
 <ResponseExample>
 
-```json 200 — completed (fast path)
+```json 200: completed (fast path)
 {
   "success": true,
   "data": {
@@ -93,7 +93,7 @@ curl -s https://api.robinzip.app/v1/text \
 }
 ```
 
-```json 202 — queued
+```json 202: queued
 {
   "success": true,
   "data": {
@@ -107,7 +107,7 @@ curl -s https://api.robinzip.app/v1/text \
 
 ## Results
 
-One code path handles both: check `status`. If it's `completed`, the result is already in the response. Otherwise poll `GET /v1/jobs/:id` — ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll — or wait for the webhook.
+One code path handles both: check `status`. If it's `completed`, the result is already in the response. Otherwise poll `GET /v1/jobs/:id` (ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll) or wait for the webhook.
 
 Jobs created from inline `text` return `result.outputText`; jobs created from a `fileId` return `result.outputUrl` pointing to a `.txt` file. PDFs have their text extracted before processing.
 

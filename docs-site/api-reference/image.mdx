@@ -3,9 +3,9 @@ title: "Compress images"
 description: "POST /v1/image"
 ---
 
-Compress an uploaded image (`.jpg`, `.jpeg`, `.png`, `.webp`) with a preset or a custom operation chain. Every request returns a [job](/concepts/jobs) — always the same shape. Small images are processed inline and the job comes back already `completed` (HTTP **200**, result included); everything else is queued (HTTP **202**) and finishes asynchronously.
+Compress an uploaded image (`.jpg`, `.jpeg`, `.png`, `.webp`) with a preset or a custom operation chain. Every request returns a [job](/concepts/jobs), always the same shape. Small images are processed inline and the job comes back already `completed` (HTTP **200**, result included); everything else is queued (HTTP **202**) and finishes asynchronously.
 
-**Sync eligibility:** input of at most **5 MB**, output format not AVIF, and no `webhookUrl`. Everything else is queued — AVIF always queues.
+**Sync eligibility:** input of at most **5 MB**, output format not AVIF, and no `webhookUrl`. Everything else is queued; AVIF always queues.
 
 ## Request
 
@@ -14,11 +14,11 @@ Compress an uploaded image (`.jpg`, `.jpeg`, `.png`, `.webp`) with a preset or a
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional, 1–255 characters. Returns the existing job if a job with this key was already created. Applies to queued jobs only — sync jobs complete inline and are not deduplicated.
+  Optional, 1–255 characters. Returns the existing job if a job with this key was already created. Applies to queued jobs only; sync jobs complete inline and are not deduplicated.
 </ParamField>
 
 <ParamField body="imageId" type="string" required>
-  Id of an [upload](/concepts/uploads) — must be an image file (`.jpg`, `.jpeg`, `.png`, `.webp`).
+  Id of an [upload](/concepts/uploads), must be an image file (`.jpg`, `.jpeg`, `.png`, `.webp`).
 </ParamField>
 
 <ParamField body="preset" type="string">
@@ -37,17 +37,17 @@ Compress an uploaded image (`.jpg`, `.jpeg`, `.png`, `.webp`) with a preset or a
 
 | Preset | Pipeline | Output |
 | --- | --- | --- |
-| `chill` | encode (quality 85) | WebP — original dimensions, near-lossless |
-| `medium` | resize (2560px, inside) → encode (quality 80) | WebP — balanced |
-| `aggressive` | resize (2048px, inside) → encode (quality 50, effort 2) | AVIF — maximum savings, always queued |
-| `thumbnail` | resize (512×512, cover, attention) → encode (quality 75) | WebP — smart-cropped thumbnail |
+| `chill` | encode (quality 85) | WebP: original dimensions, near-lossless |
+| `medium` | resize (2560px, inside) → encode (quality 80) | WebP: balanced |
+| `aggressive` | resize (2048px, inside) → encode (quality 50, effort 2) | AVIF: maximum savings, always queued |
+| `thumbnail` | resize (512×512, cover, attention) → encode (quality 75) | WebP: smart-cropped thumbnail |
 
 ## Operations
 
 | Type | Params (defaults) | Description |
 | --- | --- | --- |
-| `resize` | `width` 16–8192, `height` 16–8192, `fit` `inside`\|`cover`\|`contain` (inside), `position` `centre`\|`attention`\|`entropy` (centre) | Fit within width/height, or crop with `fit: cover` — `position: attention` smart-crops toward the most interesting region |
-| `encode` | `format` `webp`\|`avif`\|`jpeg`\|`png` (webp), `quality` 1–100 (80), `effort` 0–9 (4) | Output encoding — WebP by default (universal support), AVIF for maximum compression (queued) |
+| `resize` | `width` 16–8192, `height` 16–8192, `fit` `inside`\|`cover`\|`contain` (inside), `position` `centre`\|`attention`\|`entropy` (centre) | Fit within width/height, or crop with `fit: cover`; `position: attention` smart-crops toward the most interesting region |
+| `encode` | `format` `webp`\|`avif`\|`jpeg`\|`png` (webp), `quality` 1–100 (80), `effort` 0–9 (4) | Output encoding: WebP by default (universal support), AVIF for maximum compression (queued) |
 
 Encoding rules:
 
@@ -59,7 +59,7 @@ Encoding rules:
 
 ## Examples
 
-End-to-end — upload a photo, then thumbnail it synchronously:
+End-to-end: upload a photo, then thumbnail it synchronously:
 
 ```bash End-to-end (sync)
 # 1. Create the upload
@@ -74,7 +74,7 @@ curl -s -X PUT "$UPLOAD_URL" \
   -H "Content-Type: image/jpeg" \
   --data-binary @photo.jpg
 
-# 3. Process — small non-AVIF input, so the job returns completed (200)
+# 3. Process: small non-AVIF input, so the job returns completed (200)
 curl -s https://api.robinzip.app/v1/image \
   -H "Authorization: Bearer $ROBIN_KEY" \
   -H "Content-Type: application/json" \
@@ -97,7 +97,7 @@ curl -s https://api.robinzip.app/v1/image \
 
 <ResponseExample>
 
-```json 200 — completed (sync)
+```json 200: completed (sync)
 {
   "success": true,
   "data": {
@@ -117,7 +117,7 @@ curl -s https://api.robinzip.app/v1/image \
 }
 ```
 
-```json 202 — queued
+```json 202: queued
 {
   "success": true,
   "data": {
@@ -131,9 +131,9 @@ curl -s https://api.robinzip.app/v1/image \
 
 ## Results
 
-One code path handles both: check `status`. If it's `completed`, the result is already in the response. Otherwise poll `GET /v1/jobs/:id` — ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll — or wait for the webhook.
+One code path handles both: check `status`. If it's `completed`, the result is already in the response. Otherwise poll `GET /v1/jobs/:id` (ideally with [`?wait=25`](/api-reference/jobs-get) to long-poll) or wait for the webhook.
 
-`result.outputUrl` is a signed download URL, freshly generated on every read and valid for 1 hour — re-fetch the job for a new one. Results are retained for 7 days.
+`result.outputUrl` is a signed download URL, freshly generated on every read and valid for 1 hour; re-fetch the job for a new one. Results are retained for 7 days.
 
 ## Credits
 

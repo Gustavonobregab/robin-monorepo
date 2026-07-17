@@ -16,13 +16,13 @@ Request a presigned URL to upload a file. See [Uploads](/concepts/uploads) for t
 </ParamField>
 
 <ParamField body="size" type="number" required>
-  File size in bytes (minimum 1). Checked against your plan limit — 25 MB on Free, 100 MB on Pro. The actual size is re-verified when the upload is consumed.
+  File size in bytes (minimum 1). Checked against your plan limit: 25 MB on Free, 100 MB on Pro. The actual size is re-verified when the upload is consumed.
 </ParamField>
 
 ## Response
 
 <ResponseField name="id" type="string">
-  Upload id — pass as `audioId` (audio jobs), `imageId` (image jobs), or `fileId` (text jobs).
+  Upload id, pass as `audioId` (audio jobs), `imageId` (image jobs), or `fileId` (text jobs).
 </ResponseField>
 
 <ResponseField name="uploadUrl" type="string">

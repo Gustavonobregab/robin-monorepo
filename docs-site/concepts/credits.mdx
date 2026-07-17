@@ -3,7 +3,7 @@ title: "Credits"
 description: "How usage is metered and billed"
 ---
 
-Every processing request consumes credits from your monthly allowance. Credits are **size-based** — cost depends only on input size, not on which operations you run.
+Every processing request consumes credits from your monthly allowance. Credits are **size-based**: cost depends only on input size, not on which operations you run.
 
 ## Rates
 
@@ -44,8 +44,8 @@ When a request would exceed your cycle limit:
 }
 ```
 
-This returns HTTP 429 — distinguish it from rate limiting by the `code` field.
+This returns HTTP 429; distinguish it from rate limiting by the `code` field.
 
 ## Tracking usage
 
-`GET /v1/usage/current` returns per-pipeline totals for the current billing period — see [Usage](/api-reference/usage). The dashboard shows remaining credits in real time.
+`GET /v1/usage/current` returns per-pipeline totals for the current billing period; see [Usage](/api-reference/usage). The dashboard shows remaining credits in real time.

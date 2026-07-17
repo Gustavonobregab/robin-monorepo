@@ -11,13 +11,14 @@ import {
   Loader2,
   MoreHorizontal,
   Paperclip,
-  SlidersHorizontal,
   X,
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { PageHeader } from '@/app/components/ui/PageHeader'
-import { InlineSelect } from '@/app/components/ui/Select'
+import { PresetPicker } from '@/app/components/ui/PresetPicker'
+import { Slider } from '@/app/components/ui/Slider'
+import { Switch } from '@/app/components/ui/Switch'
 import { Skeleton } from '@/app/components/ui/Skeleton'
 import { EmptyState } from '@/app/components/ui/EmptyState'
 import { RetryCard } from '@/app/components/ui/RetryCard'
@@ -29,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/app/components/ui/DropdownMenu'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
-import { submitTextJob } from '@/app/http/text'
+import { getTextPresets, submitTextJob } from '@/app/http/text'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { toastApiError, toastSubmitError } from '@/app/http/errors'
@@ -43,14 +44,8 @@ import {
   timeAgo,
   triggerDownload,
 } from '@/app/lib/utils'
-import type { JobListItem, JobMetrics, JobView, SubmitTextJobInput, TextPreset } from '@/types'
+import type { JobListItem, JobMetrics, JobView, SubmitTextJobInput, TextOperationInput, TextPreset } from '@/types'
 
-/* Intensity options map 1:1 to the API's text presets (chill/medium/aggressive). */
-const INTENSITY_OPTIONS: { value: TextPreset; label: string; hint: string }[] = [
-  { value: 'chill', label: 'Light', hint: 'Light cleanup, trims whitespace' },
-  { value: 'medium', label: 'Balanced', hint: 'Whitespace, punctuation and unicode cleanup' },
-  { value: 'aggressive', label: 'Aggressive', hint: 'Full cleanup, JSON converted to TOON' },
-]
 
 function SizeDelta({ metrics, className }: { metrics: JobMetrics; className?: string }) {
   const saved = savedPercent(metrics.inputSize, metrics.outputSize)
@@ -68,13 +63,18 @@ export default function TextPage() {
 
   const [text, setText] = useState('')
   const [file, setFile] = useState<File | null>(null)
-  const [preset, setPreset] = useState<TextPreset>('medium')
+  const [preset, setPreset] = useState<string | null>(null)
+  const [intensity, setIntensity] = useState(50)
+  const [jsonToToon, setJsonToToon] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [instantResult, setInstantResult] = useState<JobView['result'] | null>(null)
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
+
+  const { data: presetsData } = useSWR('text/presets', () => getTextPresets())
+  const presets = presetsData?.data ?? []
 
   const {
     data: jobList,
@@ -112,7 +112,15 @@ export default function TextPage() {
         fileId = upload.id
       }
 
-      const input: SubmitTextJobInput = fileId ? { fileId, preset } : { text, preset }
+      const source = fileId ? { fileId } : { text }
+      let input: SubmitTextJobInput
+      if (preset) {
+        input = { ...source, preset: preset as TextPreset }
+      } else {
+        const operations: TextOperationInput[] = [{ type: 'trim', params: { intensity } }]
+        if (jsonToToon) operations.push({ type: 'json-to-toon' })
+        input = { ...source, operations }
+      }
       const submitted = await submitTextJob(input, randomKey())
 
       if (submitted.status === 'completed' && submitted.result) {
@@ -200,6 +208,28 @@ export default function TextPage() {
           />
         )}
 
+        <PresetPicker
+          className="px-1 pt-3"
+          presets={presets}
+          value={preset}
+          onChange={setPreset}
+          loading={!presetsData}
+        >
+          <div className="flex flex-wrap items-center gap-4 pt-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-medium text-muted-foreground">Cleanup intensity</span>
+              <Slider value={intensity} onChange={setIntensity} min={0} max={100} className="w-24" />
+              <span className="w-7 text-[13px] font-medium tabular-nums text-foreground">
+                {intensity}
+              </span>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2">
+              <Switch checked={jsonToToon} onCheckedChange={setJsonToToon} />
+              <span className="text-[13px] font-medium text-muted-foreground">JSON to TOON</span>
+            </label>
+          </div>
+        </PresetPicker>
+
         <div className="flex items-center gap-1 px-1 pb-1 pt-2">
           <input
             ref={fileInputRef}
@@ -217,12 +247,6 @@ export default function TextPage() {
             Upload .txt
           </Button>
 
-          <InlineSelect
-            value={preset}
-            onValueChange={(v) => setPreset(v as TextPreset)}
-            options={INTENSITY_OPTIONS}
-            icon={<SlidersHorizontal className="h-4 w-4 text-muted-foreground" />}
-          />
 
           <div className="ml-auto flex items-center gap-3">
             {!file && (

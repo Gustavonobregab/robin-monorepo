@@ -16,13 +16,16 @@ import {
   Settings,
   PanelLeft,
   Sparkles,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
 import { AssistantPanel } from '@/app/components/assistant/AssistantPanel'
 import { useSession } from '@/app/lib/auth-client'
 
-type NavItem = { label: string; href: string; icon: LucideIcon }
+const DOCS_URL = 'https://docs.robinzip.app'
+
+type NavItem = { label: string; href: string; icon: LucideIcon; external?: boolean }
 type NavGroup = { label?: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
@@ -52,6 +55,9 @@ const NAV: NavGroup[] = [
       { label: 'Settings', href: '/dashboard/account', icon: Settings },
     ],
   },
+  {
+    items: [{ label: 'Docs', href: DOCS_URL, icon: BookOpen, external: true }],
+  },
 ]
 
 /* Label that fades + slides in when the sidebar expands. */
@@ -59,11 +65,13 @@ const revealClass =
   'whitespace-nowrap opacity-0 -translate-x-1 transition-all duration-150 group-aria-expanded/sidebar:opacity-100 group-aria-expanded/sidebar:translate-x-0'
 
 function NavRow({ item, active }: { item: NavItem; active: boolean }) {
-  const { icon: Icon, label, href } = item
+  const { icon: Icon, label, href, external } = item
   return (
     <Link
       href={href}
       title={label}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
       className={`flex h-9 items-center gap-3 rounded-lg px-[0.7rem] text-sm transition-colors ${
         active
           ? 'bg-secondary font-medium text-foreground'

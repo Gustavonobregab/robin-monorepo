@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
-import { Chip } from '@/app/components/ui/Chip'
+import { PresetPicker } from '@/app/components/ui/PresetPicker'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,7 +108,7 @@ function buildOperations(s: EncodeSettings): AudioOperationInput[] {
 export default function AudioPage() {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
-  const [preset, setPreset] = useState<AudioPreset | null>('medium')
+  const [preset, setPreset] = useState<AudioPreset | null>(null)
   const [settings, setSettings] = useState<EncodeSettings>(PRESET_SETTINGS.medium)
   const [jobId, setJobId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -134,8 +134,6 @@ export default function AudioPage() {
 
   const presets = presetsData?.data ?? []
   const busy = submitting || isPolling
-
-  const activePresetDef = presets.find((p) => p.id === preset)
 
   const creditsEstimate = useMemo(() => {
     if (!file) return null
@@ -163,18 +161,12 @@ export default function AudioPage() {
 
   const noJobs = (jobsData?.items ?? []).length === 0
 
-  function applyPreset(id: string) {
-    if (preset === id) {
-      setPreset(null)
-      return
-    }
-    const next = id as AudioPreset
-    setPreset(next)
-    setSettings(PRESET_SETTINGS[next])
+  function applyPreset(id: string | null) {
+    setPreset(id as AudioPreset | null)
+    if (id) setSettings(PRESET_SETTINGS[id as AudioPreset])
   }
 
   function updateSettings(patch: Partial<EncodeSettings>) {
-    setPreset(null)
     setSettings((s) => ({ ...s, ...patch }))
   }
 
@@ -246,24 +238,6 @@ export default function AudioPage() {
         description="Shrink audio files with tuned presets or custom encoding."
       />
 
-      {/* Preset chips */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {presetsData
-            ? presets.map((p) => (
-                <Chip key={p.id} active={preset === p.id} onClick={() => applyPreset(p.id)}>
-                  {p.name}
-                </Chip>
-              ))
-            : !presetsError &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-24 rounded-lg" />
-              ))}
-        </div>
-        {activePresetDef && (
-          <p className="text-[13px] text-muted-foreground">{activePresetDef.description}</p>
-        )}
-      </div>
 
       {/* Composer */}
       <Dropzone
@@ -295,7 +269,15 @@ export default function AudioPage() {
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-1 px-1 pb-1">
+        <div className="mt-2 flex items-start gap-2 px-1 pb-1">
+          <PresetPicker
+            className="min-w-0 flex-1"
+            presets={presets}
+            value={preset}
+            onChange={applyPreset}
+            loading={!presetsData && !presetsError}
+          >
+          <div className="flex flex-wrap items-center gap-1 pt-1">
           <InlineSelect
             icon={<AudioLines className="h-4 w-4 text-muted-foreground" />}
             value={settings.format}
@@ -327,8 +309,10 @@ export default function AudioPage() {
               className="w-28"
             />
           </div>
+          </div>
+          </PresetPicker>
 
-          <div className="ml-auto flex items-center gap-3 pl-2">
+          <div className="flex shrink-0 items-center gap-3 pl-2">
             {creditsEstimate !== null && (
               <span className="text-[13px] text-muted-foreground">
                 ~{creditsEstimate} credits

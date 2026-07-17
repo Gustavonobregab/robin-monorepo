@@ -6,6 +6,8 @@ import { animate } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
 
+const DOCS_URL = 'https://docs.robinzip.app'
+
 const HEADLINE: { text: string; keep?: boolean }[] = [
   { text: 'Compress ', keep: true },
   { text: 'every file, ' },
@@ -210,8 +212,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <span className="text-[15px] font-semibold tracking-tight">Robin</span>
+      <header className="mx-auto flex max-w-6xl items-center justify-end px-6 py-5">
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
           <a href="#how" className="transition-colors hover:text-foreground">
             How it works
@@ -221,6 +222,14 @@ export default function LandingPage() {
           </a>
           <a href="#pricing" className="transition-colors hover:text-foreground">
             Pricing
+          </a>
+          <a
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            Docs
           </a>
         </nav>
         <div className="flex items-center gap-2">
@@ -476,6 +485,14 @@ export default function LandingPage() {
             </a>
             <a href="#pricing" className="transition-colors hover:text-foreground">
               Pricing
+            </a>
+            <a
+              href={DOCS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              Docs
             </a>
           </div>
         </div>

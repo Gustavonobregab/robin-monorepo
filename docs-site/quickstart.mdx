@@ -8,7 +8,7 @@ This walkthrough uploads an MP3, processes it with the `podcast` preset, and dow
 <Steps>
 <Step title="Create an API key">
 
-Create a key in the dashboard under **Settings → API Keys**. The full key (`sk_live_...`) is shown once — copy it immediately; only a hash is stored.
+Create a key in the dashboard under **Settings → API Keys**. The full key (`sk_live_...`) is shown once; copy it immediately, since only a hash is stored.
 
 ```bash
 export ROBIN_KEY="sk_live_..."
@@ -42,7 +42,7 @@ curl -s https://api.robinzip.app/v1/upload \
 </Step>
 <Step title="PUT the file to the upload URL">
 
-Use exactly the `contentType` returned in the previous step — the signature is bound to it.
+Use exactly the `contentType` returned in the previous step: the signature is bound to it.
 
 ```bash
 curl -s -X PUT "$UPLOAD_URL" \
@@ -117,4 +117,4 @@ curl -s -o episode.ogg "$OUTPUT_URL"
 </Step>
 </Steps>
 
-Prefer a push model over polling? Add a `webhookUrl` to the job body — see [Webhooks](/concepts/webhooks).
+Prefer a push model over polling? Add a `webhookUrl` to the job body; see [Webhooks](/concepts/webhooks).

@@ -3,7 +3,7 @@ title: "Jobs"
 description: "Lifecycle, polling, results, and idempotency"
 ---
 
-Everything returns a job. `POST /v1/text` and `POST /v1/audio` always respond with the same object — `{ id, status, error?, result? }` — regardless of input size:
+Everything returns a job. `POST /v1/text` and `POST /v1/audio` always respond with the same object (`{ id, status, error?, result? }`) regardless of input size:
 
 - **Small inline text (≤ 50 KB, no `webhookUrl`)** is processed inline: HTTP **200**, the job arrives already `completed` with `result` populated, and it appears in your job history like any other.
 - **Everything else** is queued: HTTP **202 Accepted** with `{ id, status: "created" }`, and the job finishes asynchronously.
@@ -22,8 +22,8 @@ created → pending → processing → completed
 | `created` | Job accepted and enqueued |
 | `processing` | A worker is running the operation pipeline |
 | `pending` | A processing attempt failed; the job is waiting to be retried |
-| `completed` | Done — `result` is populated |
-| `failed` | All attempts exhausted — `error` is populated, credits refunded |
+| `completed` | Done, `result` is populated |
+| `failed` | All attempts exhausted, `error` is populated, credits refunded |
 
 Processing is retried up to 3 times with exponential backoff before a job is marked `failed`. Fast-path text jobs skip the queue entirely and are born `completed`.
 
@@ -33,9 +33,9 @@ Three ways to get a result, in order of preference:
 
 | Mode | How | Use when |
 | --- | --- | --- |
-| Immediate | Read `result` straight off the `POST` response | Inline text ≤ 50 KB — nothing else to do |
-| Long-poll | `GET /v1/jobs/:id?wait=25` | Everything else — the server holds the response until the job finishes or the timeout passes, so a typical job takes 1–2 calls instead of a polling loop. Each request counts against your rate limit, so `wait` saves quota too. See [Get a job](/api-reference/jobs-get). |
-| Webhooks | Pass `webhookUrl` at creation | High volume or long-running jobs where you don't want an open connection — see [Webhooks](/concepts/webhooks) |
+| Immediate | Read `result` straight off the `POST` response | Inline text ≤ 50 KB, nothing else to do |
+| Long-poll | `GET /v1/jobs/:id?wait=25` | Everything else: the server holds the response until the job finishes or the timeout passes, so a typical job takes 1–2 calls instead of a polling loop. Each request counts against your rate limit, so `wait` saves quota too. See [Get a job](/api-reference/jobs-get). |
+| Webhooks | Pass `webhookUrl` at creation | High volume or long-running jobs where you don't want an open connection; see [Webhooks](/concepts/webhooks) |
 
 ## Results
 
@@ -60,9 +60,9 @@ Three ways to get a result, in order of preference:
 }
 ```
 
-- **`outputUrl`** — file outputs. A fresh signed URL is generated on every read and is valid for 1 hour; just re-fetch the job to get a new one. Audio outputs are `.ogg` (Opus) by default, or `.mp3` if you opted in via the `encode` operation. Text jobs created from a `fileId` output a `.txt` file.
-- **`outputText`** — inline output, returned for text jobs whose input was inline `text`.
-- **Retention** — results are available for **7 days** after completion.
+- **`outputUrl`**: file outputs. A fresh signed URL is generated on every read and is valid for 1 hour; just re-fetch the job to get a new one. Audio outputs are `.ogg` (Opus) by default, or `.mp3` if you opted in via the `encode` operation. Text jobs created from a `fileId` output a `.txt` file.
+- **`outputText`**: inline output, returned for text jobs whose input was inline `text`.
+- **Retention**: results are available for **7 days** after completion.
 
 ## Listing jobs
 
@@ -97,7 +97,7 @@ Pass `nextCursor` back as `cursor` to fetch the next page. `limit` defaults to 2
 
 ## Idempotency
 
-`POST /v1/text` and `POST /v1/audio` accept an optional `Idempotency-Key` header (1–255 characters, scoped to your account):
+`POST /v1/text`, `POST /v1/audio`, and `POST /v1/image` accept an optional `Idempotency-Key` header (1–255 characters, scoped to your account):
 
 ```bash
 curl -s https://api.robinzip.app/v1/audio \
