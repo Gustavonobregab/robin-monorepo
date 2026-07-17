@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     const res = await fetch(
-      `${request.nextUrl.origin}/api/auth/get-session`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/get-session`,
       {
         headers: {
           cookie: request.headers.get('cookie') || '',

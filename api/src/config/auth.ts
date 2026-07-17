@@ -25,6 +25,10 @@ export const auth = betterAuth({
       sameSite: 'lax',
       secure: true,
     },
+    // prod: dashboard (robinzip.app) e api (api.robinzip.app) precisam ver a mesma sessão
+    ...(process.env.NODE_ENV === 'production' && {
+      crossSubDomainCookies: { enabled: true, domain: '.robinzip.app' },
+    }),
   },
   socialProviders: {
     google: {
