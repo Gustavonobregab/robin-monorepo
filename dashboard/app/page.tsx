@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { animate } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
@@ -115,6 +116,53 @@ function Media({ className = '' }: { className?: string }) {
   return <div className={`rounded-2xl bg-black/[0.04] ${className}`} aria-hidden />
 }
 
+function Vignette({ className = '', children }: { className?: string; children: ReactNode }) {
+  return (
+    <div aria-hidden className={`relative overflow-hidden rounded-2xl bg-black/[0.03] ${className}`}>
+      {children}
+    </div>
+  )
+}
+
+function DashboardVisual() {
+  return (
+    <div className="absolute inset-x-8 bottom-0 top-7 overflow-hidden rounded-t-xl border border-b-0 border-black/[0.07] bg-background">
+      <div className="flex items-center gap-1.5 border-b border-black/[0.05] px-3.5 py-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-black/10" />
+        <span className="h-1.5 w-1.5 rounded-full bg-black/10" />
+        <span className="h-1.5 w-1.5 rounded-full bg-black/10" />
+        <span className="ml-2 rounded-full bg-black/[0.04] px-2.5 py-0.5 text-[9px] text-muted-foreground">
+          robinzip.app
+        </span>
+      </div>
+      <div className="space-y-2 p-3.5">
+        <div className="rounded-lg border border-dashed border-black/10 py-4 text-center text-[10px] text-muted-foreground">
+          Drop a file to compress
+        </div>
+        <div className="flex items-center justify-between rounded-lg bg-black/[0.03] px-3 py-2 text-[10px]">
+          <span className="font-mono text-foreground/70">keynote.mp3</span>
+          <span className="text-muted-foreground">
+            <s className="mr-1.5">31 MB</s>
+            <span className="font-medium text-foreground">2.2 MB</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ApiVisual() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <pre className="font-mono text-[11px] leading-[1.9] text-muted-foreground">
+        {'curl api.robinzip.app/v1/audio\n  -H "Authorization: Bearer rb_live_a1f0"\n  -F "preset=voice"\n'}
+        <span className="font-medium text-foreground">201</span>
+        {'  "savings": "93%"'}
+      </pre>
+    </div>
+  )
+}
+
 const STEPS = [
   {
     title: 'Upload',
@@ -140,13 +188,6 @@ const WORKFLOWS = [
   'Optimize images',
   'Archive audio',
   'Automate pipelines',
-]
-
-const CAROUSEL = [
-  { title: 'Batch jobs', copy: 'Queue thousands of files, let the workers grind.' },
-  { title: 'Presets', copy: 'One name, a whole encoding strategy behind it.' },
-  { title: 'Webhooks', copy: 'HMAC-signed delivery when every job completes.' },
-  { title: 'Usage analytics', copy: 'Credits, savings, and volume, per key and per month.' },
 ]
 
 const AUDIENCES = [
@@ -177,6 +218,7 @@ const SURFACES = [
     copy: 'Upload, pick a preset, download. Track credits, savings, and job history from one place.',
     href: '/dashboard/home',
     label: 'Open the dashboard',
+    Visual: DashboardVisual,
   },
   {
     name: 'API',
@@ -184,6 +226,150 @@ const SURFACES = [
     copy: 'Bearer keys, idempotency, long-polling, webhooks. Built to sit quietly inside your pipeline.',
     href: '/dashboard/keys',
     label: 'Get an API key',
+    Visual: ApiVisual,
+  },
+]
+
+function GridLine({ position }: { position: 'top' | 'bottom' }) {
+  return (
+    <div
+      className={`absolute ${position === 'top' ? 'top-0' : 'bottom-0'} left-1/2 h-px w-screen -translate-x-1/2 bg-black/[0.05]`}
+    />
+  )
+}
+
+function RowDots({ position, center = true }: { position: 'top' | 'bottom'; center?: boolean }) {
+  const y = position === 'top' ? '-top-[2.5px]' : '-bottom-[2.5px]'
+  return (
+    <>
+      <span className={`absolute -left-6 ${y} h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-foreground/25`} />
+      {center && (
+        <span
+          className={`absolute left-1/2 ${y} hidden h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-foreground/25 md:block`}
+        />
+      )}
+      <span className={`absolute -right-6 ${y} h-[5px] w-[5px] translate-x-1/2 rounded-full bg-foreground/25`} />
+    </>
+  )
+}
+
+/* syntax colors lifted from the elevenlabs code sample */
+const Kw = ({ children }: { children: ReactNode }) => <span style={{ color: '#F41A2F' }}>{children}</span>
+const Id = ({ children }: { children: ReactNode }) => <span style={{ color: '#0A59D2' }}>{children}</span>
+const Str = ({ children }: { children: ReactNode }) => <span style={{ color: '#052F70' }}>{children}</span>
+
+function ApiCode({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex w-full overflow-x-auto rounded-3xl py-6 [scrollbar-width:none]">
+      <div className="sticky left-0 w-6 flex-none bg-gradient-to-r from-background to-transparent" />
+      <pre
+        className="font-mono text-[11px] leading-[1.375rem] text-foreground"
+        style={{ fontVariantLigatures: 'none' }}
+      >
+        <code>{children}</code>
+      </pre>
+      <div className="sticky right-0 ml-12 w-6 flex-none bg-gradient-to-l from-background to-transparent" />
+    </div>
+  )
+}
+
+function TokenDiff() {
+  return (
+    <div className="w-full space-y-6">
+      <div>
+        <div className="flex justify-between text-[12px]">
+          <span className="text-muted-foreground">Raw prompt</span>
+          <span className="text-muted-foreground">12,400 tokens</span>
+        </div>
+        <div className="mt-2.5 h-2 w-full rounded-full bg-black/[0.06]" />
+      </div>
+      <div>
+        <div className="flex justify-between text-[12px]">
+          <span className="text-muted-foreground">Compressed</span>
+          <span className="font-medium text-foreground">4,900 tokens</span>
+        </div>
+        <div className="mt-2.5 h-2 w-[40%] rounded-full bg-foreground" />
+      </div>
+    </div>
+  )
+}
+
+const API_ROWS = [
+  {
+    title: 'Audio API',
+    desc: 'Speech-aware codecs behind one endpoint. Upload heavy recordings, get lightweight Opus back with the voice intact.',
+    features: [
+      ['voice', 'Opus tuned for speech'],
+      ['podcast', 'Smaller episodes, same warmth'],
+    ],
+    visual: (
+      <ApiCode>
+        <Kw>const</Kw>
+        <Id> form</Id>
+        {' = new FormData()\nform.append('}
+        <Str>&quot;file&quot;</Str>
+        {', file)\nform.append('}
+        <Str>&quot;preset&quot;</Str>
+        {', '}
+        <Str>&quot;voice&quot;</Str>
+        {')\n\n'}
+        <Kw>await</Kw>
+        {' fetch('}
+        <Str>&quot;https://api.robinzip.app/v1/audio&quot;</Str>
+        {', {\n'}
+        <Id>{'  method:'}</Id>
+        <Str> &quot;POST&quot;</Str>
+        {',\n'}
+        <Id>{'  headers:'}</Id>
+        {' { '}
+        <Id>Authorization:</Id>
+        <Str> &quot;Bearer rb_live_a1f0&quot;</Str>
+        {' },\n'}
+        <Id>{'  body:'}</Id>
+        {' form,\n})'}
+      </ApiCode>
+    ),
+  },
+  {
+    title: 'Text API',
+    desc: 'Prompt compression that keeps meaning. Send verbose context, get the same answers back for a fraction of the tokens.',
+    features: [
+      ['prompt', 'Fewer tokens, same intent'],
+      ['context', 'Long documents, trimmed safely'],
+    ],
+    visual: <TokenDiff />,
+  },
+  {
+    title: 'Image API',
+    desc: 'WebP and AVIF generated on demand. Set a quality target and ship the smallest file that clears it.',
+    features: [
+      ['web', 'AVIF with WebP fallback'],
+      ['archive', 'Maximum squeeze for storage'],
+    ],
+    visual: (
+      <ApiCode>
+        <Kw>const</Kw>
+        <Id> job</Id>
+        {' = '}
+        <Kw>await</Kw>
+        {' fetch('}
+        <Str>&quot;https://api.robinzip.app/v1/image&quot;</Str>
+        {', {\n'}
+        <Id>{'  method:'}</Id>
+        <Str> &quot;POST&quot;</Str>
+        {',\n'}
+        <Id>{'  headers:'}</Id>
+        {' { '}
+        <Id>Authorization:</Id>
+        <Str> &quot;Bearer rb_live_a1f0&quot;</Str>
+        {' },\n'}
+        <Id>{'  body:'}</Id>
+        {' form,\n}).then((r) => r.json())\n\n'}
+        <span className="text-muted-foreground">
+          {'// { status: "completed", output: "168 KB", savings: "93%" }'}
+        </span>
+      </ApiCode>
+    ),
   },
 ]
 
@@ -210,9 +396,9 @@ export default function LandingPage() {
   const [heroDone, setHeroDone] = useState(false)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       {/* Header */}
-      <header className="mx-auto flex max-w-6xl items-center justify-end px-6 py-5">
+      <header className="mx-auto flex max-w-6xl items-center justify-end gap-8 px-6 py-5">
         <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
           <a href="#how" className="transition-colors hover:text-foreground">
             How it works
@@ -242,9 +428,11 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6">
+      <main className="relative mx-auto max-w-6xl px-6">
+        <div className="absolute inset-y-0 left-0 hidden w-px bg-black/[0.05] md:block" aria-hidden />
+        <div className="absolute inset-y-0 right-0 hidden w-px bg-black/[0.05] md:block" aria-hidden />
         {/* Hero: statement + CTAs + wide media below */}
-        <section className="pb-10 pt-16 md:pt-24">
+        <section className="flex min-h-[480px] flex-col justify-center pb-10 pt-16 md:min-h-[560px] md:pt-24">
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
             Text · Audio · Image
           </p>
@@ -273,11 +461,12 @@ export default function LandingPage() {
               <Link href="/dashboard/keys">Get an API key</Link>
             </Button>
           </div>
-          <Media className="mt-14 aspect-[16/7] w-full" />
         </section>
 
         {/* How it works: numbered steps left, media right */}
-        <section id="how" className="grid gap-10 border-t border-border py-16 md:grid-cols-[1fr_1.15fr] md:gap-16 md:py-24">
+        <section id="how" className="relative grid gap-10 py-16 md:grid-cols-[1fr_1.15fr] md:gap-16 md:py-24">
+          <GridLine position="top" />
+          <RowDots position="top" center={false} />
           <div>
             <h2 className="max-w-sm text-3xl font-light tracking-tight">
               Results in one call.
@@ -298,11 +487,19 @@ export default function LandingPage() {
               ))}
             </ol>
           </div>
-          <Media className="min-h-[320px] md:min-h-0" />
+          <Image
+            src="/landing/image-compression.webp"
+            alt="Robin compressing hero-4k.png from 2.4 MB to 168 KB"
+            width={1407}
+            height={1118}
+            className="w-full self-center rounded-2xl"
+          />
         </section>
 
         {/* Workflows: heading + pills + wide media */}
-        <section id="workflows" className="border-t border-border py-16 md:py-24">
+        <section id="workflows" className="relative py-16 md:py-24">
+          <GridLine position="top" />
+          <RowDots position="top" center={false} />
           <div className="max-w-lg space-y-3">
             <h2 className="text-3xl font-light tracking-tight">
               Built for the most demanding pipelines.
@@ -327,24 +524,10 @@ export default function LandingPage() {
           <Media className="mt-8 aspect-[16/8] w-full md:aspect-[16/6]" />
         </section>
 
-        {/* Horizontal cards */}
-        <section className="border-t border-border py-16 md:py-24">
-          <h2 className="max-w-lg text-3xl font-light tracking-tight">
-            Create, scale, and move faster with less.
-          </h2>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {CAROUSEL.map(({ title, copy }) => (
-              <div key={title} className="rounded-3xl border border-border p-4">
-                <Media className="aspect-[4/3]" />
-                <p className="mt-4 text-sm font-medium">{title}</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{copy}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* Audiences */}
-        <section className="border-t border-border py-16 md:py-24">
+        <section className="relative py-16 md:py-24">
+          <GridLine position="top" />
+          <RowDots position="top" center={false} />
           <div className="max-w-lg space-y-3">
             <h2 className="text-3xl font-light tracking-tight">Built for every product.</h2>
             <p className="text-[15px] leading-relaxed text-muted-foreground">
@@ -381,14 +564,18 @@ export default function LandingPage() {
         </section>
 
         {/* Two surfaces */}
-        <section className="border-b border-border py-16 md:py-24">
+        <section className="relative py-16 md:py-24">
+          <GridLine position="bottom" />
+          <RowDots position="bottom" center={false} />
           <h2 className="max-w-md text-3xl font-light tracking-tight">
             Two ways in. The same small files out.
           </h2>
           <div className="mt-10 grid gap-3 md:grid-cols-2">
-            {SURFACES.map(({ name, tagline, copy, href, label }) => (
+            {SURFACES.map(({ name, tagline, copy, href, label, Visual }) => (
               <div key={name} className="flex flex-col rounded-3xl border border-border p-7">
-                <Media className="aspect-[16/8]" />
+                <Vignette className="aspect-[16/8]">
+                  <Visual />
+                </Vignette>
                 <p className="mt-6 text-sm font-medium">{name}</p>
                 <p className="mt-1 text-xl font-light tracking-tight">{tagline}</p>
                 <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{copy}</p>
@@ -401,6 +588,49 @@ export default function LandingPage() {
                 </Link>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* API grid */}
+        <section className="py-16 md:py-24">
+          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Robin API</p>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
+            <h2 className="max-w-md text-3xl font-light tracking-tight">
+              Or build anything with one compression API.
+            </h2>
+            <Button variant="secondary" className="rounded-full" asChild>
+              <a href={DOCS_URL} target="_blank" rel="noopener noreferrer">
+                Explore docs
+              </a>
+            </Button>
+          </div>
+
+          <div className="relative mt-14">
+            {API_ROWS.map(({ title, desc, features, visual }) => (
+              <div key={title} className="relative grid md:grid-cols-2">
+                <GridLine position="top" />
+                <RowDots position="top" />
+                <div className="py-10 md:py-14 md:pr-14">
+                  <p className="text-lg font-medium">{title}</p>
+                  <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+                    {desc}
+                  </p>
+                  <div className="mt-9 grid max-w-md grid-cols-2 gap-6">
+                    {features.map(([name, sub]) => (
+                      <div key={name}>
+                        <p className="font-mono text-[13px] font-medium">{name}</p>
+                        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{sub}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center border-t border-black/[0.05] py-10 md:border-l md:border-t-0 md:py-14 md:pl-14">
+                  {visual}
+                </div>
+              </div>
+            ))}
+            <GridLine position="bottom" />
+            <RowDots position="bottom" />
           </div>
         </section>
 
@@ -456,7 +686,9 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA */}
-        <section className="flex flex-col items-center gap-4 border-t border-border py-20 text-center">
+        <section className="relative flex flex-col items-center gap-4 py-20 text-center">
+          <GridLine position="top" />
+          <RowDots position="top" center={false} />
           <h2 className="max-w-xl text-4xl font-light tracking-tight">
             Ready to see how small your files can get?
           </h2>
@@ -473,7 +705,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border">
+      <footer className="border-t border-black/[0.05]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-6 text-[13px] text-muted-foreground sm:flex-row">
           <span>Robin · robinzip.app</span>
           <div className="flex items-center gap-5">
