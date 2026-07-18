@@ -14,6 +14,7 @@ import {
   CreditCard,
   KeyRound,
   Settings,
+  Webhook,
   PanelLeft,
   Sparkles,
   BookOpen,
@@ -52,6 +53,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: 'Billing', href: '/dashboard/billing', icon: CreditCard },
       { label: 'API Keys', href: '/dashboard/keys', icon: KeyRound },
+      { label: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook },
       { label: 'Settings', href: '/dashboard/account', icon: Settings },
     ],
   },
