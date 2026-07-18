@@ -36,4 +36,16 @@ export const DEFAULT_PLANS = [
     isDefault: false,
     active: true,
   },
+  {
+    name: 'Pro Max',
+    slug: 'pro-max',
+    description: 'For teams compressing at scale',
+    credits: 5000,
+    creditWeights: DEFAULT_CREDIT_WEIGHTS,
+    prices: { brl: 249, usd: 49 },
+    features: { maxFileSize: 500 * MB, maxApiKeys: 15, webhooks: true },
+    isPublic: true,
+    isDefault: false,
+    active: true,
+  },
 ];

@@ -344,6 +344,14 @@ const PLANS = [
     highlight: true,
     perks: ['1,000 credits per month', 'Files up to 100 MB', '5 API keys', 'Job webhooks'],
   },
+  {
+    name: 'Pro Max',
+    price: '$49',
+    period: 'per month',
+    cta: 'Go Pro Max',
+    highlight: false,
+    perks: ['5,000 credits per month', 'Files up to 500 MB', '15 API keys', 'Job webhooks'],
+  },
 ]
 
 export default function LandingPage() {
@@ -596,7 +604,7 @@ export default function LandingPage() {
               Start free, upgrade when your files do. Credits reset every month.
             </p>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
             {PLANS.map(({ name, price, period, cta, highlight, perks }) => (
               <div
                 key={name}
