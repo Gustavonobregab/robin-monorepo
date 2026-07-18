@@ -89,19 +89,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
   const [pinned, setPinned] = useState(true)
   const [hovered, setHovered] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const open = pinned || hovered
   const user = session?.user
 
   return (
     <div className="min-h-screen bg-background">
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+      )}
       <aside
-        aria-expanded={open}
+        aria-expanded={open || mobileOpen}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`group/sidebar fixed left-0 top-0 z-40 hidden h-screen flex-col overflow-hidden border-r border-border bg-sidebar transition-[width] duration-200 ease-out md:flex ${
-          open ? 'w-64' : 'w-[4.5rem]'
-        }`}
+        className={`group/sidebar fixed left-0 top-0 z-40 flex h-screen w-64 flex-col overflow-hidden border-r border-border bg-sidebar transition-[width,transform] duration-200 ease-out ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 ${open ? 'md:w-64' : 'md:w-[4.5rem]'}`}
       >
         {/* Brand + collapse toggle */}
         <div className="flex h-[3.75rem] items-center gap-3 px-[0.9rem]">
@@ -110,16 +118,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex-1" />
           <button
-            onClick={() => setPinned((v) => !v)}
+            onClick={() => {
+              setPinned((v) => !v)
+              setHovered(false)
+            }}
             title={pinned ? 'Collapse' : 'Expand'}
-            className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${revealClass}`}
+            className={`hidden h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:grid ${revealClass}`}
           >
             <PanelLeft className="h-4 w-4" />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2 no-scrollbar">
+        <nav
+          className="flex-1 space-y-5 overflow-y-auto px-3 py-2 no-scrollbar"
+          onClick={() => setMobileOpen(false)}
+        >
           {NAV.map((group, gi) => (
             <div key={gi} className="space-y-1">
               {group.label && (
@@ -175,6 +189,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           pinned ? 'md:pl-64' : 'md:pl-[4.5rem]'
         }`}
       >
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background px-4 md:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            title="Menu"
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <PanelLeft className="h-4 w-4" />
+          </button>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <AudioLines className="h-4 w-4" />
+          </div>
+        </header>
         <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-10">{children}</main>
       </div>
     </div>
