@@ -27,7 +27,7 @@ const app = new Elysia()
       origin: ['http://localhost:3000', 'http://localhost:3333', 'http://localhost:3002', 'https://robin-dashboard-amber.vercel.app', 'https://robinzip.app', 'https://www.robinzip.app'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Idempotency-Key'],
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
   }))
   .all('/api/auth/*', (c) => auth.handler(c.request))
   // Mounted before apiErrorPlugin: its global mapResponse would wrap the docs HTML in { success, data }

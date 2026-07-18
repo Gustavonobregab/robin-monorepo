@@ -17,6 +17,29 @@ export const usersRoutes = new Elysia({ prefix: '/users' })
     }),
   })
 
+  .patch('/me/onboarding', async ({ userId, body }) => {
+    return await usersService.updateOnboarding(userId, body);
+  }, {
+    body: t.Object({
+      role: t.Optional(t.Union([
+        t.Literal('developer'),
+        t.Literal('founder'),
+        t.Literal('agency'),
+        t.Literal('company'),
+      ])),
+      useCases: t.Optional(t.Array(
+        t.Union([t.Literal('text'), t.Literal('audio'), t.Literal('image')]),
+        { minItems: 1 },
+      )),
+      usageMode: t.Optional(t.Union([
+        t.Literal('site'),
+        t.Literal('api'),
+        t.Literal('both'),
+      ])),
+      completed: t.Optional(t.Boolean()),
+    }),
+  })
+
   .put('/webhook-config', async ({ userId, body }) => {
     return await usersService.updateWebhookUrl(userId, body.url);
   }, {

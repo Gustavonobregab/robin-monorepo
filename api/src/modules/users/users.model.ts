@@ -9,6 +9,12 @@ const userSchema = new Schema<User>({
   oderId: { type: String, unique: true, sparse: true },
   webhookUrl: { type: String },
   webhookSecret: { type: String },
+  profile: {
+    role: { type: String, enum: ['developer', 'founder', 'agency', 'company'] },
+    useCases: { type: [String], enum: ['text', 'audio', 'image'], default: undefined },
+    usageMode: { type: String, enum: ['site', 'api', 'both'] },
+    onboardingCompletedAt: { type: Date },
+  },
   plan: { type: Schema.Types.ObjectId, ref: 'Plan' },            // reference to active plan
   subscription: {
     status: {                                                      // subscription state

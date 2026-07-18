@@ -267,6 +267,17 @@ export interface SubscriptionSummary {
   currentPeriodEnd: string
 }
 
+export type OnboardingRole = 'developer' | 'founder' | 'agency' | 'company'
+export type OnboardingUseCase = 'text' | 'audio' | 'image'
+export type OnboardingUsageMode = 'site' | 'api' | 'both'
+
+export interface OnboardingProfile {
+  role?: OnboardingRole
+  useCases?: OnboardingUseCase[]
+  usageMode?: OnboardingUsageMode
+  onboardingCompletedAt?: string
+}
+
 export interface UserProfile {
   name: string
   email: string
@@ -275,6 +286,8 @@ export interface UserProfile {
   totalRequests: number
   webhookUrl: string | null
   webhooksEnabled: boolean
+  profile: OnboardingProfile | null
+  onboardingCompleted: boolean
   plan: PlanSummary | null
   subscription: SubscriptionSummary | null
   currentUsage: CurrentUsage

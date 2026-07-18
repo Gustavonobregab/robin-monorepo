@@ -1,5 +1,16 @@
 import type { ObjectId } from 'mongoose';
 
+export type OnboardingRole = 'developer' | 'founder' | 'agency' | 'company';
+export type OnboardingUseCase = 'text' | 'audio' | 'image';
+export type OnboardingUsageMode = 'site' | 'api' | 'both';
+
+export interface UserOnboardingProfile {
+  role?: OnboardingRole;
+  useCases?: OnboardingUseCase[];
+  usageMode?: OnboardingUsageMode;
+  onboardingCompletedAt?: Date;
+}
+
 export interface User {
   _id?: ObjectId;
   name: string;
@@ -9,6 +20,7 @@ export interface User {
   image?: string;
   webhookUrl?: string;
   webhookSecret?: string;
+  profile?: UserOnboardingProfile;
   plan?: ObjectId;                     // reference to the active plan document
   subscription?: {
     status: 'active' | 'canceled' | 'past_due'; // past_due = renewal failed, Stripe is retrying

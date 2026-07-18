@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import { UserModel } from './users.model';
+import type { OnboardingRole, OnboardingUsageMode, OnboardingUseCase } from './users.types';
 import { ApiError } from '../../utils/api-error';
 import { usageService } from '../usage/usage.service';
 import { PlanModel } from '../plans/plans.model';
@@ -42,6 +43,8 @@ export class UsersService {
       email: user.email,
       image: user.image,
       createdAt: user.createdAt,
+      profile: user.profile ?? null,
+      onboardingCompleted: Boolean(user.profile?.onboardingCompletedAt),
       totalRequests: stats.totalRequests,
       webhookUrl: user.webhookUrl ?? null,
       webhooksEnabled: plan?.features.webhooks ?? false,
@@ -68,6 +71,31 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async updateOnboarding(userId: string, data: {
+    role?: OnboardingRole;
+    useCases?: OnboardingUseCase[];
+    usageMode?: OnboardingUsageMode;
+    completed?: boolean;
+  }) {
+    const $set: Record<string, unknown> = {};
+    if (data.role) $set['profile.role'] = data.role;
+    if (data.useCases) $set['profile.useCases'] = data.useCases;
+    if (data.usageMode) $set['profile.usageMode'] = data.usageMode;
+    if (data.completed) $set['profile.onboardingCompletedAt'] = new Date();
+
+    const user = await UserModel.findOneAndUpdate(
+      { $or: [{ oderId: userId }, { _id: userId }] },
+      { $set },
+      { new: true },
+    ).lean();
+
+    if (!user) {
+      throw new ApiError('USER_NOT_FOUND', 'User not found', 404);
+    }
+
+    return user.profile ?? {};
   }
 
   async assertWebhookAccess(userId: string) {

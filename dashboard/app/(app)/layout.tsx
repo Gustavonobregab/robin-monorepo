@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import {
   AudioLines,
   Home,
@@ -23,6 +24,7 @@ import {
 import { Button } from '@/app/components/ui/Button'
 import { AssistantPanel } from '@/app/components/assistant/AssistantPanel'
 import { useSession } from '@/app/lib/auth-client'
+import { getProfile } from '@/app/http/users'
 
 const DOCS_URL = 'https://docs.robinzip.app'
 
@@ -88,7 +90,13 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
+  const { data: profileData } = useSWR('users/me', getProfile)
+
+  useEffect(() => {
+    if (profileData && !profileData.data.onboardingCompleted) router.replace('/onboarding')
+  }, [profileData, router])
   const [pinned, setPinned] = useState(true)
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
