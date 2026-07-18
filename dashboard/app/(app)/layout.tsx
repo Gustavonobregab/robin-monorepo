@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import {
   AudioLines,
+  Wand2,
   Home,
   FileText,
   Mic,
@@ -28,7 +29,14 @@ import { getProfile } from '@/app/http/users'
 
 const DOCS_URL = 'https://docs.robinzip.app'
 
-type NavItem = { label: string; href: string; icon: LucideIcon; external?: boolean }
+type NavItem = {
+  label: string
+  href: string
+  icon: LucideIcon
+  external?: boolean
+  disabled?: boolean
+  badge?: string
+}
 type NavGroup = { label?: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
@@ -42,6 +50,9 @@ const NAV: NavGroup[] = [
       { label: 'Audio', href: '/dashboard/audio', icon: Mic },
       { label: 'Image', href: '/dashboard/image', icon: ImageIcon },
     ],
+  },
+  {
+    items: [{ label: 'RobinAgent', href: '#', icon: Wand2, disabled: true, badge: 'Soon' }],
   },
   {
     label: 'Activity',
@@ -69,7 +80,27 @@ const revealClass =
   'whitespace-nowrap opacity-0 -translate-x-1 transition-all duration-150 group-aria-expanded/sidebar:opacity-100 group-aria-expanded/sidebar:translate-x-0'
 
 function NavRow({ item, active }: { item: NavItem; active: boolean }) {
-  const { icon: Icon, label, href, external } = item
+  const { icon: Icon, label, href, external, disabled, badge } = item
+
+  if (disabled) {
+    return (
+      <div
+        title={label}
+        className="flex h-9 cursor-default select-none items-center gap-3 rounded-lg px-[0.7rem] text-sm text-muted-foreground/60"
+      >
+        <Icon className="h-[1.05rem] w-[1.05rem] shrink-0" />
+        <span className={`${revealClass} flex-1`}>{label}</span>
+        {badge && (
+          <span
+            className={`${revealClass} rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground`}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Link
       href={href}

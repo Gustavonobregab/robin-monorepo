@@ -11,10 +11,14 @@ import {
   Gauge,
   Loader2,
   MoreHorizontal,
+  Mic,
+  Rabbit,
   Speaker,
+  Waves,
   X,
 } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
+import { FeatureModal } from '@/app/components/ui/FeatureModal'
 import { PresetPicker } from '@/app/components/ui/PresetPicker'
 import {
   DropdownMenu,
@@ -33,6 +37,7 @@ import { Skeleton } from '@/app/components/ui/Skeleton'
 import { Slider } from '@/app/components/ui/Slider'
 import { StatusBadge } from '@/app/components/ui/StatusBadge'
 import { useJobPoll } from '@/app/hooks/use-job-poll'
+import { useOnceFlag } from '@/app/hooks/use-once-flag'
 import { getAudioPresets, submitAudioJob } from '@/app/http/audio'
 import { toastApiError, toastSubmitError } from '@/app/http/errors'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
@@ -115,6 +120,7 @@ export default function AudioPage() {
   const [submitting, setSubmitting] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [podcastTeaserUnseen, dismissPodcastTeaser] = useOnceFlag('audio-podcast-template')
 
   const { data: presetsData, error: presetsError } = useSWR('audio/presets', () =>
     getAudioPresets(),
@@ -168,6 +174,8 @@ export default function AudioPage() {
     if (pending?.file) setFile(pending.file)
     const presetParam = new URLSearchParams(window.location.search).get('preset')
     if (presetParam && presetParam in PRESET_SETTINGS) applyPreset(presetParam)
+    // Arriving via the podcast deep link already surfaces the feature, skip the teaser
+    if (presetParam === 'podcast') dismissPodcastTeaser()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function applyPreset(id: string | null) {
@@ -177,6 +185,11 @@ export default function AudioPage() {
 
   function updateSettings(patch: Partial<EncodeSettings>) {
     setSettings((s) => ({ ...s, ...patch }))
+  }
+
+  function tryPodcastTemplate() {
+    applyPreset('podcast')
+    dismissPodcastTeaser()
   }
 
   async function handleSubmit() {
@@ -242,6 +255,25 @@ export default function AudioPage() {
 
   return (
     <div className="space-y-8">
+      <FeatureModal
+        open={podcastTeaserUnseen}
+        onOpenChange={(o) => {
+          if (!o) dismissPodcastTeaser()
+        }}
+        badge="Template"
+        heroLabel="Podcast"
+        title="Introducing the Podcast template"
+        features={[
+          { icon: Mic, text: 'Tuned for spoken voice, Opus 24 kbps mono' },
+          { icon: Waves, text: 'Up to 10x smaller with no audible loss' },
+          { icon: Rabbit, text: 'One click, no encoding settings to fiddle with' },
+        ]}
+        ctaLabel="Try Podcast"
+        onCta={tryPodcastTemplate}
+        secondaryLabel="Maybe later"
+        onSecondary={dismissPodcastTeaser}
+      />
+
       <PageHeader
         title="Audio"
         description="Shrink audio files with tuned presets or custom encoding."
