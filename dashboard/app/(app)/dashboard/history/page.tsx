@@ -124,7 +124,7 @@ export default function HistoryPage() {
   const filtered = Boolean(type || status || query.trim())
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <PageHeader title="History" description="Every compression job on your account." />
 
       <div className="mt-6">

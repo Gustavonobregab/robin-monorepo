@@ -26,7 +26,7 @@ export default function AccountPage() {
   const email = profile?.email ?? session?.user.email ?? ''
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div>
       <PageHeader
         title="Settings"
         description="Your profile, webhooks and session."

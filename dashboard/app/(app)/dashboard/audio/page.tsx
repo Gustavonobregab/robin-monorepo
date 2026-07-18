@@ -232,7 +232,7 @@ export default function AudioPage() {
   }, [timedOut])
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title="Audio"
         description="Shrink audio files with tuned presets or custom encoding."

@@ -201,7 +201,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <AudioLines className="h-4 w-4" />
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:px-10">{children}</main>
+        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:px-10">{children}</main>
       </div>
     </div>
   )

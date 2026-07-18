@@ -70,7 +70,7 @@ export default function UsagePage() {
   const isLoading = analyticsLoading || profileLoading
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader
         title="Usage"
         description="Analytics for your API and dashboard activity."

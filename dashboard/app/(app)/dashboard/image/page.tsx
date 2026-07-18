@@ -142,7 +142,7 @@ export default function ImagePage() {
   const busy = submitting || isPolling
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
+    <div className="flex flex-col gap-10">
       <PageHeader
         title="Image"
         description="Compress JPEG, PNG and WebP images into smaller files."

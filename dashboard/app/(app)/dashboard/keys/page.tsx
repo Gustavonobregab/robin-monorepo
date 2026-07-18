@@ -88,7 +88,7 @@ export default function KeysPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div>
       <PageHeader
         title="API keys"
         description="Authenticate requests to the public API. Maximum 5 active keys."

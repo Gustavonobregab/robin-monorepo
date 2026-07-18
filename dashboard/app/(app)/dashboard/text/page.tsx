@@ -172,7 +172,7 @@ export default function TextPage() {
   const recentJobs = jobList?.items ?? []
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader
         title="Text"
         description="Paste text or upload a .txt file and compress it."

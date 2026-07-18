@@ -106,7 +106,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10">
+    <div className="space-y-10">
       <PageHeader
         title="Billing"
         description="Manage your plan and invoices."
