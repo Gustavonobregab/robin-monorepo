@@ -108,9 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <AudioLines className="h-[1.05rem] w-[1.05rem]" />
           </div>
-          <span className={`flex-1 text-sm font-medium tracking-tight text-foreground ${revealClass}`}>
-            Robin
-          </span>
+          <div className="flex-1" />
           <button
             onClick={() => setPinned((v) => !v)}
             title={pinned ? 'Collapse' : 'Expand'}
