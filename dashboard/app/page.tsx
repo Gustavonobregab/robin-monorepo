@@ -253,11 +253,6 @@ function RowDots({ position, center = true }: { position: 'top' | 'bottom'; cent
   )
 }
 
-/* syntax colors lifted from the elevenlabs code sample */
-const Kw = ({ children }: { children: ReactNode }) => <span style={{ color: '#F41A2F' }}>{children}</span>
-const Id = ({ children }: { children: ReactNode }) => <span style={{ color: '#0A59D2' }}>{children}</span>
-const Str = ({ children }: { children: ReactNode }) => <span style={{ color: '#052F70' }}>{children}</span>
-
 function ApiCode({ children }: { children: ReactNode }) {
   return (
     <div className="flex w-full overflow-x-auto rounded-3xl py-6 [scrollbar-width:none]">
@@ -304,29 +299,7 @@ const API_ROWS = [
     ],
     visual: (
       <ApiCode>
-        <Kw>const</Kw>
-        <Id> form</Id>
-        {' = new FormData()\nform.append('}
-        <Str>&quot;file&quot;</Str>
-        {', file)\nform.append('}
-        <Str>&quot;preset&quot;</Str>
-        {', '}
-        <Str>&quot;voice&quot;</Str>
-        {')\n\n'}
-        <Kw>await</Kw>
-        {' fetch('}
-        <Str>&quot;https://api.robinzip.app/v1/audio&quot;</Str>
-        {', {\n'}
-        <Id>{'  method:'}</Id>
-        <Str> &quot;POST&quot;</Str>
-        {',\n'}
-        <Id>{'  headers:'}</Id>
-        {' { '}
-        <Id>Authorization:</Id>
-        <Str> &quot;Bearer rb_live_a1f0&quot;</Str>
-        {' },\n'}
-        <Id>{'  body:'}</Id>
-        {' form,\n})'}
+        {'const form = new FormData()\nform.append("file", file)\nform.append("preset", "voice")\n\nawait fetch("https://api.robinzip.app/v1/audio", {\n  method: "POST",\n  headers: { Authorization: "Bearer rb_live_a1f0" },\n  body: form,\n})'}
       </ApiCode>
     ),
   },
@@ -348,26 +321,7 @@ const API_ROWS = [
     ],
     visual: (
       <ApiCode>
-        <Kw>const</Kw>
-        <Id> job</Id>
-        {' = '}
-        <Kw>await</Kw>
-        {' fetch('}
-        <Str>&quot;https://api.robinzip.app/v1/image&quot;</Str>
-        {', {\n'}
-        <Id>{'  method:'}</Id>
-        <Str> &quot;POST&quot;</Str>
-        {',\n'}
-        <Id>{'  headers:'}</Id>
-        {' { '}
-        <Id>Authorization:</Id>
-        <Str> &quot;Bearer rb_live_a1f0&quot;</Str>
-        {' },\n'}
-        <Id>{'  body:'}</Id>
-        {' form,\n}).then((r) => r.json())\n\n'}
-        <span className="text-muted-foreground">
-          {'// { status: "completed", output: "168 KB", savings: "93%" }'}
-        </span>
+        {'const job = await fetch("https://api.robinzip.app/v1/image", {\n  method: "POST",\n  headers: { Authorization: "Bearer rb_live_a1f0" },\n  body: form,\n}).then((r) => r.json())\n\n// { status: "completed", output: "168 KB", savings: "93%" }'}
       </ApiCode>
     ),
   },
