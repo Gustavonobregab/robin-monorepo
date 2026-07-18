@@ -285,7 +285,6 @@ export interface UserProfile {
   createdAt: string
   totalRequests: number
   webhookUrl: string | null
-  webhooksEnabled: boolean
   profile: OnboardingProfile | null
   onboardingCompleted: boolean
   plan: PlanSummary | null

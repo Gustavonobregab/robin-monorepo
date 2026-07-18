@@ -10,7 +10,6 @@ import { jobService } from '../jobs/job.service';
 import type { JobStatusView } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
-import { usersService } from '../users/users.service';
 import { isDuplicateKeyError } from '../../utils/mongo';
 
 export class AudioService {
@@ -39,10 +38,6 @@ export class AudioService {
     }
 
     const operations = this.resolveOperations(preset, customOps);
-
-    if (input.webhookUrl) {
-      await usersService.assertWebhookAccess(userId);
-    }
 
     // Reserve credits before enqueueing; cost scales with file size
     const creditCost = await reserveCredits(userId, 'audio', upload.size);

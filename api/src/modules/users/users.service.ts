@@ -47,7 +47,6 @@ export class UsersService {
       onboardingCompleted: Boolean(user.profile?.onboardingCompletedAt),
       totalRequests: stats.totalRequests,
       webhookUrl: user.webhookUrl ?? null,
-      webhooksEnabled: plan?.features.webhooks ?? false,
       plan: plan ? { name: plan.name, slug: plan.slug, credits: plan.credits } : null,
       subscription: user.subscription ? {
         status: user.subscription.status,
@@ -98,26 +97,7 @@ export class UsersService {
     return user.profile ?? {};
   }
 
-  async assertWebhookAccess(userId: string) {
-    const user = await UserModel.findOne({
-      $or: [{ oderId: userId }, { _id: userId }],
-    }).lean();
-
-    if (!user) {
-      throw new ApiError('USER_NOT_FOUND', 'User not found', 404);
-    }
-
-    if (user.plan) {
-      const plan = await PlanModel.findById(user.plan).lean();
-      if (plan && !plan.features.webhooks) {
-        throw new ApiError('FEATURE_NOT_AVAILABLE', 'Webhooks are not available on your current plan. Please upgrade.', 403);
-      }
-    }
-  }
-
   async updateWebhookUrl(userId: string, url: string) {
-    await this.assertWebhookAccess(userId);
-
     const updated = await UserModel.findOneAndUpdate(
       { $or: [{ oderId: userId }, { _id: userId }] },
       { $set: { webhookUrl: url } },

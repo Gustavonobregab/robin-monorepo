@@ -10,7 +10,6 @@ import { jobService } from '../jobs/job.service';
 import type { JobStatusView } from '../jobs/job.types';
 import { uploadService } from '../upload/upload.service';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
-import { usersService } from '../users/users.service';
 import { usageService } from '../usage/usage.service';
 import { isDuplicateKeyError } from '../../utils/mongo';
 import { getObjectBuffer, putObject } from '../../config/storage';
@@ -40,10 +39,6 @@ export class ImageService {
     }
 
     const operations = this.resolveOperations(preset, customOps);
-
-    if (input.webhookUrl) {
-      await usersService.assertWebhookAccess(userId);
-    }
 
     const creditCost = await reserveCredits(userId, 'image', upload.size);
 

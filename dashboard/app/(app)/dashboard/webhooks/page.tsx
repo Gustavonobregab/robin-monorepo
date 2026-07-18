@@ -32,7 +32,6 @@ export default function WebhooksPage() {
       ) : (
         <div className="space-y-6">
           <EndpointCard
-            enabled={profile?.webhooksEnabled ?? false}
             currentUrl={profile?.webhookUrl ?? null}
             loading={!profile}
             onSaved={() => mutate()}
@@ -54,12 +53,10 @@ function FieldSkeleton() {
 }
 
 function EndpointCard({
-  enabled,
   currentUrl,
   loading,
   onSaved,
 }: {
-  enabled: boolean
   currentUrl: string | null
   loading: boolean
   onSaved: () => void
@@ -98,14 +95,7 @@ function EndpointCard({
 
   return (
     <Card className="p-6">
-      <div className="flex items-center gap-2">
-        <h2 className="text-base font-medium text-foreground">Endpoint</h2>
-        {!enabled && !loading && (
-          <span className="rounded-full border border-black/10 px-2 py-0.5 text-xs text-muted-foreground">
-            Upgrade required
-          </span>
-        )}
-      </div>
+      <h2 className="text-base font-medium text-foreground">Endpoint</h2>
       <p className="mt-1 text-[13px] text-muted-foreground">
         We POST job results to this URL when a job completes or fails.
       </p>
@@ -122,7 +112,6 @@ function EndpointCard({
               <Input
                 type="url"
                 value={value}
-                disabled={!enabled}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="https://your-app.com/webhooks/robin"
               />
@@ -153,7 +142,7 @@ function EndpointCard({
               type="button"
               variant="secondary"
               className="mt-4"
-              disabled={!enabled || !dirty || saving}
+              disabled={!dirty || saving}
               onClick={save}
             >
               {saving ? 'Saving…' : 'Save webhook'}

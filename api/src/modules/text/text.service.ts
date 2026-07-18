@@ -11,7 +11,6 @@ import { uploadService } from '../upload/upload.service';
 import { processText } from '../../worker/text/pipeline';
 import type { JobStatusView } from '../jobs/job.types';
 import { reserveCredits, rollbackCredits } from '../../middlewares/credits';
-import { usersService } from '../users/users.service';
 import { usageService } from '../usage/usage.service';
 import { isDuplicateKeyError } from '../../utils/mongo';
 import { ulid } from 'ulidx';
@@ -149,10 +148,6 @@ export class TextService {
     if (input.idempotencyKey) {
       const existing = await jobService.findByIdempotencyKey(userId, input.idempotencyKey);
       if (existing) return (await jobService.getStatus(userId, existing.id))!;
-    }
-
-    if (input.webhookUrl) {
-      await usersService.assertWebhookAccess(userId);
     }
 
     let source: { kind: 'storage'; ref: string } | { kind: 'inline'; text: string };
