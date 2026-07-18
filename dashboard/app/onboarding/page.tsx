@@ -97,7 +97,7 @@ function OptionRow({
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { data } = useSWR('users/me', getProfile)
+  const { data, error } = useSWR('users/me', getProfile)
 
   const [step, setStep] = useState(0)
   const [role, setRole] = useState<OnboardingRole | null>(null)
@@ -147,6 +147,11 @@ export default function OnboardingPage() {
 
   const canContinue =
     step === 0 ? role !== null : step === 1 ? useCases.length > 0 : usageMode !== null
+
+  // Blank screen while deciding (or redirecting away) so the wizard never flashes for onboarded users
+  if (!error && (!data || data.data.onboardingCompleted)) {
+    return <div className="min-h-screen bg-background" />
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10">

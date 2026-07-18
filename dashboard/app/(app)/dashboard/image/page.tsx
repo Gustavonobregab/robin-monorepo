@@ -28,6 +28,7 @@ import { uploadFile } from '@/app/http/upload'
 import { getImagePresets, submitImageJob } from '@/app/http/image'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { toastApiError, toastSubmitError } from '@/app/http/errors'
+import { consumePendingInput } from '@/app/lib/pending-input'
 import { formatBytes, randomKey, timeAgo, triggerDownload } from '@/app/lib/utils'
 import type { ImageOperationInput, ImageOutputFormat, JobView } from '@/types'
 
@@ -71,6 +72,16 @@ export default function ImagePage() {
   const presets = presetsData?.data ?? []
 
   const { job, isPolling, isFailed, timedOut } = useJobPoll({ jobId, fetcher: getJobStatus })
+
+  // Prefill handed off by the home composer or a template deep link
+  useEffect(() => {
+    const pending = consumePendingInput()
+    if (pending?.file) setFile(pending.file)
+    const presetParam = new URLSearchParams(window.location.search).get('preset')
+    if (['chill', 'medium', 'aggressive', 'thumbnail'].includes(presetParam ?? '')) {
+      setPreset(presetParam)
+    }
+  }, [])
 
   useEffect(() => {
     if (job?.status === 'completed') void mutateJobs()

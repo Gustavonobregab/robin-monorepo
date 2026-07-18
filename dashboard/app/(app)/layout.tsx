@@ -92,7 +92,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session } = useSession()
-  const { data: profileData } = useSWR('users/me', getProfile)
+  const { data: profileData, error: profileError } = useSWR('users/me', getProfile)
+  const contentReady = Boolean(profileError) || profileData?.data.onboardingCompleted === true
 
   useEffect(() => {
     if (profileData && !profileData.data.onboardingCompleted) router.replace('/onboarding')
@@ -211,7 +212,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <AudioLines className="h-4 w-4" />
           </div>
         </header>
-        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:px-10">{children}</main>
+        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 md:px-10">
+          {contentReady ? children : null}
+        </main>
       </div>
     </div>
   )

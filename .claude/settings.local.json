@@ -67,7 +67,9 @@
       "Bash(rg -rn \"jobs\" /Users/gustavonobregab/Programming/robin-monorepo/api/src/modules/jobs -l)",
       "Bash(echo \"TSC-EXIT: $?\")",
       "Skill(simplify)",
-      "Bash(bunx eslint *)"
+      "Bash(bunx eslint *)",
+      "Bash(node -e ' *)",
+      "Skill(artifact-design)"
     ]
   },
   "enabledPlugins": {

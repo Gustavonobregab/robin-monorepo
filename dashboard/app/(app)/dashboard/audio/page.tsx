@@ -39,6 +39,7 @@ import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { getPublicPlans } from '@/app/http/plans'
 import { uploadFile } from '@/app/http/upload'
 import { getProfile } from '@/app/http/users'
+import { consumePendingInput } from '@/app/lib/pending-input'
 import {
   formatBytes,
   formatSaved,
@@ -160,6 +161,14 @@ export default function AudioPage() {
   }, [jobsData, jobId, job, query])
 
   const noJobs = (jobsData?.items ?? []).length === 0
+
+  // Prefill handed off by the home composer or a template deep link
+  useEffect(() => {
+    const pending = consumePendingInput()
+    if (pending?.file) setFile(pending.file)
+    const presetParam = new URLSearchParams(window.location.search).get('preset')
+    if (presetParam && presetParam in PRESET_SETTINGS) applyPreset(presetParam)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function applyPreset(id: string | null) {
     setPreset(id as AudioPreset | null)

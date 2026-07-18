@@ -34,6 +34,7 @@ import { getTextPresets, submitTextJob } from '@/app/http/text'
 import { uploadFile } from '@/app/http/upload'
 import { getJobStatus, listJobs } from '@/app/http/jobs'
 import { toastApiError, toastSubmitError } from '@/app/http/errors'
+import { consumePendingInput } from '@/app/lib/pending-input'
 import {
   cn,
   downloadTextAsFile,
@@ -75,6 +76,17 @@ export default function TextPage() {
 
   const { data: presetsData } = useSWR('text/presets', () => getTextPresets())
   const presets = presetsData?.data ?? []
+
+  // Prefill handed off by the home composer or a template deep link
+  useEffect(() => {
+    const pending = consumePendingInput()
+    if (pending?.file) setFile(pending.file)
+    else if (pending?.text) setText(pending.text)
+    const presetParam = new URLSearchParams(window.location.search).get('preset')
+    if (presetParam === 'chill' || presetParam === 'medium' || presetParam === 'aggressive') {
+      setPreset(presetParam)
+    }
+  }, [])
 
   const {
     data: jobList,
