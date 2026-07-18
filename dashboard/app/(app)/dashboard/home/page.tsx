@@ -1,17 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpDown, FileText, Mic, ImageIcon, Plus } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, FileText, Mic, ImageIcon } from 'lucide-react'
 import { Button } from '@/app/components/ui/Button'
-import { Chip } from '@/app/components/ui/Chip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/app/components/ui/DropdownMenu'
 import { SearchInput } from '@/app/components/ui/SearchInput'
 import { StatusBadge } from '@/app/components/ui/StatusBadge'
-import { Tabs } from '@/app/components/ui/Tabs'
 import type { JobStatus } from '@/types'
 
 /* Home: ElevenLabs voice-library layout in black & white. */
-
-const FILTERS = ['All', 'Text', 'Audio', 'Image', 'Done', 'Queued', 'Failed']
 
 const QUICK_START = [
   { label: 'Text', desc: 'Clean & compress prose', meta: 'gzip · brotli', href: '/dashboard/text', Icon: FileText },
@@ -34,21 +36,31 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-5">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-medium tracking-tight text-foreground">Compress</h1>
-        <div className="flex items-end justify-between gap-4">
-          <Tabs tabs={['Overview', 'History']} />
-          <div className="flex items-center gap-2 pb-1">
-            <Button variant="secondary" asChild>
-              <Link href="/dashboard/usage">Usage</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/dashboard/text">
-                <Plus className="h-4 w-4" />
-                New job
-              </Link>
-            </Button>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" asChild>
+            <Link href="/dashboard/usage">Usage</Link>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                Compress
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {QUICK_START.map(({ label, desc, href, Icon }) => (
+                <DropdownMenuItem key={label} asChild>
+                  <Link href={href}>
+                    <Icon className="h-4 w-4" />
+                    <span className="flex-1">{label}</span>
+                    <span className="text-[12px] text-muted-foreground">{desc}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -59,15 +71,6 @@ export default function HomePage() {
           <ArrowUpDown className="h-4 w-4" />
           Sort
         </Button>
-      </div>
-
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f, i) => (
-          <Chip key={f} active={i === 0}>
-            {f}
-          </Chip>
-        ))}
       </div>
 
       {/* Quick start: transparent hover cards */}
