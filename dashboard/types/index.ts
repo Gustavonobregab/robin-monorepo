@@ -146,11 +146,17 @@ export interface ApiKey {
 // ─── Text ────────────────────────────────────────────────────
 export type TextPreset = 'chill' | 'medium' | 'aggressive'
 
+/* What the preset actually runs: params come back resolved, defaults included. */
+export interface PresetOperation {
+  type: string
+  params?: Record<string, string | number | boolean>
+}
+
 export interface TextPresetDef {
   id: string
   name: string
   description: string
-  operations: string[]
+  operations: PresetOperation[]
 }
 
 export interface TextOperationParamDef {
@@ -196,7 +202,7 @@ export interface ImagePresetDef {
   id: string
   name: string
   description: string
-  operations: string[]
+  operations: PresetOperation[]
 }
 
 export type ImageOutputFormat = 'webp' | 'avif' | 'jpeg' | 'png'
@@ -217,7 +223,7 @@ export interface AudioPresetDef {
   id: string
   name: string
   description: string
-  operations: string[]
+  operations: PresetOperation[]
 }
 
 export interface AudioOperationParamDef {

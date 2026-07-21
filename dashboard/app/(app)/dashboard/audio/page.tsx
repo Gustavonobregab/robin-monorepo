@@ -17,6 +17,7 @@ import {
   Waves,
   X,
 } from 'lucide-react'
+import { RecordControl } from '@/app/components/audio/RecordControl'
 import { Button } from '@/app/components/ui/Button'
 import { FeatureModal } from '@/app/components/ui/FeatureModal'
 import { PresetPicker } from '@/app/components/ui/PresetPicker'
@@ -289,6 +290,10 @@ export default function AudioPage() {
         label={file ? 'Drop or click to replace' : 'Drop an audio file here, or click to browse'}
         hint={file ? undefined : 'MP3 or WAV'}
       >
+        <div className="mt-2 px-1">
+          <RecordControl onRecorded={setFile} disabled={busy} />
+        </div>
+
         {file && (
           <div className="mt-2 flex items-center gap-3 px-2">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-black/[0.04] text-foreground">

@@ -232,7 +232,7 @@ export class TextService {
       id,
       name: preset.name,
       description: preset.description,
-      operations: preset.operations.map((op) => op.type),
+      operations: this.resolveOperations(id as TextPreset),
     }));
   }
 
