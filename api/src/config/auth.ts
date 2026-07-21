@@ -34,6 +34,7 @@ export const auth = betterAuth({
     google: {
       clientId: googleId as string,
       clientSecret: googleSecret as string,
+      prompt: 'select_account',
     },
   },
   secret: process.env.BETTER_AUTH_SECRET,
