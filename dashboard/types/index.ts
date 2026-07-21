@@ -298,6 +298,27 @@ export interface UserProfile {
   currentUsage: CurrentUsage
 }
 
+// ─── Webhooks ────────────────────────────────────────────────
+export type WebhookDeliveryStatus = 'success' | 'failed'
+
+export interface WebhookDelivery {
+  id: string
+  jobId: string
+  event: 'job.completed' | 'job.failed'
+  url: string
+  attempt: number
+  status: WebhookDeliveryStatus
+  httpStatus?: number
+  error?: string
+  durationMs: number
+  createdAt: string
+}
+
+export interface WebhookDeliveryListResponse {
+  items: WebhookDelivery[]
+  nextCursor: string | null
+}
+
 // ─── Auth ─────────────────────────────────────────────────────
 export interface User {
   id: string

@@ -2,9 +2,14 @@ import { createHmac } from 'crypto';
 import { JobModel } from '../jobs/job.model';
 import { UserModel } from '../users/users.model';
 import { ensureWebhookSecret } from '../users/users.service';
+import { WebhookDeliveryModel } from './webhooks.model';
+import type { WebhookDelivery, WebhookDeliveryListItem, WebhookDeliveryListQuery } from './webhooks.types';
 import type { WebhookEvent } from '../../queues/webhook.queue';
 
 const DELIVERY_TIMEOUT_MS = 10_000;
+const OBJECT_ID = /^[a-f0-9]{24}$/;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 const log = (jobId: string, msg: string) => console.log(`[WEBHOOK:${jobId}] ${msg}`);
 
@@ -52,7 +57,7 @@ export class WebhooksService {
   }
 
   // Throws on any delivery failure so BullMQ retries with backoff.
-  async deliverJobWebhook(jobId: string, event: WebhookEvent): Promise<void> {
+  async deliverJobWebhook(jobId: string, event: WebhookEvent, attempt = 1): Promise<void> {
     const target = await resolveWebhookTarget(jobId);
     if (!target) return;
 
@@ -74,6 +79,18 @@ export class WebhooksService {
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const signature = signWebhookPayload(secret, timestamp, body);
+    const startedAt = Date.now();
+
+    const record = (outcome: { status: 'success' | 'failed'; httpStatus?: number; error?: string }) =>
+      this.recordDelivery({
+        userId: user._id.toString(),
+        jobId,
+        event,
+        url,
+        attempt,
+        durationMs: Date.now() - startedAt,
+        ...outcome,
+      });
 
     let response: Response;
     try {
@@ -89,16 +106,62 @@ export class WebhooksService {
         signal: AbortSignal.timeout(DELIVERY_TIMEOUT_MS),
       });
     } catch (err) {
-      log(jobId, `Delivery to ${url} failed: ${err instanceof Error ? err.message : err}`);
+      const message = err instanceof Error ? err.message : String(err);
+      log(jobId, `Delivery to ${url} failed: ${message}`);
+      await record({ status: 'failed', error: message });
       throw err;
     }
 
     if (!response.ok) {
       log(jobId, `Delivery to ${url} failed: HTTP ${response.status}`);
+      await record({ status: 'failed', httpStatus: response.status, error: `HTTP ${response.status}` });
       throw new Error(`Webhook delivery failed: HTTP ${response.status}`);
     }
 
+    await record({ status: 'success', httpStatus: response.status });
     log(jobId, `Delivered ${event} to ${url}`);
+  }
+
+  async listDeliveries(
+    userId: string,
+    query: WebhookDeliveryListQuery
+  ): Promise<{ items: WebhookDeliveryListItem[]; nextCursor: string | null }> {
+    const limit = Math.min(query.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+
+    const docs = await WebhookDeliveryModel.find({
+      userId,
+      ...(query.cursor && OBJECT_ID.test(query.cursor) && { _id: { $lt: query.cursor } }),
+    })
+      .sort({ _id: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const page = docs.slice(0, limit);
+
+    return {
+      items: page.map((doc) => ({
+        id: doc._id.toString(),
+        jobId: doc.jobId,
+        event: doc.event,
+        url: doc.url,
+        attempt: doc.attempt,
+        status: doc.status,
+        httpStatus: doc.httpStatus ?? undefined,
+        error: doc.error ?? undefined,
+        durationMs: doc.durationMs,
+        createdAt: doc.createdAt,
+      })),
+      nextCursor: docs.length > limit ? page[page.length - 1]._id.toString() : null,
+    };
+  }
+
+  // Telemetry: a failed log write must never fail (or retry) the delivery itself.
+  private async recordDelivery(delivery: Omit<WebhookDelivery, 'createdAt'>): Promise<void> {
+    try {
+      await WebhookDeliveryModel.create(delivery);
+    } catch (err) {
+      log(delivery.jobId, `Failed to record delivery: ${err instanceof Error ? err.message : err}`);
+    }
   }
 }
 
