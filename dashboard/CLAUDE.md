@@ -98,10 +98,14 @@ the single map in `app/http/errors.ts`.
 Use theme tokens only — never hardcode hex or Tailwind palette classes
 (`bg-red-500`, `text-amber-800`) in app UI.
 
-- **Neutrals / brand** → `background`, `background-section`, `accent-light`,
-  `accent-strong`, `foreground`, `muted`, `border`.
-- **Semantic status** → `danger` / `danger-light`, `warning` / `warning-light`;
-  success reuses `accent-light`. Defined once in `tailwind.config.ts`.
+- **Surfaces** → `background`, `card`, `popover`, `sidebar`, `secondary`,
+  `muted`, plus `border`, `input`, `ring`.
+- **Text** → `foreground`, `muted-foreground`, and each surface's `*-foreground`
+  pair (`card-foreground`, `popover-foreground`, ...).
+- **Brand** → `primary` / `primary-foreground`, `accent` / `accent-foreground`.
+- **Destructive** → `destructive` / `destructive-foreground` /
+  `destructive-subtle`, for failed states and delete/revoke actions.
+- Defined once in `app/globals.css` and mapped in `tailwind.config.ts`.
 - Hardcoded hex is allowed only when a color is genuinely data-driven, or in
   marketing/landing illustrations (fake browser chrome, decorative gradients).
 

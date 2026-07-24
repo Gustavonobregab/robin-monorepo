@@ -13,6 +13,6 @@
     "dev:dashboard": "bun run --filter dashboard dev",
     "start": "bun run --filter api start",
     "worker": "bun run --filter api worker",
-    "seed": "bun run --filter api seed"
+    "seed": "bun run --filter api seed:plans"
   }
 }

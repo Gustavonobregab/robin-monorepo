@@ -11,7 +11,6 @@
       "Bash(npx tsc:*)",
       "Bash(bun run build:*)",
       "Bash(bun add:*)",
-      "Bash(git:*)",
       "Bash(bun --version)",
       "Bash(bun install:*)",
       "Bash(grep -E \"^\\(next|react|ky|swr|better-auth|framer-motion|sonner|recharts|lucide-react|clsx|tailwind-merge|class-variance-authority\\)$\")",
@@ -70,6 +69,24 @@
       "Bash(bunx eslint *)",
       "Bash(node -e ' *)",
       "Skill(artifact-design)"
+    ],
+    "defaultMode": "acceptEdits",
+    "ask": [],
+    "deny": [
+      "Bash(gh pr close:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr review:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git revert:*)"
     ]
   },
   "enabledPlugins": {

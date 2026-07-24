@@ -1,7 +1,7 @@
 # Robin — Monorepo
 
-Compression-as-a-service: audio and text compression jobs behind a dashboard
-and a public API (`/v1`, API-key auth).
+Compression-as-a-service: audio, image and text compression jobs behind a
+dashboard and a public API (`/v1`, API-key auth).
 
 ## Structure
 
@@ -11,6 +11,7 @@ robin-monorepo/
 ├── dashboard/    # Frontend — Next.js (conventions: dashboard/CLAUDE.md)
 ├── docs-site/    # Public API docs (Mintlify)
 ├── docs/         # Internal research notes and specs
+├── deploy/       # Dockerfile, docker-compose, nginx, post-receive hook (VPS deploy)
 └── package.json  # Workspace root
 ```
 
@@ -26,7 +27,7 @@ From the repo root:
 bun run dev           # API dev server
 bun run dev:dashboard # Dashboard dev server
 bun run worker        # BullMQ worker
-bun run seed          # Seed API keys
+bun run seed          # Seed plans (api/src/scripts/seed-plans.ts, idempotent upserts)
 ```
 
 Or inside each workspace directly:
