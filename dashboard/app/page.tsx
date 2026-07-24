@@ -60,16 +60,16 @@ function CompressingHeadline({ onDone }: { onDone: () => void }) {
     })
 
     const controls = cuts.flatMap((cut, i) => {
-      const at = 1.1 + i * 0.09
+      const at = 0.35 + i * 0.06
       return [
-        animate(cut, { opacity: 0, filter: 'blur(5px)' }, { duration: 1.5, delay: at, ease: 'easeInOut' }),
-        animate(cut, { width: 0 }, { duration: 1.4, delay: at + 0.55, ease: [0.45, 0, 0.55, 1] }),
+        animate(cut, { opacity: 0, filter: 'blur(5px)' }, { duration: 0.8, delay: at, ease: 'easeInOut' }),
+        animate(cut, { width: 0 }, { duration: 0.8, delay: at + 0.3, ease: [0.45, 0, 0.55, 1] }),
       ]
     })
-    const growAt = 1.1 + (cuts.length - 1) * 0.09 + 0.55 + 1.4 - 0.8
+    const growAt = 0.35 + (cuts.length - 1) * 0.06 + 0.3 + 0.8 - 0.5
     controls.push(
       animate(h1, { fontSize: `${endSize}px` }, {
-        duration: 1.2,
+        duration: 0.8,
         delay: growAt,
         ease: [0.65, 0, 0.35, 1],
         onComplete: () => onDoneRef.current(),
@@ -109,11 +109,6 @@ function SizeDiff({ className = '' }: { className?: string }) {
       <span className="ml-2.5 text-[13px]">−93%</span>
     </p>
   )
-}
-
-/* blank media slot: swap for real <img>/<video>, keep the radius */
-function Media({ className = '' }: { className?: string }) {
-  return <div className={`rounded-2xl bg-black/[0.04] ${className}`} aria-hidden />
 }
 
 function Vignette({ className = '', children }: { className?: string; children: ReactNode }) {
@@ -180,14 +175,6 @@ const STEPS = [
     title: 'Ship it lighter',
     copy: 'Every job reports input, output, and savings. Download from a signed URL and move on.',
   },
-]
-
-const WORKFLOWS = [
-  'Compress prompts',
-  'Shrink podcasts',
-  'Optimize images',
-  'Archive audio',
-  'Automate pipelines',
 ]
 
 const AUDIENCES = [
@@ -365,9 +352,6 @@ export default function LandingPage() {
           <a href="#how" className="transition-colors hover:text-foreground">
             How it works
           </a>
-          <a href="#workflows" className="transition-colors hover:text-foreground">
-            Workflows
-          </a>
           <a href="#pricing" className="transition-colors hover:text-foreground">
             Pricing
           </a>
@@ -456,34 +440,6 @@ export default function LandingPage() {
             height={1118}
             className="w-full self-center rounded-2xl"
           />
-        </section>
-
-        {/* Workflows: heading + pills + wide media */}
-        <section id="workflows" className="relative py-16 md:py-24">
-          <GridLine position="top" />
-          <RowDots position="top" center={false} />
-          <div className="max-w-lg space-y-3">
-            <h2 className="text-3xl font-light tracking-tight">
-              Built for the most demanding pipelines.
-            </h2>
-            <p className="text-[15px] leading-relaxed text-muted-foreground">
-              Designed for products moving files at scale, turning heavy media and verbose prompts
-              into assets your infrastructure barely notices.
-            </p>
-          </div>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {WORKFLOWS.map((w, i) => (
-              <span
-                key={w}
-                className={`rounded-full px-4 py-2 text-[13px] font-medium ${
-                  i === 0 ? 'bg-foreground text-background' : 'border border-border text-muted-foreground'
-                }`}
-              >
-                {w}
-              </span>
-            ))}
-          </div>
-          <Media className="mt-8 aspect-[16/8] w-full md:aspect-[16/6]" />
         </section>
 
         {/* Audiences */}
