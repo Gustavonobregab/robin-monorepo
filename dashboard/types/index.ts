@@ -293,6 +293,7 @@ export interface UserProfile {
   webhookUrl: string | null
   profile: OnboardingProfile | null
   onboardingCompleted: boolean
+  isSuperAdmin?: boolean
   plan: PlanSummary | null
   subscription: SubscriptionSummary | null
   currentUsage: CurrentUsage
@@ -324,4 +325,116 @@ export interface User {
   id: string
   name: string
   email: string
+}
+
+// ─── Admin ───────────────────────────────────────────────────
+export interface AdminOverview {
+  users: { total: number; new7d: number; new30d: number }
+  subscriptions: {
+    byPlan: { planName: string; count: number }[]
+    active: number
+    pastDue: number
+    canceled: number
+  }
+  jobs24h: { total: number; completed: number; failed: number; processing: number }
+  usage7d: {
+    events: number
+    creditsConsumed: number
+    inputBytes: number
+    outputBytes: number
+    byPipeline: { pipelineType: JobPipeline; events: number; creditsConsumed: number }[]
+  }
+  webhooks7d: { deliveries: number; failed: number }
+}
+
+export interface AdminUserListItem {
+  id: string
+  name: string
+  email: string
+  planName: string | null
+  subscriptionStatus: string | null
+  creditsUsed: number
+  creditsLimit: number
+  createdAt: string
+  lastActivityAt: string | null
+}
+
+export interface AdminUserListResponse {
+  items: AdminUserListItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface AdminUserDetail {
+  user: {
+    id: string
+    name: string
+    email: string
+    emailVerified: boolean
+    image?: string
+    profile: OnboardingProfile | null
+    createdAt: string
+  }
+  subscription:
+    | ({ planName: string; status: string; credits: { limit: number; used: number } } & Record<
+        string,
+        unknown
+      >)
+    | null
+  keysCount: number
+  usage30d: { events: number; creditsConsumed: number; inputBytes: number; outputBytes: number }
+  recentJobs: {
+    id: string
+    type: JobPipeline
+    status: JobStatus
+    createdAt: string
+    processingMs: number | null
+  }[]
+}
+
+export interface AdminJobListItem {
+  id: string
+  userEmail: string
+  type: JobPipeline
+  status: JobStatus
+  createdAt: string
+  processingMs: number | null
+  error?: string
+}
+
+export interface AdminJobListResponse {
+  items: AdminJobListItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface AdminMetricsDay {
+  date: string
+  newUsers: number
+  jobs: number
+  jobsFailed: number
+  creditsConsumed: number
+  inputBytes: number
+  outputBytes: number
+}
+
+export interface AdminMetrics {
+  days: AdminMetricsDay[]
+}
+
+export interface AdminQueueCounts {
+  name: string
+  waiting: number
+  active: number
+  failed: number
+  delayed: number
+}
+
+export interface AdminHealth {
+  mongo: { ok: boolean; latencyMs: number }
+  redis: { ok: boolean; latencyMs: number }
+  queues: AdminQueueCounts[]
+  uptime: number
 }

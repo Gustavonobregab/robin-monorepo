@@ -4,6 +4,7 @@ import type { OnboardingRole, OnboardingUsageMode, OnboardingUseCase } from './u
 import { ApiError } from '../../utils/api-error';
 import { usageService } from '../usage/usage.service';
 import { PlanModel } from '../plans/plans.model';
+import { isSuperAdminEmail } from '../../middlewares/super-admin';
 
 export async function ensureWebhookSecret(user: { _id: unknown; webhookSecret?: string | null }): Promise<string> {
   if (user.webhookSecret) return user.webhookSecret;
@@ -42,6 +43,7 @@ export class UsersService {
       name: user.name,
       email: user.email,
       image: user.image,
+      isSuperAdmin: isSuperAdminEmail(user.email),
       createdAt: user.createdAt,
       profile: user.profile ?? null,
       onboardingCompleted: Boolean(user.profile?.onboardingCompletedAt),

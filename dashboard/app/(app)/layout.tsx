@@ -18,6 +18,7 @@ import {
   Settings,
   Webhook,
   PanelLeft,
+  ShieldCheck,
   Sparkles,
   BookOpen,
   type LucideIcon,
@@ -125,6 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
   const { data: profileData, error: profileError } = useSWR('users/me', getProfile)
   const contentReady = Boolean(profileError) || profileData?.data.onboardingCompleted === true
+  const isSuperAdmin = profileData?.data.isSuperAdmin === true
 
   useEffect(() => {
     if (profileData && !profileData.data.onboardingCompleted) router.replace('/onboarding')
@@ -194,6 +196,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           ))}
+          {isSuperAdmin && (
+            <div className="space-y-1">
+              <NavRow
+                item={{ label: 'Admin', href: '/admin', icon: ShieldCheck }}
+                active={pathname === '/admin' || pathname.startsWith('/admin/')}
+              />
+            </div>
+          )}
         </nav>
 
         {/* User card */}
